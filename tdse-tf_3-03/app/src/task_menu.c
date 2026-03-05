@@ -58,23 +58,22 @@
 #define DEL_MEN_XX_MED				50ul
 #define DEL_MEN_XX_MAX				500ul
 
-#define MAX_MOTORS					2 -1
-#define MAX_VAR						3 -1
-#define MAX_POWER					1
-#define MAX_SPEED					9
-#define MAX_SPIN					1
+#define MAX_PARAMETROS				sizeof(task_menu_parameters)
+#define MAX_TEST					sizeof(task_menu_test)
 
 
 /********************** internal data declaration ****************************/
-task_menu_dta_t task_menu_dta =
-	{DEL_MEN_XX_MIN, ST_ACT_MENU_0, EV_MEN_ENT_IDLE, false, 0, 0, 0};
+task_menu_dta_t task_menu_dta_list[] = {
+	{DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_HUM_SUELO},
+	{DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_HUM_SUELO},
+	{DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_HUM_SUELO},
+	{DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_HUM_SUELO}
+};
 
 motor_info_t motor_info_list[] = {
 	{false, 0, false},
 	{false, 0, false}
 };
-
-//int motor_info_list[MAX_MOTORS][3] = {{0, 0, 0}, {0, 0, 0}};
 
 
 const int MAX_VAL[] = {MAX_POWER, MAX_SPEED, MAX_SPIN};
@@ -84,7 +83,10 @@ const char* val_names[][10] = {{"OFF", "ON"}, {"0", "1", "2", "3", "4", "5", "6"
 #define MENU_DTA_QTY	(sizeof(task_menu_dta)/sizeof(task_menu_dta_t))
 
 /********************** internal functions declaration ***********************/
-void task_menu_statechart(void);
+void task_menu_statechart_normal(void);
+void task_menu_statechart_setup(void);
+void task_menu_statechart_failure(void);
+void task_menu_statechart_test(void);
 void LCD_show(const char * first_row, const char * second_row);
 
 /********************** internal data definition *****************************/
@@ -94,6 +96,7 @@ const char *p_task_menu_ 		= "Non-Blocking & Update By Time Code";
 
 /********************** external data declaration ****************************/
 uint32_t g_task_menu_cnt;
+task_menu_sys_t active_system;
 volatile uint32_t g_task_menu_tick_cnt;
 
 /********************** external functions definition ************************/
@@ -127,26 +130,32 @@ void task_menu_init(void *parameters)
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 	LOGGER_INFO("   %s = %lu", GET_NAME(g_task_menu_cnt), g_task_menu_cnt);
 
+	active_system = SYS_NORMAL;
+
 	init_queue_event_task_menu();
 
-	/* Update Task Actuator Configuration & Data Pointer */
-	p_task_menu_dta = &task_menu_dta;
+	for (index = 0; MENU_DTA_QTY > index; index++)
+		{
 
-	/* Init & Print out: Task execution FSM */
-	state = ST_ACT_MENU_0;
-	p_task_menu_dta->state = state;
+			/* Update Task Actuator Configuration & Data Pointer */
+			p_task_menu_dta = &task_menu_dta_list[index];
 
-	event = EV_MEN_ENT_IDLE;
-	p_task_menu_dta->event = event;
+			/* Init & Print out: Task execution FSM */
+			state = ST_SYS_00;
+			p_task_menu_dta->state = state;
 
-	b_event = false;
-	p_task_menu_dta->flag = b_event;
+			event = EV_SYS_BTN_ESC;
+			p_task_menu_dta->event = event;
 
-	LOGGER_INFO(" ");
-	LOGGER_INFO("   %s = %lu   %s = %lu   %s = %s",
-				 GET_NAME(state), (uint32_t)state,
-				 GET_NAME(event), (uint32_t)event,
-				 GET_NAME(b_event), (b_event ? "true" : "false"));
+			b_event = false;
+			p_task_menu_dta->flag = b_event;
+
+			LOGGER_INFO(" ");
+			LOGGER_INFO("   %s = %lu   %s = %lu   %s = %s",
+						 GET_NAME(state), (uint32_t)state,
+						 GET_NAME(event), (uint32_t)event,
+						 GET_NAME(b_event), (b_event ? "true" : "false"));
+		}
 
 	/* Init & Print out: LCD Display */
 	displayInit( DISPLAY_CONNECTION_GPIO_4BITS );
@@ -181,7 +190,23 @@ void task_menu_update(void *parameters)
 		g_task_menu_cnt++;
 
 		/* Run Task Menu Statechart */
-    	task_menu_statechart();
+		switch (active_system) {
+			case SYS_NORMAL:
+				task_menu_statechart_normal();
+				break;
+			case SYS_SETUP:
+				task_menu_statechart_setup();
+				break;
+			case SYS_FAILURE:
+				task_menu_statechart_failure();
+				break;
+			case SYS_TEST:
+				task_menu_statechart_test();
+				break;
+			default:
+				break;
+		}
+
 
     	/* Protect shared resource */
 		__asm("CPSID i");	/* disable interrupts */
@@ -199,14 +224,14 @@ void task_menu_update(void *parameters)
 	}
 }
 
-void task_menu_statechart(void)
+void task_menu_statechart_normal(void)
 {
 	task_menu_dta_t *p_task_menu_dta;
 	char first_row[20];
 	char second_row[20];
 
     /* Update Task Menu Data Pointer */
-	p_task_menu_dta = &task_menu_dta;
+	p_task_menu_dta = &task_menu_dta_list[active_system];
 
 	if (true == any_event_task_menu())
 	{
@@ -214,36 +239,37 @@ void task_menu_statechart(void)
 		p_task_menu_dta->event = get_event_task_menu();
 	}
 
+	//TODO: rehacer cada caso
 	switch (p_task_menu_dta->state)
 	{
-		case ST_ACT_MENU_0:
+		case ST_SYS_00:
 
 			if ((true == p_task_menu_dta->flag) && (EV_MEN_ENT_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_1;
-				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_motor);
+				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_parameter);
 				LCD_show("Select Motor:", second_row);
 			}
 
 			break;
 
-		case ST_ACT_MENU_1:
+		case ST_SYS_01:
 			if ((true == p_task_menu_dta->flag) && (EV_MEN_ENT_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_2;
-				snprintf(first_row, sizeof(first_row), "Config Motor: %lu", p_task_menu_dta->curr_motor);
-				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->curr_var]);
+				snprintf(first_row, sizeof(first_row), "Config Motor: %lu", p_task_menu_dta->curr_parameter);
+				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show(first_row, second_row);
 
 			}
 			else if ((true == p_task_menu_dta->flag) && (EV_MEN_NEX_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
-				if(p_task_menu_dta->curr_motor < MAX_MOTORS){p_task_menu_dta->curr_motor++;}
-				else if (p_task_menu_dta->curr_motor == MAX_MOTORS){p_task_menu_dta->curr_motor=0;}
-				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_motor);
+				if(p_task_menu_dta->curr_parameter < MAX_PARAMETROS){p_task_menu_dta->curr_parameter++;}
+				else if (p_task_menu_dta->curr_parameter == MAX_PARAMETROS){p_task_menu_dta->curr_parameter=0;}
+				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_parameter);
 				LCD_show("Select Motor:", second_row);
 
 			}
@@ -264,65 +290,96 @@ void task_menu_statechart(void)
 
 			break;
 
-		case ST_ACT_MENU_2:
+		case ST_SYS_02:
 			if ((true == p_task_menu_dta->flag) && (EV_MEN_ENT_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_3;
 
-				if (0 == p_task_menu_dta->curr_var){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_motor].power;}
-				if (1 == p_task_menu_dta->curr_var){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_motor].speed;}
-				if (2 == p_task_menu_dta->curr_var){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_motor].spin;}
+				if (0 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_parameter].power;}
+				if (1 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_parameter].speed;}
+				if (2 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_parameter].spin;}
 
-				snprintf(first_row, sizeof(first_row), "Set %s", var_names[p_task_menu_dta->curr_var]);
-				snprintf(second_row, sizeof(second_row), "> %s", val_names[p_task_menu_dta->curr_var][p_task_menu_dta->curr_val]);
+				snprintf(first_row, sizeof(first_row), "Set %s", var_names[p_task_menu_dta->current_value]);
+				snprintf(second_row, sizeof(second_row), "> %s", val_names[p_task_menu_dta->current_value][p_task_menu_dta->curr_val]);
 				LCD_show(first_row, second_row);
 
 			}
 			else if ((true == p_task_menu_dta->flag) && (EV_MEN_NEX_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
-				if(p_task_menu_dta->curr_var < MAX_VAR){p_task_menu_dta->curr_var++;}
-				else if (p_task_menu_dta->curr_var == MAX_VAR){p_task_menu_dta->curr_var=0;}
-				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->curr_var]);
+				if(p_task_menu_dta->current_value < MAX_VAR){p_task_menu_dta->current_value++;}
+				else if (p_task_menu_dta->current_value == MAX_VAR){p_task_menu_dta->current_value=0;}
+				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show("Select Variable:", second_row);
 			}
 			else if ((true == p_task_menu_dta->flag) && (EV_MEN_ESC_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_1;
-				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_motor);
+				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_parameter);
 				LCD_show("Select Motor:", second_row);
 			}
 			break;
-		case ST_ACT_MENU_3:
+		case ST_SYS_03:
 			if ((true == p_task_menu_dta->flag) && (EV_MEN_ENT_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_2;
 
-				if (0 == p_task_menu_dta->curr_var){motor_info_list[p_task_menu_dta->curr_motor].power = p_task_menu_dta->curr_val;}
-				if (1 == p_task_menu_dta->curr_var){motor_info_list[p_task_menu_dta->curr_motor].speed = p_task_menu_dta->curr_val;}
-				if (2 == p_task_menu_dta->curr_var){motor_info_list[p_task_menu_dta->curr_motor].spin = p_task_menu_dta->curr_val;}
+				if (0 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].power = p_task_menu_dta->curr_val;}
+				if (1 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].speed = p_task_menu_dta->curr_val;}
+				if (2 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].spin = p_task_menu_dta->curr_val;}
 
-				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->curr_var]);
+				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show("Select Variable:", second_row);
 
 			}
 			else if ((true == p_task_menu_dta->flag) && (EV_MEN_NEX_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
-				if(p_task_menu_dta->curr_val < MAX_VAL[p_task_menu_dta->curr_var]){p_task_menu_dta->curr_val++;}
-				else if (p_task_menu_dta->curr_val == MAX_VAL[p_task_menu_dta->curr_var]){p_task_menu_dta->curr_val=0;}
-				snprintf(first_row, sizeof(first_row), "Set %s", var_names[p_task_menu_dta->curr_var]);
-				snprintf(second_row, sizeof(second_row), "> %s", val_names[p_task_menu_dta->curr_var][p_task_menu_dta->curr_val]);
+				if(p_task_menu_dta->curr_val < MAX_VAL[p_task_menu_dta->current_value]){p_task_menu_dta->curr_val++;}
+				else if (p_task_menu_dta->curr_val == MAX_VAL[p_task_menu_dta->current_value]){p_task_menu_dta->curr_val=0;}
+				snprintf(first_row, sizeof(first_row), "Set %s", var_names[p_task_menu_dta->current_value]);
+				snprintf(second_row, sizeof(second_row), "> %s", val_names[p_task_menu_dta->current_value][p_task_menu_dta->curr_val]);
 				LCD_show(first_row, second_row);
 			}
 			else if ((true == p_task_menu_dta->flag) && (EV_MEN_ESC_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_2;
-				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->curr_var]);
+				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
+				LCD_show("Select Variable:", second_row);
+			}
+			break;
+		case ST_SYS_04:
+			if ((true == p_task_menu_dta->flag) && (EV_MEN_ENT_ACTIVE == p_task_menu_dta->event))
+			{
+				p_task_menu_dta->flag = false;
+				p_task_menu_dta->state = ST_ACT_MENU_2;
+
+				if (0 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].power = p_task_menu_dta->curr_val;}
+				if (1 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].speed = p_task_menu_dta->curr_val;}
+				if (2 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].spin = p_task_menu_dta->curr_val;}
+
+				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
+				LCD_show("Select Variable:", second_row);
+
+			}
+			else if ((true == p_task_menu_dta->flag) && (EV_MEN_NEX_ACTIVE == p_task_menu_dta->event))
+			{
+				p_task_menu_dta->flag = false;
+				if(p_task_menu_dta->curr_val < MAX_VAL[p_task_menu_dta->current_value]){p_task_menu_dta->curr_val++;}
+				else if (p_task_menu_dta->curr_val == MAX_VAL[p_task_menu_dta->current_value]){p_task_menu_dta->curr_val=0;}
+				snprintf(first_row, sizeof(first_row), "Set %s", var_names[p_task_menu_dta->current_value]);
+				snprintf(second_row, sizeof(second_row), "> %s", val_names[p_task_menu_dta->current_value][p_task_menu_dta->curr_val]);
+				LCD_show(first_row, second_row);
+			}
+			else if ((true == p_task_menu_dta->flag) && (EV_MEN_ESC_ACTIVE == p_task_menu_dta->event))
+			{
+				p_task_menu_dta->flag = false;
+				p_task_menu_dta->state = ST_ACT_MENU_2;
+				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show("Select Variable:", second_row);
 			}
 			break;
@@ -332,5 +389,21 @@ void task_menu_statechart(void)
 			break;
 	}
 }
+
+void task_menu_statechart_setup(void)
+{
+}
+
+void task_menu_statechart_failure(void)
+{
+}
+
+void task_menu_statechart_test(void)
+{
+}
+
+
+
+
 
 /********************** end of file ******************************************/
