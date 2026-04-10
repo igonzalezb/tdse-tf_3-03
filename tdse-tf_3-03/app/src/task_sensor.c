@@ -60,7 +60,7 @@
 #define DEL_BTN_XX_HOLD				1000ul
 
 /********************** internal data declaration ****************************/
-const task_sensor_cfg_t task_sensor_cfg_list[] = {
+task_sensor_cfg_t task_sensor_cfg_list[] = {
 	{ID_BTN_ENT,  BTN_ENT_PORT,  BTN_ENT_PIN,  BTN_ENT_PRESSED, DEL_BTN_XX_MAX,	 DEL_BTN_XX_HOLD, EV_MEN_ENT_IDLE,  EV_MEN_ENT_ACTIVE, EV_MEN_ENT_HOLD},
 	{ID_BTN_NEX,  BTN_NEX_PORT,  BTN_NEX_PIN,  BTN_NEX_PRESSED, DEL_BTN_XX_MAX,	 DEL_BTN_XX_HOLD, EV_MEN_NEX_IDLE,  EV_MEN_NEX_ACTIVE, EV_MEN_NEX_HOLD},
 	{ID_BTN_PREV, BTN_PREV_PORT, BTN_PREV_PIN, BTN_PREV_PRESSED,DEL_BTN_XX_MAX,  DEL_BTN_XX_HOLD, EV_MEN_PREV_IDLE, EV_MEN_PREV_ACTIVE, EV_MEN_PREV_HOLD},

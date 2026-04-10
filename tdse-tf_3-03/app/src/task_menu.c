@@ -58,8 +58,8 @@
 #define DEL_MEN_XX_MED				50ul
 #define DEL_MEN_XX_MAX				500ul
 
-#define MAX_PARAMETROS				sizeof(task_menu_parameters)
-#define MAX_TEST					sizeof(task_menu_test)
+#define MAX_PARAMETROS				sizeof(task_menu_parameters_t)
+#define MAX_TEST					sizeof(task_menu_test_t)
 
 
 /********************** internal data declaration ****************************/
@@ -77,16 +77,22 @@ motor_info_t motor_info_list[] = {
 
 
 const int MAX_VAL[] = {MAX_POWER, MAX_SPEED, MAX_SPIN};
+const int MIN_VAL[] = {MIN_POWER, MIN_SPEED, MIN_SPIN};
+
+
 const char* var_names[] = {"Power", "Speed", "Spin"};
 const char* val_names[][10] = {{"OFF", "ON"}, {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, {"L", "R"}};
 
-#define MENU_DTA_QTY	(sizeof(task_menu_dta)/sizeof(task_menu_dta_t))
+#define MENU_DTA_QTY	(sizeof(task_menu_dta_list)/sizeof(task_menu_dta_t))
 
 /********************** internal functions declaration ***********************/
 void task_menu_statechart_normal(void);
 void task_menu_statechart_setup(void);
 void task_menu_statechart_failure(void);
 void task_menu_statechart_test(void);
+int get_value(task_menu_parameters_t parameter);
+void set_value(task_menu_parameters_t parameter, int value);
+void test_function(task_menu_test_t current_test);
 void LCD_show(const char * first_row, const char * second_row);
 
 /********************** internal data definition *****************************/
@@ -248,7 +254,7 @@ void task_menu_statechart_normal(void)
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_1;
-				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_parameter);
+				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
 				LCD_show("Select Motor:", second_row);
 			}
 
@@ -259,7 +265,7 @@ void task_menu_statechart_normal(void)
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_2;
-				snprintf(first_row, sizeof(first_row), "Config Motor: %lu", p_task_menu_dta->curr_parameter);
+				snprintf(first_row, sizeof(first_row), "Config Motor: %lu", p_task_menu_dta->current_parameter);
 				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show(first_row, second_row);
 
@@ -267,9 +273,9 @@ void task_menu_statechart_normal(void)
 			else if ((true == p_task_menu_dta->flag) && (EV_MEN_NEX_ACTIVE == p_task_menu_dta->event))
 			{
 				p_task_menu_dta->flag = false;
-				if(p_task_menu_dta->curr_parameter < MAX_PARAMETROS){p_task_menu_dta->curr_parameter++;}
-				else if (p_task_menu_dta->curr_parameter == MAX_PARAMETROS){p_task_menu_dta->curr_parameter=0;}
-				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_parameter);
+				if(p_task_menu_dta->current_parameter < MAX_PARAMETROS){p_task_menu_dta->current_parameter++;}
+				else if (p_task_menu_dta->current_parameter == MAX_PARAMETROS){p_task_menu_dta->current_parameter=0;}
+				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
 				LCD_show("Select Motor:", second_row);
 
 			}
@@ -296,9 +302,9 @@ void task_menu_statechart_normal(void)
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_3;
 
-				if (0 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_parameter].power;}
-				if (1 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_parameter].speed;}
-				if (2 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->curr_parameter].spin;}
+				if (0 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->current_parameter].power;}
+				if (1 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->current_parameter].speed;}
+				if (2 == p_task_menu_dta->current_value){p_task_menu_dta->curr_val = motor_info_list[p_task_menu_dta->current_parameter].spin;}
 
 				snprintf(first_row, sizeof(first_row), "Set %s", var_names[p_task_menu_dta->current_value]);
 				snprintf(second_row, sizeof(second_row), "> %s", val_names[p_task_menu_dta->current_value][p_task_menu_dta->curr_val]);
@@ -317,7 +323,7 @@ void task_menu_statechart_normal(void)
 			{
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_1;
-				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->curr_parameter);
+				snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
 				LCD_show("Select Motor:", second_row);
 			}
 			break;
@@ -327,9 +333,9 @@ void task_menu_statechart_normal(void)
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_2;
 
-				if (0 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].power = p_task_menu_dta->curr_val;}
-				if (1 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].speed = p_task_menu_dta->curr_val;}
-				if (2 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].spin = p_task_menu_dta->curr_val;}
+				if (0 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->current_parameter].power = p_task_menu_dta->curr_val;}
+				if (1 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->current_parameter].speed = p_task_menu_dta->curr_val;}
+				if (2 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->current_parameter].spin = p_task_menu_dta->curr_val;}
 
 				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show("Select Variable:", second_row);
@@ -358,9 +364,9 @@ void task_menu_statechart_normal(void)
 				p_task_menu_dta->flag = false;
 				p_task_menu_dta->state = ST_ACT_MENU_2;
 
-				if (0 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].power = p_task_menu_dta->curr_val;}
-				if (1 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].speed = p_task_menu_dta->curr_val;}
-				if (2 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->curr_parameter].spin = p_task_menu_dta->curr_val;}
+				if (0 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->current_parameter].power = p_task_menu_dta->curr_val;}
+				if (1 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->current_parameter].speed = p_task_menu_dta->curr_val;}
+				if (2 == p_task_menu_dta->current_value){motor_info_list[p_task_menu_dta->current_parameter].spin = p_task_menu_dta->curr_val;}
 
 				snprintf(second_row, sizeof(second_row), "> %s", var_names[p_task_menu_dta->current_value]);
 				LCD_show("Select Variable:", second_row);
@@ -390,8 +396,145 @@ void task_menu_statechart_normal(void)
 	}
 }
 
+
+//TODO: verificar el funcionamiento y ver lo de la pantalla
 void task_menu_statechart_setup(void)
 {
+	task_menu_dta_t *p_task_menu_dta;
+		char first_row[20];
+		char second_row[20];
+
+	    /* Update Task Menu Data Pointer */
+		p_task_menu_dta = &task_menu_dta_list[active_system];
+
+		if (true == any_event_task_menu())
+		{
+			p_task_menu_dta->flag = true;
+			p_task_menu_dta->event = get_event_task_menu();
+		}
+
+		switch (p_task_menu_dta->state)
+		{
+			case ST_SYS_00: //Menu Setup General: se elige que parametro modificar
+
+				if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_RIGHT == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_00;
+
+					if (p_task_menu_dta->current_parameter < MAX_PARAMETROS)
+					{
+						p_task_menu_dta->current_parameter++;
+					}
+					else
+					{
+						p_task_menu_dta->current_parameter = 0;
+					}
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+					LCD_show("Select Parameter:", second_row);
+				}
+				else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_LEFT == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_00;
+
+					if (p_task_menu_dta->current_parameter > 0)
+					{
+						p_task_menu_dta->current_parameter--;
+					}
+					else
+					{
+						p_task_menu_dta->current_parameter = MAX_PARAMETROS;
+					}
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+					LCD_show("Select Parameter:", second_row);
+				}
+				else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_ENTER == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_01;
+
+					p_task_menu_dta->current_value = get_value(p_task_menu_dta->current_parameter);
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_value);
+					LCD_show("Select Value:", second_row);
+				}
+				else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_ESC == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_00;
+					active_system = SYS_NORMAL;
+
+					//TODO: ver (deberia mostrar la pantalla en normal)
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+					LCD_show("Select Parameter:", second_row);
+				}
+
+				break;
+			case ST_SYS_01: //Menu Setup de cada parametro: se elige el valor del parametro.
+
+				if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_RIGHT == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_01;
+
+					if (p_task_menu_dta->current_value < MAX_VAL[p_task_menu_dta->current_parameter])
+					{
+						p_task_menu_dta->current_value++;
+					}
+					else
+					{
+						p_task_menu_dta->current_value = MIN_VAL[p_task_menu_dta->current_parameter];
+					}
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_value);
+					LCD_show("Select Value:", second_row);
+				}
+				else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_LEFT == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_01;
+
+					if (p_task_menu_dta->current_value >= MIN_VAL[p_task_menu_dta->current_parameter])
+					{
+						p_task_menu_dta->current_value--;
+					}
+					else
+					{
+						p_task_menu_dta->current_value = MAX_VAL[p_task_menu_dta->current_parameter];
+					}
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_value);
+					LCD_show("Select Value:", second_row);
+				}
+				else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_ENTER == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_00;
+
+					save_value(p_task_menu_dta->current_parameter, p_task_menu_dta->current_value);
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+					LCD_show("Select Parameter:", second_row);
+				}
+				else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_ESC == p_task_menu_dta->event))
+				{
+					p_task_menu_dta->flag = false;
+					p_task_menu_dta->state = ST_SYS_00;
+
+					snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+					LCD_show("Select Value:", second_row);
+				}
+
+				break;
+
+
+			default:
+
+				break;
+		}
 }
 
 void task_menu_statechart_failure(void)
@@ -400,9 +543,162 @@ void task_menu_statechart_failure(void)
 
 void task_menu_statechart_test(void)
 {
+	task_menu_dta_t *p_task_menu_dta;
+			char first_row[20];
+			char second_row[20];
+
+		    /* Update Task Menu Data Pointer */
+			p_task_menu_dta = &task_menu_dta_list[active_system];
+
+			if (true == any_event_task_menu())
+			{
+				p_task_menu_dta->flag = true;
+				p_task_menu_dta->event = get_event_task_menu();
+			}
+
+			switch (p_task_menu_dta->state)
+			{
+				case ST_SYS_00:
+
+					if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_RIGHT == p_task_menu_dta->event))
+					{
+						p_task_menu_dta->flag = false;
+						p_task_menu_dta->state = ST_SYS_00;
+
+						if (p_task_menu_dta->current_test < MAX_TEST)
+						{
+							p_task_menu_dta->current_test++;
+						}
+						else
+						{
+							p_task_menu_dta->current_test = 0;
+						}
+
+						snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_test);
+						LCD_show("Select Parameter:", second_row);
+					}
+					else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_LEFT == p_task_menu_dta->event))
+					{
+						p_task_menu_dta->flag = false;
+						p_task_menu_dta->state = ST_SYS_00;
+
+						if (p_task_menu_dta->current_test > 0)
+						{
+							p_task_menu_dta->current_test--;
+						}
+						else
+						{
+							p_task_menu_dta->current_test = MAX_TEST;
+						}
+
+						snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+						LCD_show("Select Parameter:", second_row);
+					}
+					else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_ENTER == p_task_menu_dta->event))
+					{
+						p_task_menu_dta->flag = false;
+						p_task_menu_dta->state = ST_SYS_00;
+
+						test_function(p_task_menu_dta->current_test);
+
+						snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_value);
+						LCD_show("Select Value:", second_row);
+					}
+					else if ((true == p_task_menu_dta->flag) && (EV_SYS_BTN_ESC == p_task_menu_dta->event))
+					{
+						p_task_menu_dta->flag = false;
+						p_task_menu_dta->state = ST_SYS_00;
+						active_system = SYS_NORMAL;
+
+						//TODO: ver (deberia mostrar la pantalla en normal)
+						snprintf(second_row, sizeof(second_row), "> %lu", p_task_menu_dta->current_parameter);
+						LCD_show("Select Parameter:", second_row);
+					}
+
+					break;
+
+			}
+
 }
 
 
+int get_value(task_menu_parameters_t parameter)
+{
+	//TODO
+	switch (parameter) {
+		case PARAM_HUM_SUELO:
+
+			break;
+		case PARAM_HUM_AMB:
+
+			break;
+		case PARAM_TEMP_AMB:
+
+			break;
+		case PARAM_LUZ:
+
+			break;
+		case PARAM_AGUA:
+
+			break;
+		default:
+			break;
+	}
+}
+
+void set_value(task_menu_parameters_t parameter, int value)
+{
+	//TODO
+	switch (parameter) {
+			case PARAM_HUM_SUELO:
+
+				break;
+			case PARAM_HUM_AMB:
+
+				break;
+			case PARAM_TEMP_AMB:
+
+				break;
+			case PARAM_LUZ:
+
+				break;
+			case PARAM_AGUA:
+
+				break;
+			default:
+				break;
+		}
+}
+
+void test_function(task_menu_test_t current_test)
+{
+	//TODO
+	switch (current_test) {
+		case TEST_NIVEL_AGUA:
+
+			break;
+		case TEST_BOMBA:
+
+			break;
+		case TEST_LUZ:
+
+			break;
+		case TEST_LED:
+
+			break;
+		case TEST_HUM_SUELO:
+
+			break;
+		case TEST_TEMP:
+
+			break;
+		case TEST_BUZZER:
+
+			break;
+		default:
+			break;
+	}
+}
 
 
 

@@ -102,7 +102,7 @@ typedef struct
 	bool					flag;
 	task_menu_parameters_t	current_parameter;
 	uint32_t				current_value;
-	task_menu_test_t			current_test;
+	task_menu_test_t		current_test;
 } task_menu_dta_t;
 
 
@@ -110,7 +110,7 @@ typedef struct
 
 
 /********************** external data declaration ****************************/
-extern task_menu_dta_t task_menu_dta_list;
+extern task_menu_dta_t task_menu_dta_list[];
 
 /********************** external functions declaration ***********************/
 
