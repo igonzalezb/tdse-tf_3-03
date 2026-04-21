@@ -82,13 +82,11 @@ extern "C" {
 #define BTN_NEX_PRESSED	GPIO_PIN_RESET
 #define BTN_NEX_HOVER	GPIO_PIN_SET
 
-
 //TODO Poner bien el PIN para PREV
 #define BTN_PREV_PIN		D11_Pin
 #define BTN_PREV_PORT		D11_GPIO_Port
 #define BTN_PREV_PRESSED	GPIO_PIN_RESET
 #define BTN_PREV_HOVER		GPIO_PIN_SET
-
 
 #define BTN_ESC_PIN		D12_Pin
 #define BTN_ESC_PORT	D12_GPIO_Port

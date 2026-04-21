@@ -76,12 +76,12 @@ extern "C" {
 
 /********************** typedef **********************************************/
 
-extern char* const logger_msg;
+extern char *const logger_msg;
 extern int logger_msg_len; // only for debug information
 
 /********************** external functions declaration ***********************/
 
-void logger_log_print_(char* const msg);
+void logger_log_print_(char *const msg);
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
