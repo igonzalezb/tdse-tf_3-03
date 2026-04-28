@@ -58,7 +58,7 @@
 
 #if 1 == LOGGER_CONFIG_ENABLE
 static char logger_msg_buffer_[LOGGER_CONFIG_MAXLEN];
-char* const logger_msg = logger_msg_buffer_;
+char *const logger_msg = logger_msg_buffer_;
 int logger_msg_len;
 #endif
 
@@ -67,8 +67,7 @@ int logger_msg_len;
 /********************** external functions definition ************************/
 
 #if 1 == LOGGER_CONFIG_USE_SEMIHOSTING
-void logger_log_print_(char* const msg)
-{
+void logger_log_print_(char *const msg) {
 	printf(msg);
 	fflush(stdout);
 }

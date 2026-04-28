@@ -58,19 +58,17 @@
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
-struct
-{
-	uint32_t	head;
-	uint32_t	tail;
-	uint32_t	count;
-	task_menu_ev_t	queue[MAX_EVENTS];
+struct {
+	uint32_t head;
+	uint32_t tail;
+	uint32_t count;
+	task_menu_ev_t queue[MAX_EVENTS];
 } queue_task_a;
 
 /********************** external data declaration ****************************/
 
 /********************** external functions definition ************************/
-void init_queue_event_task_menu(void)
-{
+void init_queue_event_task_menu(void) {
 	uint32_t i;
 
 	queue_task_a.head = 0;
@@ -81,8 +79,7 @@ void init_queue_event_task_menu(void)
 		queue_task_a.queue[i] = EVENT_UNDEFINED;
 }
 
-void put_event_task_menu(task_menu_ev_t event)
-{
+void put_event_task_menu(task_menu_ev_t event) {
 	queue_task_a.count++;
 	queue_task_a.queue[queue_task_a.head++] = event;
 
@@ -90,8 +87,7 @@ void put_event_task_menu(task_menu_ev_t event)
 		queue_task_a.head = 0;
 }
 
-task_menu_ev_t get_event_task_menu(void)
-{
+task_menu_ev_t get_event_task_menu(void) {
 	task_menu_ev_t event;
 
 	queue_task_a.count--;
@@ -104,9 +100,8 @@ task_menu_ev_t get_event_task_menu(void)
 	return event;
 }
 
-bool any_event_task_menu(void)
-{
-  return (queue_task_a.head != queue_task_a.tail);
+bool any_event_task_menu(void) {
+	return (queue_task_a.head != queue_task_a.tail);
 }
 
 /********************** end of file ******************************************/

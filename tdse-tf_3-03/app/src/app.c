@@ -56,30 +56,28 @@
 #define TASK_X_DELAY_MIN	0ul
 
 typedef struct {
-	void (*task_init)(void *);		// Pointer to task (must be a
+	void (*task_init)(void*);		// Pointer to task (must be a
 									// 'void (void *)' function)
-	void (*task_update)(void *);	// Pointer to task (must be a
-									// 'void (void *)' function)
+	void (*task_update)(void*);	// Pointer to task (must be a
+								// 'void (void *)' function)
 	void *parameters;				// Pointer to parameters
 } task_cfg_t;
 
 typedef struct {
-    uint32_t WCET;			// Worst-case execution time (microseconds)
+	uint32_t WCET;			// Worst-case execution time (microseconds)
 } task_dta_t;
 
 /********************** internal data declaration ****************************/
-const task_cfg_t task_cfg_list[]	= {
-		{task_sensor_init,	task_sensor_update, 	NULL},
-		{task_menu_init,	task_menu_update, 		NULL}
-};
+const task_cfg_t task_cfg_list[] = { { task_sensor_init, task_sensor_update,
+NULL }, { task_menu_init, task_menu_update, NULL } };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
 
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
-const char *p_sys	= " Bare Metal - Event-Triggered Systems (ETS)";
-const char *p_app	= " App - Interactive Menu";
+const char *p_sys = " Bare Metal - Event-Triggered Systems (ETS)";
+const char *p_app = " App - Interactive Menu";
 
 /********************** external data declaration ****************************/
 uint32_t g_app_cnt;
@@ -90,13 +88,13 @@ volatile uint32_t g_app_tick_cnt;
 task_dta_t task_dta_list[TASK_QTY];
 
 /********************** external functions definition ************************/
-void app_init(void)
-{
+void app_init(void) {
 	uint32_t index;
 
 	/* Print out: Application Initialized */
 	LOGGER_INFO(" ");
-	LOGGER_INFO("%s is running - Tick [mS] = %lu", GET_NAME(app_init), HAL_GetTick());
+	LOGGER_INFO("%s is running - Tick [mS] = %lu", GET_NAME(app_init),
+			HAL_GetTick());
 
 	LOGGER_INFO(p_sys);
 	LOGGER_INFO(p_app);
@@ -108,9 +106,8 @@ void app_init(void)
 	/* Init Cycle Counter */
 	cycle_counter_init();
 
-    /* Go through the task arrays */
-	for (index = 0; TASK_QTY > index; index++)
-	{
+	/* Go through the task arrays */
+	for (index = 0; TASK_QTY > index; index++) {
 		/* Run task_x_init */
 		(*task_cfg_list[index].task_init)(task_cfg_list[index].parameters);
 
@@ -119,75 +116,73 @@ void app_init(void)
 	}
 
 	/* Protect shared resource */
-	__asm("CPSID i");	/* disable interrupts */
+	__asm("CPSID i");
+	/* disable interrupts */
 	/* Init Tick Counter */
 	g_app_tick_cnt = G_APP_TICK_CNT_INI;
 
 	g_task_sensor_tick_cnt = G_APP_TICK_CNT_INI;
 	g_task_menu_tick_cnt = G_APP_TICK_CNT_INI;
-    __asm("CPSIE i");	/* enable interrupts */
+	__asm("CPSIE i");
+	/* enable interrupts */
 }
 
-void app_update(void)
-{
+void app_update(void) {
 	uint32_t index;
 	bool b_time_update_required = false;
 	uint32_t cycle_counter_time_us;
 
 	/* Protect shared resource */
-	__asm("CPSID i");	/* disable interrupts */
-    if (G_APP_TICK_CNT_INI < g_app_tick_cnt)
-    {
+	__asm("CPSID i");
+	/* disable interrupts */
+	if (G_APP_TICK_CNT_INI < g_app_tick_cnt) {
 		/* Update Tick Counter */
-    	g_app_tick_cnt--;
-    	b_time_update_required = true;
-    }
-    __asm("CPSIE i");	/* enable interrupts */
+		g_app_tick_cnt--;
+		b_time_update_required = true;
+	}
+	__asm("CPSIE i");
+	/* enable interrupts */
 
 	/* Check if it's time to run tasks */
-    while (b_time_update_required)
-    {
-    	/* Update App Counter */
-    	g_app_cnt++;
-    	g_app_runtime_us = 0;
+	while (b_time_update_required) {
+		/* Update App Counter */
+		g_app_cnt++;
+		g_app_runtime_us = 0;
 
 		/* Go through the task arrays */
-		for (index = 0; TASK_QTY > index; index++)
-		{
+		for (index = 0; TASK_QTY > index; index++) {
 			cycle_counter_reset();
 
-    		/* Run task_x_update */
-			(*task_cfg_list[index].task_update)(task_cfg_list[index].parameters);
+			/* Run task_x_update */
+			(*task_cfg_list[index].task_update)(
+					task_cfg_list[index].parameters);
 
 			cycle_counter_time_us = cycle_counter_get_time_us();
 
 			/* Update variables */
 			g_app_runtime_us += cycle_counter_time_us;
 
-			if (task_dta_list[index].WCET < cycle_counter_time_us)
-			{
+			if (task_dta_list[index].WCET < cycle_counter_time_us) {
 				task_dta_list[index].WCET = cycle_counter_time_us;
 			}
 		}
 
 		/* Protect shared resource */
-		__asm("CPSID i");	/* disable interrupts */
-		if (G_APP_TICK_CNT_INI < g_app_tick_cnt)
-		{
+		__asm("CPSID i");
+		/* disable interrupts */
+		if (G_APP_TICK_CNT_INI < g_app_tick_cnt) {
 			/* Update Tick Counter */
 			g_app_tick_cnt--;
 			b_time_update_required = true;
-		}
-		else
-		{
+		} else {
 			b_time_update_required = false;
 		}
-		__asm("CPSIE i");	/* enable interrupts */
+		__asm("CPSIE i");
+		/* enable interrupts */
 	}
 }
 
-void HAL_SYSTICK_Callback(void)
-{
+void HAL_SYSTICK_Callback(void) {
 	/* Update Tick Counter */
 	g_app_tick_cnt++;
 

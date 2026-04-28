@@ -49,44 +49,38 @@ extern "C" {
 
 /********************** typedef **********************************************/
 
-
 /* Events to excite Task Menu */
-typedef enum task_menu_ev { EV_SYS_BTN_RIGHT,
-							EV_SYS_BTN_LEFT,
-							EV_SYS_BTN_ENTER,
-							EV_SYS_BTN_ESC,
-							EV_SYS_BTN_ESC_HOLD} task_menu_ev_t;
+typedef enum task_menu_ev {
+	EV_SYS_BTN_RIGHT,
+	EV_SYS_BTN_LEFT,
+	EV_SYS_BTN_ENTER,
+	EV_SYS_BTN_ESC,
+	EV_SYS_BTN_ESC_HOLD,
+	EV_SYS_NEXT_TIMER
+} task_menu_ev_t;
 
 /* State of Task Menu */
-typedef enum task_menu_st {	ST_SYS_00,
-							ST_SYS_01,
-							ST_SYS_02,
-							ST_SYS_03,
-							ST_SYS_04,
-							} task_menu_st_t;
+typedef enum task_menu_st {
+	ST_SYS_00, ST_SYS_01, ST_SYS_02, ST_SYS_03, ST_SYS_04,
+} task_menu_st_t;
 
+typedef enum task_menu_sys {
+	SYS_NORMAL, SYS_SETUP, SYS_FAILURE, SYS_TEST,
+} task_menu_sys_t;
 
-typedef enum task_menu_sys {SYS_NORMAL,
-							SYS_SETUP,
-							SYS_FAILURE,
-							SYS_TEST,
-							} task_menu_sys_t;
+typedef enum task_menu_parameters {
+	PARAM_HUM_SUELO, PARAM_HUM_AMB, PARAM_TEMP_AMB, PARAM_LUZ, PARAM_AGUA,
+} task_menu_parameters_t;
 
-typedef enum task_menu_parameters {	PARAM_HUM_SUELO,
-									PARAM_HUM_AMB,
-									PARAM_TEMP_AMB,
-									PARAM_LUZ,
-									PARAM_AGUA,
-								  } task_menu_parameters_t;
-
-typedef enum task_menu_test {	TEST_NIVEL_AGUA,
-								TEST_BOMBA,
-								TEST_LUZ,
-								TEST_LED,
-								TEST_HUM_SUELO,
-								TEST_TEMP,
-								TEST_BUZZER,
-							  } task_menu_test_t;
+typedef enum task_menu_test {
+	TEST_NIVEL_AGUA,
+	TEST_BOMBA,
+	TEST_LUZ,
+	TEST_LED,
+	TEST_HUM_SUELO,
+	TEST_TEMP,
+	TEST_BUZZER,
+} task_menu_test_t;
 
 typedef struct motor_info {
 	bool power;
@@ -94,20 +88,15 @@ typedef struct motor_info {
 	bool spin;
 } motor_info_t;
 
-typedef struct
-{
-	uint32_t				tick;
-	task_menu_st_t			state;
-	task_menu_ev_t			event;
-	bool					flag;
-	task_menu_parameters_t	current_parameter;
-	uint32_t				current_value;
-	task_menu_test_t		current_test;
+typedef struct {
+	uint32_t tick;
+	task_menu_st_t state;
+	task_menu_ev_t event;
+	bool flag;
+	task_menu_parameters_t current_parameter;
+	uint32_t current_value;
+	task_menu_test_t current_test;
 } task_menu_dta_t;
-
-
-
-
 
 /********************** external data declaration ****************************/
 extern task_menu_dta_t task_menu_dta_list[];

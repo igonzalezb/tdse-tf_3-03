@@ -54,48 +54,42 @@ extern "C" {
 /*!< DWT Cycle Counter register */
 /*!< CYCCNTENA bit in DWT_CONTROL register */
 static inline void cycle_counter_init(void) __attribute__((always_inline));
-static inline void cycle_counter_init(void)
-{
-	 CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;/* enable DWT hardware */
-	 DWT->CYCCNT = 0;								/* reset cycle counter */
-	 DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;			/* start counting */
+static inline void cycle_counter_init(void) {
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;/* enable DWT hardware */
+	DWT->CYCCNT = 0; /* reset cycle counter */
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; /* start counting */
 }
 
 /* reset cycle counter */
 /*!< DWT Cycle Counter register */
 static inline void cycle_counter_reset(void) __attribute__((always_inline));
-static inline void cycle_counter_reset(void)
-{
+static inline void cycle_counter_reset(void) {
 	DWT->CYCCNT = 0;
 }
 
 /* enable counting */
 /*!< CYCCNTENA bit in DWT_CONTROL register */
 static inline void cycle_counter_enable(void) __attribute__((always_inline));
-static inline void cycle_counter_enable(void)
-{
+static inline void cycle_counter_enable(void) {
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
 /* disable counting */
 /*!< CYCCNTENA bit in DWT_CONTROL register */
 static inline void cycle_counter_disable(void) __attribute__((always_inline));
-static inline void cycle_counter_disable(void)
-{
+static inline void cycle_counter_disable(void) {
 	DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
 }
 
 /* read cycle counter */
 /*!< DWT Cycle Counter register */
 static inline uint32_t cycle_counter_get(void) __attribute__((always_inline));
-static inline uint32_t cycle_counter_get(void)
-{
+static inline uint32_t cycle_counter_get(void) {
 	return (DWT->CYCCNT);
 }
 
 static inline uint32_t cycle_counter_get_time_us(void) __attribute__((always_inline));
-static inline uint32_t cycle_counter_get_time_us(void)
-{
+static inline uint32_t cycle_counter_get_time_us(void) {
 	return (DWT->CYCCNT / (SystemCoreClock / 1000000));
 }
 
