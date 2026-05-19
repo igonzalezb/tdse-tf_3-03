@@ -38,6 +38,14 @@
 /********************** inclusions *******************************************/
 /* Project includes */
 #include "main.h"
+#include "app.h"
+#include "board.h"
+#include "task_humidity.h"
+#include "task_light.h"
+#include "dwt.h"
+#include "task_water_level.h"
+#include "task_pump_current.h"
+#include "task_led_current.h"
 
 /* Demo includes */
 #include "logger.h"
@@ -55,6 +63,9 @@
 #define TASK_X_WCET_INI		0ul
 #define TASK_X_DELAY_MIN	0ul
 
+extern UART_HandleTypeDef huart2;
+#define G_APP_TICK_CNT_INI   0ul
+
 typedef struct {
 	void (*task_init)(void*);		// Pointer to task (must be a
 									// 'void (void *)' function)
@@ -63,13 +74,26 @@ typedef struct {
 	void *parameters;				// Pointer to parameters
 } task_cfg_t;
 
+shared_data_type shared_data;
+uint32_t g_app_cnt; //
+uint32_t g_app_time_us; // Los 3 para medir tiempo de ejecucion (dwt)
+uint32_t g_app_wcet_us; // Peor tiempo de ejcucion
+
+
 typedef struct {
 	uint32_t WCET;			// Worst-case execution time (microseconds)
 } task_dta_t;
 
 /********************** internal data declaration ****************************/
-const task_cfg_t task_cfg_list[] = { { task_sensor_init, task_sensor_update,
-NULL }, { task_menu_init, task_menu_update, NULL } };
+const task_cfg_t task_cfg_list[] = {
+		{ task_sensor_init, task_sensor_update, NULL },
+		{ task_menu_init, task_menu_update, NULL },
+	    {task_humidity_init, task_humidity_update, &shared_data},
+		{task_light_init, task_light_update, &shared_data},
+		{task_water_level_init, task_water_level_update, &shared_data},
+		{task_pump_current_init, task_pump_current_update, &shared_data},
+		{task_led_current_init, task_led_current_update, &shared_data},
+};
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
 
@@ -90,6 +114,33 @@ task_dta_t task_dta_list[TASK_QTY];
 /********************** external functions definition ************************/
 void app_init(void) {
 	uint32_t index;
+    shared_data.humidity_adc_value = 0u;  //Inicializacion variables de humedad
+    shared_data.humidity_threshold = HUMIDITY_THRESHOLD_DEFAULT;
+    shared_data.humidity = false;
+    shared_data.humidity_changed = false;
+
+    shared_data.light_adc_value = 0u;   //Inicializacion variables de luz
+    shared_data.light_threshold = LIGHT_THRESHOLD_DEFAULT;
+    shared_data.light = false;
+    shared_data.light_changed = false;
+
+    shared_data.water_level_adc_value = 0u;   //Inicializacion variables de agua
+    shared_data.water_level_threshold = WATER_LEVEL_THRESHOLD_DEFAULT;
+    shared_data.water_level = false;
+    shared_data.water_level_changed = false;
+
+    shared_data.pump_current_adc_value = 0u;
+    shared_data.pump_current_threshold = PUMP_CURRENT_THRESHOLD_DEFAULT;
+    shared_data.pump_current = false;
+    shared_data.pump_current_changed = false;
+
+    shared_data.led_current_adc_value = 0u;
+    shared_data.led_current_threshold = LED_CURRENT_THRESHOLD_DEFAULT;
+    shared_data.led_current = false;
+    shared_data.led_current_changed = false;
+
+    shared_data.adc_busy = false;   //Inicializacion de adc_owner
+    shared_data.adc_owner = ADC_OWNER_NONE;
 
 	/* Print out: Application Initialized */
 	LOGGER_INFO(" ");
