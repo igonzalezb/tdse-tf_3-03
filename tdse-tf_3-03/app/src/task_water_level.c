@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "main.h"
 #include "app.h"
 #include "board.h"

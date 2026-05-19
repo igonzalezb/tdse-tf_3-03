@@ -1,4 +1,5 @@
 #include <main.h>
+#include <stdbool.h>
 #include "app.h"
 #include "board.h"
 #include "task_humidity.h"
