@@ -1,74 +1,64 @@
-/*
- * Copyright (c) 2023 Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from
- *    this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- * @file   : app.h
- * @date   : Set 26, 2023
- * @author : Juan Manuel Cruz <jcruz@fi.uba.ar> <jcruz@frba.utn.edu.ar>
- * @version	v1.0.0
- */
-
 #ifndef APP_INC_APP_H_
 #define APP_INC_APP_H_
 
-/********************** CPP guard ********************************************/
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/********************** inclusions *******************************************/
+#include <stdbool.h>
+#include <stdint.h>
 
-/********************** macros ***********************************************/
-#define TEST_0 (0)
-#define TEST_1 (1)
-#define TEST_2 (2)
+typedef enum {
+    ADC_OWNER_NONE = 0,
+    ADC_OWNER_HUMIDITY,		//Para decidir quien esta utilizando el ADC1
+    ADC_OWNER_LIGHT,
+    ADC_OWNER_WATER_LEVEL,
+	ADC_OWNER_PUMP_CURRENT,
+	ADC_OWNER_LED_CURRENT
+} adc_owner_t;
 
-#define TEST_X (TEST_0)
+typedef struct {
+    uint16_t humidity_adc_value; // shared_data.humidity_adc_value ---> valor de adc medido
+    uint16_t humidity_threshold; // shared_data.humidity_threshold ---> valor de threshold para determinar si esta humedo
+    bool humidity; //
+    bool humidity_changed; //
 
-/********************** typedef **********************************************/
+    uint16_t light_adc_value;
+    uint16_t light_threshold; // Lo mismo q en humidity
+    bool light;
+    bool light_changed;
 
-/********************** external data declaration ****************************/
-extern uint32_t g_app_cnt;
-extern uint32_t g_app_runtime_us;
+    uint16_t water_level_adc_value;
+    uint16_t water_level_threshold;
+    bool water_level;
+    bool water_level_changed;
 
-extern volatile uint32_t g_app_tick_cnt;
+    uint16_t pump_current_adc_value;
+    uint16_t pump_current_threshold;
+    bool pump_current;
+    bool pump_current_changed;
 
-/********************** external functions declaration ***********************/
-extern void app_init(void);
-extern void app_update(void);
+    uint16_t led_current_adc_value;
+    uint16_t led_current_threshold;
+    bool led_current;
+    bool led_current_changed;
 
-/********************** End of CPP guard *************************************/
+
+    bool adc_busy;  // Esta el adc usandose?
+    adc_owner_t adc_owner; //Quien lo esta usando
+} shared_data_type;
+
+extern shared_data_type shared_data;
+
+extern uint32_t g_app_cnt; //
+extern uint32_t g_app_time_us; //Estos 2 son para medir tiempod e ejecucion en dwt.h
+extern uint32_t g_app_wcet_us; // Peor tiempo de ejecucion
+
+void app_init(void);
+void app_update(void);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* APP_INC_APP_H_ */
-
-/********************** end of file ******************************************/

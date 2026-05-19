@@ -2,6 +2,7 @@
 #include "app.h"
 #include "board.h"
 #include "task_light.h"
+#include <stdbool.h>
 
 extern ADC_HandleTypeDef hadc1;
 

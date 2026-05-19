@@ -4,11 +4,11 @@
  *  Created on: Apr 27, 2026
  *      Author: fmjgo
  */
+#include <stdbool.h>
 #include "main.h"
 #include "app.h"
 #include "board.h"
 #include "task_led_current.h"
-
 extern ADC_HandleTypeDef hadc1;
 
 typedef enum {
