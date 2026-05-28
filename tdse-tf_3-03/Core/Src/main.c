@@ -353,10 +353,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Btn_Esc_Pin Btn_Next_Pin Btn_Prev_Pin Btn_Enter_Pin */
-  GPIO_InitStruct.Pin = Btn_Esc_Pin|Btn_Next_Pin|Btn_Prev_Pin|Btn_Enter_Pin;
+  /*Configure GPIO pins : Btn_Esc_Pin Btn_Next_Pin Btn_Prev_Pin Btn_Enter_Pin
+                           D10_Pin */
+  GPIO_InitStruct.Pin = Btn_Esc_Pin|Btn_Next_Pin|Btn_Prev_Pin|Btn_Enter_Pin
+                          |D10_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LCD_E_Pin LCD_D4_Pin */
@@ -386,12 +388,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(D8_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : D10_Pin */
-  GPIO_InitStruct.Pin = D10_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(D10_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
