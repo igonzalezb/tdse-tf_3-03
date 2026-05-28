@@ -69,27 +69,27 @@ extern "C" {
 
 // Sensores
 
-#define HUMIDITY_ADC_CHANNEL            ADC_CHANNEL_11
+#define HUMIDITY_ADC_CHANNEL            ADC_CHANNEL_8
 #define HUMIDITY_SAMPLE_TICKS          	50u
 #define HUMIDITY_THRESHOLD_DEFAULT   	3950u
 #define HUMIDITY_WET_BELOW_THRESHOLD    1u
 
-#define LIGHT_ADC_CHANNEL               ADC_CHANNEL_8
+#define LIGHT_ADC_CHANNEL               ADC_CHANNEL_4
 #define LIGHT_SAMPLE_TICKS              50u
 #define LIGHT_THRESHOLD_DEFAULT         2000u
 #define LIGHT_PRESENT_ABOVE_THRESHOLD   1u
 
-#define WATER_LEVEL_ADC_CHANNEL         ADC_CHANNEL_4
+#define WATER_LEVEL_ADC_CHANNEL         ADC_CHANNEL_1
 #define WATER_LEVEL_SAMPLE_TICKS        50u
 #define WATER_LEVEL_THRESHOLD_DEFAULT   2000u
 #define WATER_LEVEL_PRESENT_ABOVE_THRESHOLD  1u
 
-#define PUMP_CURRENT_ADC_CHANNEL        ADC_CHANNEL_0
+#define PUMP_CURRENT_ADC_CHANNEL        ADC_CHANNEL_11
 #define PUMP_CURRENT_SAMPLE_TICKS       50u
 #define PUMP_CURRENT_THRESHOLD_DEFAULT  100u
 #define PUMP_CURRENT_PRESENT_ABOVE_THRESHOLD  1u
 
-#define LED_CURRENT_ADC_CHANNEL              ADC_CHANNEL_1
+#define LED_CURRENT_ADC_CHANNEL              ADC_CHANNEL_10
 #define LED_CURRENT_SAMPLE_TICKS             50u
 #define LED_CURRENT_THRESHOLD_DEFAULT        100u
 #define LED_CURRENT_PRESENT_ABOVE_THRESHOLD  1u
@@ -107,36 +107,35 @@ extern "C" {
 #define DHT22_ERROR_FRAME             2u
 #define DHT22_ERROR_CHECKSUM          3u
 
-#define DHT22_GPIO_PORT               GPIOB
-#define DHT22_GPIO_PIN                GPIO_PIN_2
+#define DHT22_GPIO_PORT               GPIOC
+#define DHT22_GPIO_PIN                GPIO_PIN_8
 
 // Termina Sensores
 
-#define BTN_ENT_PIN		D10_Pin
-#define BTN_ENT_PORT	D10_GPIO_Port
+#define BTN_ENT_PIN		Btn_Enter_Pin
+#define BTN_ENT_PORT	Btn_Enter_GPIO_Port
 #define BTN_ENT_PRESSED	GPIO_PIN_RESET
 #define BTN_ENT_HOVER	GPIO_PIN_SET
 
-#define BTN_NEX_PIN		D11_Pin
-#define BTN_NEX_PORT	D11_GPIO_Port
+#define BTN_NEX_PIN		Btn_Next_Pin
+#define BTN_NEX_PORT	Btn_Next_GPIO_Port
 #define BTN_NEX_PRESSED	GPIO_PIN_RESET
 #define BTN_NEX_HOVER	GPIO_PIN_SET
 
-//TODO Poner bien el PIN para PREV
-#define BTN_PREV_PIN		D11_Pin
-#define BTN_PREV_PORT		D11_GPIO_Port
+#define BTN_PREV_PIN		Btn_Prev_Pin
+#define BTN_PREV_PORT		Btn_Prev_GPIO_Port
 #define BTN_PREV_PRESSED	GPIO_PIN_RESET
 #define BTN_PREV_HOVER		GPIO_PIN_SET
 
-#define BTN_ESC_PIN		D12_Pin
-#define BTN_ESC_PORT	D12_GPIO_Port
+#define BTN_ESC_PIN		Btn_Esc_Pin
+#define BTN_ESC_PORT	Btn_Esc_GPIO_Port
 #define BTN_ESC_PRESSED	GPIO_PIN_RESET
 #define BTN_ESC_HOVER	GPIO_PIN_SET
 
-#define LED_A_PIN		LD2_Pin
-#define LED_A_PORT		LD2_GPIO_Port
-#define LED_A_ON		GPIO_PIN_SET
-#define LED_A_OFF		GPIO_PIN_RESET
+// #define LED_A_PIN		LD2_Pin
+// #define LED_A_PORT		LD2_GPIO_Port
+// #define LED_A_ON		GPIO_PIN_SET
+// #define LED_A_OFF		GPIO_PIN_RESET
 
 #endif
 

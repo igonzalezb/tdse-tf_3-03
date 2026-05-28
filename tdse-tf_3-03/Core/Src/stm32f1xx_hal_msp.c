@@ -102,23 +102,23 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC1 GPIO Configuration
+    PC0     ------> ADC1_IN10
     PC1     ------> ADC1_IN11
-    PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1
     PA4     ------> ADC1_IN4
     PB0     ------> ADC1_IN8
     */
-    GPIO_InitStruct.Pin = S_Hum_Suelo_Pin;
+    GPIO_InitStruct.Pin = Med_I_LED_Pin|Med_I_Bomba_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(S_Hum_Suelo_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = Med_I_Bomba_Pin|Med_I_LED_Pin|S_Nivel_Agua_Pin;
+    GPIO_InitStruct.Pin = S_Nivel_Agua_Pin|S_Luz_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = S_Luz_Pin;
+    GPIO_InitStruct.Pin = S_Hum_Suelo_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(S_Luz_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(S_Hum_Suelo_GPIO_Port, &GPIO_InitStruct);
 
     /* USER CODE BEGIN ADC1_MspInit 1 */
 
@@ -145,17 +145,17 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     __HAL_RCC_ADC1_CLK_DISABLE();
 
     /**ADC1 GPIO Configuration
+    PC0     ------> ADC1_IN10
     PC1     ------> ADC1_IN11
-    PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1
     PA4     ------> ADC1_IN4
     PB0     ------> ADC1_IN8
     */
+    HAL_GPIO_DeInit(GPIOC, Med_I_LED_Pin|Med_I_Bomba_Pin);
+
+    HAL_GPIO_DeInit(GPIOA, S_Nivel_Agua_Pin|S_Luz_Pin);
+
     HAL_GPIO_DeInit(S_Hum_Suelo_GPIO_Port, S_Hum_Suelo_Pin);
-
-    HAL_GPIO_DeInit(GPIOA, Med_I_Bomba_Pin|Med_I_LED_Pin|S_Nivel_Agua_Pin);
-
-    HAL_GPIO_DeInit(S_Luz_GPIO_Port, S_Luz_Pin);
 
     /* USER CODE BEGIN ADC1_MspDeInit 1 */
 

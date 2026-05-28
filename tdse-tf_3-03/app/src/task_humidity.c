@@ -116,7 +116,7 @@ void task_humidity_update(void *parameters)
                 shared_data->humidity_changed = true;
             }
 
-            HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, shared_data->humidity ? GPIO_PIN_SET : GPIO_PIN_RESET);
+//            HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, shared_data->humidity ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
             task_humidity_data.state = TASK_HUMIDITY_ST_WAIT_NEXT_SAMPLE;
         }
