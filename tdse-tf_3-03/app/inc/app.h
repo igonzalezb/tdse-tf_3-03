@@ -43,6 +43,11 @@ typedef struct {
     bool led_current;
     bool led_current_changed;
 
+    uint16_t dht22_humidity_x10;
+    int16_t  dht22_temperature_x10;
+    bool dht22_valid;
+    bool dht22_changed;
+    uint8_t dht22_error;
 
     bool adc_busy;  // Esta el adc usandose?
     adc_owner_t adc_owner; //Quien lo esta usando

@@ -59,7 +59,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
-#define B1_EXTI_IRQn EXTI15_10_IRQn
 #define S_Hum_Suelo_Pin GPIO_PIN_1
 #define S_Hum_Suelo_GPIO_Port GPIOC
 #define Med_I_Bomba_Pin GPIO_PIN_0
@@ -80,6 +79,9 @@ void Error_Handler(void);
 #define D11_GPIO_Port GPIOA
 #define S_Luz_Pin GPIO_PIN_0
 #define S_Luz_GPIO_Port GPIOB
+#define S_Hum_Temp_Amb_Pin GPIO_PIN_2
+#define S_Hum_Temp_Amb_GPIO_Port GPIOB
+#define S_Hum_Temp_Amb_EXTI_IRQn EXTI2_IRQn
 #define D6_Pin GPIO_PIN_10
 #define D6_GPIO_Port GPIOB
 #define D9_Pin GPIO_PIN_7

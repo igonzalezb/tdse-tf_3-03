@@ -46,6 +46,7 @@
 #include "task_water_level.h"
 #include "task_pump_current.h"
 #include "task_led_current.h"
+#include "task_dht22.h"
 
 /* Demo includes */
 #include "logger.h"
@@ -93,6 +94,7 @@ const task_cfg_t task_cfg_list[] = {
 		{task_water_level_init, task_water_level_update, &shared_data},
 		{task_pump_current_init, task_pump_current_update, &shared_data},
 		{task_led_current_init, task_led_current_update, &shared_data},
+		{task_dht22_init, task_dht22_update, &shared_data},
 };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
@@ -141,6 +143,12 @@ void app_init(void) {
 
     shared_data.adc_busy = false;   //Inicializacion de adc_owner
     shared_data.adc_owner = ADC_OWNER_NONE;
+
+    shared_data.dht22_humidity_x10 = 0u;
+    shared_data.dht22_temperature_x10 = 0;
+    shared_data.dht22_valid = false;
+    shared_data.dht22_changed = false;
+    shared_data.dht22_error = DHT22_ERROR_NONE;
 
 	/* Print out: Application Initialized */
 	LOGGER_INFO(" ");

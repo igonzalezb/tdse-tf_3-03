@@ -67,6 +67,8 @@ extern "C" {
 /* STM32 Nucleo Boards - 64 Pins */
 #if ((BOARD == NUCLEO_F103RC) || (BOARD == NUCLEO_F401RE) || (BOARD == NUCLEO_F446RE))
 
+// Sensores
+
 #define HUMIDITY_ADC_CHANNEL            ADC_CHANNEL_11
 #define HUMIDITY_SAMPLE_TICKS          	50u
 #define HUMIDITY_THRESHOLD_DEFAULT   	3950u
@@ -91,6 +93,24 @@ extern "C" {
 #define LED_CURRENT_SAMPLE_TICKS             50u
 #define LED_CURRENT_THRESHOLD_DEFAULT        100u
 #define LED_CURRENT_PRESENT_ABOVE_THRESHOLD  1u
+
+#define DHT22_SAMPLE_PERIOD_MS        2000u
+#define DHT22_STARTUP_DELAY_MS        2000u
+#define DHT22_START_LOW_MS            2u
+#define DHT22_CAPTURE_WINDOW_MS       6u
+
+#define DHT22_MAX_EDGES               90u
+#define DHT22_HIGH_THRESHOLD_US       50u
+
+#define DHT22_ERROR_NONE              0u
+#define DHT22_ERROR_TIMEOUT           1u
+#define DHT22_ERROR_FRAME             2u
+#define DHT22_ERROR_CHECKSUM          3u
+
+#define DHT22_GPIO_PORT               GPIOB
+#define DHT22_GPIO_PIN                GPIO_PIN_2
+
+// Termina Sensores
 
 #define BTN_ENT_PIN		D10_Pin
 #define BTN_ENT_PORT	D10_GPIO_Port
