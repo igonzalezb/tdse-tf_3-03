@@ -50,7 +50,6 @@ extern "C" {
 /********************** typedef **********************************************/
 /* Sensor Statechart - State Transition Table */
 
-//TODO: poner el Excel aca.
 /* Events to excite Task Sensor */
 typedef enum task_sensor_ev {
 	EV_BTN_XX_UP, EV_BTN_XX_DOWN
