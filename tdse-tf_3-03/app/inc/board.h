@@ -107,8 +107,8 @@ extern "C" {
 #define DHT22_ERROR_FRAME             2u
 #define DHT22_ERROR_CHECKSUM          3u
 
-#define DHT22_GPIO_PORT               GPIOC
-#define DHT22_GPIO_PIN                GPIO_PIN_8
+#define DHT22_GPIO_PORT               S_Hum_Temp_Amb_GPIO_Port
+#define DHT22_GPIO_PIN                S_Hum_Temp_Amb_Pin
 
 // Termina Sensores
 

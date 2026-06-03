@@ -4617,9 +4617,9 @@
 		)
 		(uuid "8d2acb1c-4f23-4cfd-9f36-86ee58838dc3")
 	)
-	(text "PB3"
+	(text "PA10"
 		(exclude_from_sim no)
-		(at 108.966 93.218 0)
+		(at 109.22 95.758 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4639,7 +4639,7 @@
 	)
 	(text "PB10"
 		(exclude_from_sim no)
-		(at 109.728 85.598 0)
+		(at 109.474 85.598 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4770,6 +4770,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "536dc79f-7cb8-4264-8723-447af74969c5")
+	)
+	(junction
+		(at 209.55 59.69)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b4f3d480-3e52-483c-bb6b-267c710130bd")
 	)
 	(junction
 		(at 247.65 137.16)
@@ -4946,7 +4952,7 @@
 		(uuid "cd34194e-dfbe-4b0a-af07-f7ffc9469446")
 	)
 	(no_connect
-		(at 118.11 96.52)
+		(at 118.11 93.98)
 		(uuid "d6cc825a-9fa3-46bf-9d5c-4fcb0bfacef0")
 	)
 	(no_connect
@@ -5033,6 +5039,16 @@
 	)
 	(wire
 		(pts
+			(xy 209.55 45.72) (xy 195.58 45.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0b5b412a-d536-4d3a-9f6b-8c9398160a5b")
+	)
+	(wire
+		(pts
 			(xy 96.52 58.42) (xy 118.11 58.42)
 		)
 		(stroke
@@ -5060,6 +5076,16 @@
 			(type default)
 		)
 		(uuid "17b53a61-2397-49c4-bef1-b2c8eb7a1a75")
+	)
+	(wire
+		(pts
+			(xy 209.55 57.15) (xy 209.55 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1cfa74c0-8d48-4d84-a139-fab6ae8b6196")
 	)
 	(wire
 		(pts
@@ -5373,7 +5399,7 @@
 	)
 	(wire
 		(pts
-			(xy 203.2 59.69) (xy 204.47 59.69)
+			(xy 203.2 59.69) (xy 209.55 59.69)
 		)
 		(stroke
 			(width 0)
@@ -5533,6 +5559,16 @@
 	)
 	(wire
 		(pts
+			(xy 209.55 49.53) (xy 209.55 45.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "87968a1c-efaf-4170-9c1b-917845ac184d")
+	)
+	(wire
+		(pts
 			(xy 93.98 149.86) (xy 93.98 152.4)
 		)
 		(stroke
@@ -5570,6 +5606,16 @@
 			(type default)
 		)
 		(uuid "90667e6d-dd33-4be8-954c-83e8caa21367")
+	)
+	(wire
+		(pts
+			(xy 209.55 59.69) (xy 213.36 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "91034a79-b4c3-48a5-8aed-16f5e207affe")
 	)
 	(wire
 		(pts
@@ -5720,6 +5766,16 @@
 			(type default)
 		)
 		(uuid "a751c745-8511-43c0-9aa0-e3a490f5941e")
+	)
+	(wire
+		(pts
+			(xy 195.58 45.72) (xy 195.58 52.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aaa7ca13-e5a6-4ae2-b0cc-4fa4fee4b76f")
 	)
 	(wire
 		(pts
@@ -5893,16 +5949,6 @@
 	)
 	(wire
 		(pts
-			(xy 195.58 49.53) (xy 195.58 52.07)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d0ad20d6-4212-4e54-8285-0f44bfaf871e")
-	)
-	(wire
-		(pts
 			(xy 163.83 29.21) (xy 187.96 29.21)
 		)
 		(stroke
@@ -5943,7 +5989,7 @@
 	)
 	(wire
 		(pts
-			(xy 96.52 93.98) (xy 118.11 93.98)
+			(xy 96.52 96.52) (xy 118.11 96.52)
 		)
 		(stroke
 			(width 0)
@@ -6332,7 +6378,7 @@
 		(uuid "554b2d0a-a599-4d7b-aeb7-7c0b06869ee7")
 	)
 	(label "Medicion DHT22 (AM2302)"
-		(at 204.47 59.69 0)
+		(at 213.36 59.69 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6342,7 +6388,7 @@
 		(uuid "565be39f-ec6c-4245-a873-768047c91b79")
 	)
 	(label "+3.3V"
-		(at 195.58 49.53 0)
+		(at 199.39 45.72 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6672,7 +6718,7 @@
 		(uuid "e7f2f1dc-63fd-46b4-9211-de2fac63ba07")
 	)
 	(label "LCD_D7"
-		(at 96.52 93.98 0)
+		(at 96.52 96.52 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -7226,6 +7272,85 @@
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
 					(reference "RV1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 209.55 53.34 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "2281f0b8-d1fc-4149-a693-bd34ee8cb9e5")
+		(property "Reference" "R4"
+			(at 204.724 53.34 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "5k1"
+			(at 207.264 53.34 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+			(at 211.328 53.34 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 209.55 53.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 209.55 53.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "fc5d76b3-5d06-447e-9de1-82276b68ad54")
+		)
+		(pin "1"
+			(uuid "f254c496-87bc-4b83-bdac-36fdcbd7b427")
+		)
+		(instances
+			(project "TDSE-TF"
+				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
+					(reference "R4")
 					(unit 1)
 				)
 			)
@@ -7838,7 +7963,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "4c40cb87-3d62-482a-9ea0-2a4b38c22f29")
-		(property "Reference" "R8"
+		(property "Reference" "R5"
 			(at 256.54 52.324 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7900,7 +8025,7 @@
 		(instances
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
-					(reference "R8")
+					(reference "R5")
 					(unit 1)
 				)
 			)
@@ -10723,7 +10848,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "e77ba62d-dab0-49b6-a2f0-fbb6b4ec0758")
-		(property "Reference" "R9"
+		(property "Reference" "R6"
 			(at 256.54 60.198 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10785,7 +10910,7 @@
 		(instances
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
-					(reference "R9")
+					(reference "R6")
 					(unit 1)
 				)
 			)
@@ -11118,7 +11243,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "f5a1df26-003c-45d1-a96a-9c9b652090c7")
-		(property "Reference" "R10"
+		(property "Reference" "R7"
 			(at 256.54 69.596 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11180,7 +11305,7 @@
 		(instances
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
-					(reference "R10")
+					(reference "R7")
 					(unit 1)
 				)
 			)
@@ -11450,7 +11575,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "AM2302"
+		(property "Value" "DHT22"
 			(at 189.23 60.9599 0)
 			(show_name no)
 			(do_not_autoplace no)
