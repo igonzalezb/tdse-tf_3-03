@@ -2,8 +2,13 @@
 #include "app.h"
 #include "task_state_led.h"
 
+#ifndef FAST
 #define FAST 150
+#endif
+
+#ifndef SLOW
 #define SLOW 500
+#endif
 
 // Definición de canales
 #define CHANNEL_LED_RED   TIM_CHANNEL_4
@@ -80,7 +85,7 @@ void task_state_led_update(void *parameters) {
 			__HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_GREEN, shared_data.pwm_state_led_green);
 			__HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_BLUE, shared_data.pwm_state_led_blue);
 		} else {
-			// Fase OFF: Forzar a 0 todos los canales (Bug corregido aquí)
+			// Fase OFF: Forzar a 0 todos los canales
 			__HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_RED, 0);
 			__HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_GREEN, 0);
 			__HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_BLUE, 0);

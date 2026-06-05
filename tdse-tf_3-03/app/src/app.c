@@ -48,6 +48,7 @@
 #include "task_led_current.h"
 #include "task_dht22.h"
 #include "task_state_led.h"
+#include "task_buzzer.h"
 
 /* Demo includes */
 #include "logger.h"
@@ -97,6 +98,7 @@ const task_cfg_t task_cfg_list[] =
 		{task_led_current_init, task_led_current_update, &shared_data },
 		{task_dht22_init, task_dht22_update, &shared_data },
 		{task_state_led_init, task_state_led_update, &shared_data },
+		{task_buzzer_init, task_buzzer_update, &shared_data },
 };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))

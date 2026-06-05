@@ -3641,6 +3641,249 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Transistor_BJT:MPSA42"
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "Q"
+				(at 5.08 1.905 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "MPSA42"
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
+				(at 5.08 -1.905 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(justify left)
+				)
+			)
+			(property "Datasheet" "http://www.onsemi.com/pub_link/Collateral/MPSA42-D.PDF"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Description" "0.5A Ic, 300V Vce, NPN High Voltage Transistor, TO-92"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Sim.Device" "NPN"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Sim.Pins" "1=E 2=B 3=C"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "NPN High Voltage Transistor"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "TO?92*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "MPSA42_0_1"
+				(polyline
+					(pts
+						(xy -2.54 0) (xy 0.635 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 1.905) (xy 0.635 -1.905)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 1.27 0)
+					(radius 2.8194)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "MPSA42_1_1"
+				(polyline
+					(pts
+						(xy 0.635 0.635) (xy 2.54 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 -0.635) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 -1.778) (xy 1.778 -1.27) (xy 2.286 -2.286) (xy 1.27 -1.778)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(pin passive line
+					(at 2.54 -5.08 90)
+					(length 2.54)
+					(name "E"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 2.54 5.08 270)
+					(length 2.54)
+					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Transistor_FET:IRF540N"
 			(pin_names
 				(hide yes)
@@ -4667,9 +4910,9 @@
 		)
 		(uuid "cbc3caf9-3176-47b0-9bab-0e79bf856932")
 	)
-	(text "PB13 (PWM)\n"
+	(text "PB13"
 		(exclude_from_sim no)
-		(at 140.208 90.678 0)
+		(at 136.652 90.678 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5259,6 +5502,16 @@
 	)
 	(wire
 		(pts
+			(xy 48.26 137.16) (xy 48.26 138.43)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4db244f7-a895-4a40-af15-a9816491c9c1")
+	)
+	(wire
+		(pts
 			(xy 242.57 57.15) (xy 252.73 57.15)
 		)
 		(stroke
@@ -5279,7 +5532,7 @@
 	)
 	(wire
 		(pts
-			(xy 62.23 149.86) (xy 83.82 149.86)
+			(xy 62.23 157.48) (xy 83.82 157.48)
 		)
 		(stroke
 			(width 0)
@@ -5289,7 +5542,7 @@
 	)
 	(wire
 		(pts
-			(xy 21.59 149.86) (xy 43.18 149.86)
+			(xy 21.59 157.48) (xy 43.18 157.48)
 		)
 		(stroke
 			(width 0)
@@ -5306,6 +5559,16 @@
 			(type default)
 		)
 		(uuid "54e94b9f-ff28-4219-8d9d-6ece45f1d3b2")
+	)
+	(wire
+		(pts
+			(xy 48.26 120.65) (xy 49.53 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "57e6e559-9784-484d-b114-933cf8b806d8")
 	)
 	(wire
 		(pts
@@ -5479,7 +5742,7 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 182.88) (xy 123.19 182.88)
+			(xy 49.53 125.73) (xy 48.26 125.73)
 		)
 		(stroke
 			(width 0)
@@ -5539,7 +5802,7 @@
 	)
 	(wire
 		(pts
-			(xy 123.19 182.88) (xy 123.19 184.15)
+			(xy 48.26 125.73) (xy 48.26 127)
 		)
 		(stroke
 			(width 0)
@@ -5559,6 +5822,16 @@
 	)
 	(wire
 		(pts
+			(xy 48.26 119.38) (xy 48.26 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "86e63def-7536-46b6-9ab1-63c791c613ca")
+	)
+	(wire
+		(pts
 			(xy 209.55 49.53) (xy 209.55 45.72)
 		)
 		(stroke
@@ -5569,7 +5842,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 149.86) (xy 93.98 152.4)
+			(xy 93.98 157.48) (xy 93.98 160.02)
 		)
 		(stroke
 			(width 0)
@@ -5616,6 +5889,16 @@
 			(type default)
 		)
 		(uuid "91034a79-b4c3-48a5-8aed-16f5e207affe")
+	)
+	(wire
+		(pts
+			(xy 24.13 132.08) (xy 31.75 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "93c198ee-7256-4c56-b03d-30ceedb6f09e")
 	)
 	(wire
 		(pts
@@ -5726,6 +6009,16 @@
 			(type default)
 		)
 		(uuid "9f26f2b2-9362-4763-b6f3-b424a722a646")
+	)
+	(wire
+		(pts
+			(xy 39.37 132.08) (xy 40.64 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9f2bbef6-d274-451a-b099-5dd98ee4cbf7")
 	)
 	(wire
 		(pts
@@ -6049,16 +6342,6 @@
 	)
 	(wire
 		(pts
-			(xy 114.3 177.8) (xy 124.46 177.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "eaf4de17-331a-4b7a-b810-3cf15891ccfe")
-	)
-	(wire
-		(pts
 			(xy 134.62 156.21) (xy 146.05 156.21)
 		)
 		(stroke
@@ -6079,7 +6362,7 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 149.86) (xy 53.34 152.4)
+			(xy 53.34 157.48) (xy 53.34 160.02)
 		)
 		(stroke
 			(width 0)
@@ -6358,7 +6641,7 @@
 		(uuid "51b05ba3-0ac0-4cd6-8cf3-58d860f8fb2b")
 	)
 	(label "Buzzer"
-		(at 114.3 177.8 0)
+		(at 24.13 132.08 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6428,7 +6711,7 @@
 		(uuid "611bab95-c022-411e-94ae-06aab5fe2d16")
 	)
 	(label "Boton Enter"
-		(at 62.23 149.86 0)
+		(at 62.23 157.48 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6688,7 +6971,7 @@
 		(uuid "da6cac2f-4a24-462a-8c91-02d1a1ce5cfd")
 	)
 	(label "Boton Escape"
-		(at 21.59 149.86 0)
+		(at 21.59 157.48 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -7187,6 +7470,116 @@
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
 					(reference "J9")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_BJT:MPSA42")
+		(at 45.72 132.08 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1405cdb8-e479-4bad-a4ba-9e270ebddb21")
+		(property "Reference" "Q3"
+			(at 50.8 130.8099 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MPSA42"
+			(at 50.8 133.3499 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
+			(at 50.8 133.985 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" "http://www.onsemi.com/pub_link/Collateral/MPSA42-D.PDF"
+			(at 45.72 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "0.5A Ic, 300V Vce, NPN High Voltage Transistor, TO-92"
+			(at 45.72 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Device" "NPN"
+			(at 45.72 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Pins" "1=E 2=B 3=C"
+			(at 45.72 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "3"
+			(uuid "41fad410-87a9-4fe6-861a-3b47a55c6ccd")
+		)
+		(pin "1"
+			(uuid "f9243186-dfcb-4f61-ab4a-d8fd1fa1d727")
+		)
+		(pin "2"
+			(uuid "a452dbaa-6bcd-4c93-9e7e-c58c813279f1")
+		)
+		(instances
+			(project "TDSE-TF"
+				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
+					(reference "Q3")
 					(unit 1)
 				)
 			)
@@ -8192,7 +8585,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 123.19 184.15 0)
+		(at 48.26 138.43 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -8203,7 +8596,7 @@
 		(fields_autoplaced yes)
 		(uuid "5527dac7-0583-448c-859b-5af1530eadc2")
 		(property "Reference" "#PWR02"
-			(at 123.19 190.5 0)
+			(at 48.26 144.78 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8214,7 +8607,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 123.19 189.23 0)
+			(at 48.26 143.51 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8224,7 +8617,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 123.19 184.15 0)
+			(at 48.26 138.43 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8235,7 +8628,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 123.19 184.15 0)
+			(at 48.26 138.43 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8246,7 +8639,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 123.19 184.15 0)
+			(at 48.26 138.43 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8349,7 +8742,7 @@
 	)
 	(symbol
 		(lib_id "Switch:SW_Push")
-		(at 88.9 149.86 0)
+		(at 88.9 157.48 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -8360,7 +8753,7 @@
 		(fields_autoplaced yes)
 		(uuid "5a8da48d-d97c-4200-ad54-e2ed738084d5")
 		(property "Reference" "SW1"
-			(at 88.9 142.24 0)
+			(at 88.9 149.86 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8370,7 +8763,7 @@
 			)
 		)
 		(property "Value" "Enter"
-			(at 88.9 144.78 0)
+			(at 88.9 152.4 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8380,7 +8773,7 @@
 			)
 		)
 		(property "Footprint" "Button_Switch_THT:SW_PUSH_1P1T 2 pines"
-			(at 88.9 144.78 0)
+			(at 88.9 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8391,7 +8784,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 144.78 0)
+			(at 88.9 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8402,7 +8795,7 @@
 			)
 		)
 		(property "Description" "Push button switch, generic, two pins"
-			(at 88.9 149.86 0)
+			(at 88.9 157.48 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9263,7 +9656,7 @@
 	)
 	(symbol
 		(lib_id "Device:Buzzer")
-		(at 127 180.34 0)
+		(at 52.07 123.19 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -9274,7 +9667,7 @@
 		(fields_autoplaced yes)
 		(uuid "8ba994b7-062b-418f-83d0-a669a3ddd0cf")
 		(property "Reference" "BZ1"
-			(at 130.81 179.0699 0)
+			(at 55.88 121.9199 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -9285,7 +9678,7 @@
 			)
 		)
 		(property "Value" "Buzzer"
-			(at 130.81 181.6099 0)
+			(at 55.88 124.4599 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -9296,7 +9689,7 @@
 			)
 		)
 		(property "Footprint" "Buzzer_Beeper:Buzzer_12x9.5RM7.6"
-			(at 126.365 177.8 90)
+			(at 51.435 120.65 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9307,7 +9700,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 126.365 177.8 90)
+			(at 51.435 120.65 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9318,7 +9711,7 @@
 			)
 		)
 		(property "Description" "Buzzer, polarized"
-			(at 127 180.34 0)
+			(at 52.07 123.19 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9423,7 +9816,7 @@
 	)
 	(symbol
 		(lib_id "Switch:SW_Push")
-		(at 48.26 149.86 0)
+		(at 48.26 157.48 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -9431,10 +9824,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "9d5641d1-c439-447f-a334-1b4d64070efb")
 		(property "Reference" "SW4"
-			(at 48.26 142.24 0)
+			(at 48.006 149.86 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -9444,7 +9836,7 @@
 			)
 		)
 		(property "Value" "Escape"
-			(at 48.26 144.78 0)
+			(at 48.26 152.4 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -9454,7 +9846,7 @@
 			)
 		)
 		(property "Footprint" "Button_Switch_THT:SW_PUSH_1P1T 2 pines"
-			(at 48.26 144.78 0)
+			(at 48.26 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9465,7 +9857,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 48.26 144.78 0)
+			(at 48.26 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9476,7 +9868,7 @@
 			)
 		)
 		(property "Description" "Push button switch, generic, two pins"
-			(at 48.26 149.86 0)
+			(at 48.26 157.48 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9974,7 +10366,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 53.34 152.4 0)
+		(at 53.34 160.02 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -9985,7 +10377,7 @@
 		(fields_autoplaced yes)
 		(uuid "b9317e50-e8b2-4d54-90e9-7125c6d22ee0")
 		(property "Reference" "#PWR026"
-			(at 53.34 158.75 0)
+			(at 53.34 166.37 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9996,7 +10388,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 53.34 157.48 0)
+			(at 53.34 165.1 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -10006,7 +10398,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 53.34 152.4 0)
+			(at 53.34 160.02 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10017,7 +10409,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 53.34 152.4 0)
+			(at 53.34 160.02 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10028,7 +10420,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 53.34 152.4 0)
+			(at 53.34 160.02 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10361,6 +10753,85 @@
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
 					(reference "D1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 35.56 132.08 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cb01dbc4-6d6d-4865-8e62-a1ee2d6f33e5")
+		(property "Reference" "R8"
+			(at 35.56 134.366 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "3k3"
+			(at 35.56 136.906 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+			(at 35.56 133.858 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 35.56 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 35.56 132.08 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "8755e16a-fa9d-4357-945d-a8f654f58329")
+		)
+		(pin "1"
+			(uuid "5d64461a-dd2e-4593-85fb-293d74b881e4")
+		)
+		(instances
+			(project "TDSE-TF"
+				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
+					(reference "R8")
 					(unit 1)
 				)
 			)
@@ -10761,7 +11232,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 93.98 152.4 0)
+		(at 93.98 160.02 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -10772,7 +11243,7 @@
 		(fields_autoplaced yes)
 		(uuid "e4796ccb-49c5-4eb8-aa8c-b3760900016b")
 		(property "Reference" "#PWR021"
-			(at 93.98 158.75 0)
+			(at 93.98 166.37 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10783,7 +11254,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 93.98 157.48 0)
+			(at 93.98 165.1 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -10793,7 +11264,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 93.98 152.4 0)
+			(at 93.98 160.02 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10804,7 +11275,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 93.98 152.4 0)
+			(at 93.98 160.02 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10815,7 +11286,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 93.98 152.4 0)
+			(at 93.98 160.02 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10832,6 +11303,84 @@
 			(project "TDSE-TF"
 				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
 					(reference "#PWR021")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:VCC")
+		(at 48.26 119.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e75c208a-4fba-4a49-ae32-e8138a62224a")
+		(property "Reference" "#PWR023"
+			(at 48.26 123.19 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "VCC"
+			(at 48.26 114.3 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 48.26 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 48.26 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"VCC\""
+			(at 48.26 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "2cd628d0-67c2-4d9d-82fb-f5f130a55cac")
+		)
+		(instances
+			(project "TDSE-TF"
+				(path "/f326f9a1-cd10-4b99-adfe-c3556115ef97"
+					(reference "#PWR023")
 					(unit 1)
 				)
 			)

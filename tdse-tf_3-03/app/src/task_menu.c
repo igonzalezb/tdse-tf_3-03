@@ -49,6 +49,7 @@ void set_value(task_menu_parameters_t parameter, uint32_t value);
 void test_function(task_menu_test_t current_test);
 void LCD_show(const char *first_row, const char *second_row);
 static void task_menu_refresh_state_led(task_menu_sys_t current_mode);
+static void task_menu_refresh_buzzer(task_menu_sys_t current_mode);
 
 uint32_t g_task_menu_cnt;
 task_menu_sys_t active_system;
@@ -132,6 +133,7 @@ void task_menu_update(void *parameters) {
 		}
 
 		task_menu_refresh_state_led(active_system);
+		task_menu_refresh_buzzer(active_system);
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
@@ -439,4 +441,23 @@ static void task_menu_refresh_state_led(task_menu_sys_t current_mode) {
     }
 
     shared_data.state_led_data_changed = true;
+}
+
+static void task_menu_refresh_buzzer(task_menu_sys_t current_mode){
+    static task_menu_sys_t last_mode = (task_menu_sys_t)-1;
+
+    if (current_mode == last_mode) {
+        return;
+    }
+    last_mode = current_mode;
+
+    // Lógica del actuador
+    if (current_mode == SYS_FAILURE) {
+        shared_data.buzzer_mode = BUZZER_MODE_INTERMITTENT;
+    } else {
+        // En cualquier otro cambio (Normal, Setup, Test), pulso corto
+        shared_data.buzzer_mode = BUZZER_MODE_PULSE;
+    }
+
+    shared_data.buzzer_mode_changed = true;
 }

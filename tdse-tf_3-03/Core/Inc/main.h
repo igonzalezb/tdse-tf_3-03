@@ -85,8 +85,8 @@ void Error_Handler(void);
 #define Btn_Next_GPIO_Port GPIOB
 #define LCD_D4_Pin GPIO_PIN_10
 #define LCD_D4_GPIO_Port GPIOB
-#define PWM_Buzzer_Pin GPIO_PIN_13
-#define PWM_Buzzer_GPIO_Port GPIOB
+#define Buzzer_Pin GPIO_PIN_13
+#define Buzzer_GPIO_Port GPIOB
 #define Btn_Prev_Pin GPIO_PIN_14
 #define Btn_Prev_GPIO_Port GPIOB
 #define Btn_Enter_Pin GPIO_PIN_15
