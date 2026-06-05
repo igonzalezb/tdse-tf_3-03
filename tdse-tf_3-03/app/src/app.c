@@ -47,6 +47,7 @@
 #include "task_pump_current.h"
 #include "task_led_current.h"
 #include "task_dht22.h"
+#include "task_state_led.h"
 
 /* Demo includes */
 #include "logger.h"
@@ -85,14 +86,18 @@ typedef struct {
 } task_dta_t;
 
 /********************** internal data declaration ****************************/
-const task_cfg_t task_cfg_list[] = { { task_sensor_init, task_sensor_update,
-		NULL }, { task_menu_init, task_menu_update, NULL }, {
-		task_humidity_init, task_humidity_update, &shared_data }, {
-		task_light_init, task_light_update, &shared_data }, {
-		task_water_level_init, task_water_level_update, &shared_data }, {
-		task_pump_current_init, task_pump_current_update, &shared_data }, {
-		task_led_current_init, task_led_current_update, &shared_data }, {
-		task_dht22_init, task_dht22_update, &shared_data }, };
+const task_cfg_t task_cfg_list[] =
+{
+		{task_sensor_init, task_sensor_update, NULL },
+		{task_menu_init, task_menu_update, NULL },
+		{task_humidity_init, task_humidity_update, &shared_data },
+		{task_light_init, task_light_update, &shared_data },
+		{task_water_level_init, task_water_level_update, &shared_data },
+		{task_pump_current_init, task_pump_current_update, &shared_data },
+		{task_led_current_init, task_led_current_update, &shared_data },
+		{task_dht22_init, task_dht22_update, &shared_data },
+		{task_state_led_init, task_state_led_update, &shared_data },
+};
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
 

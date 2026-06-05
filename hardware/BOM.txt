@@ -1,0 +1,13 @@
+Componente	Cantidad	Precio (unitario)	tengo?
+330R 1/4W	4		1200 (300)		S
+5k1 1/4W	1		300			S
+10k 1/4W	1		300			S
+Buzzer		1		3000			S
+1N4727A		2		800 (400)		S
+LED RGB		1		350			iña
+Sens. agua						fran
+Sens luz						fran
+Tira LED 5v	1		
+pinera 2ble hem	2		4600 (2300)		no
+plaqueta 20x20	1		
+

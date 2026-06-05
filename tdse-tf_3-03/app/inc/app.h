@@ -17,6 +17,12 @@ typedef enum {
 	ADC_OWNER_LED_CURRENT
 } adc_owner_t;
 
+typedef enum task_state_led_blinking {
+	STATE_LED_NO_BLINK,
+	STATE_LED_SLOW_BLINK,
+	STATE_LED_FAST_BLINK,
+} task_state_led_blinking_t;
+
 typedef struct {
     uint16_t humidity_adc_value; // shared_data.humidity_adc_value ---> valor de adc medido
     uint16_t humidity_threshold; // shared_data.humidity_threshold ---> valor de threshold para determinar si esta humedo
@@ -51,6 +57,14 @@ typedef struct {
 
     bool adc_busy;  // Esta el adc usandose?
     adc_owner_t adc_owner; //Quien lo esta usando
+
+    //info del led de estado
+    uint16_t pwm_state_led_red;
+	uint16_t pwm_state_led_green;
+	uint16_t pwm_state_led_blue;
+	task_state_led_blinking_t blinking_rate;
+	bool state_led_data_changed;
+
 } shared_data_type;
 
 extern shared_data_type shared_data;

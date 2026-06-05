@@ -4687,9 +4687,9 @@
 		)
 		(uuid "cde59ed0-a833-4b7f-aedb-5eabc4d049a0")
 	)
-	(text "PC9 (PWM)"
+	(text "PB6 (PWM)"
 		(exclude_from_sim no)
-		(at 112.268 55.118 0)
+		(at 112.268 75.438 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4737,9 +4737,9 @@
 		)
 		(uuid "e732676c-1ddd-45a4-a3a5-68345956b31e")
 	)
-	(text "PC6\n"
+	(text "PC8 (EXTI8)\n"
 		(exclude_from_sim no)
-		(at 136.398 57.404 0)
+		(at 140.208 57.658 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4884,7 +4884,7 @@
 		(uuid "7234ebef-1c8d-4db0-be1b-ee84052e6a05")
 	)
 	(no_connect
-		(at 118.11 76.2)
+		(at 118.11 55.88)
 		(uuid "751c3410-b315-4ad2-83f9-0cfaa2dd19f4")
 	)
 	(no_connect
@@ -6189,7 +6189,7 @@
 	)
 	(wire
 		(pts
-			(xy 96.52 55.88) (xy 118.11 55.88)
+			(xy 96.52 76.2) (xy 118.11 76.2)
 		)
 		(stroke
 			(width 0)
@@ -6528,7 +6528,7 @@
 		(uuid "8bb962da-2ea8-4391-b8bc-c842de4c14e3")
 	)
 	(label "LED Azul"
-		(at 96.52 55.88 0)
+		(at 96.52 76.2 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -8701,7 +8701,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_EH_B2B-EH-A_1x02_P2.50mm_Vertical"
 			(at 212.09 114.3 0)
 			(hide yes)
 			(show_name no)
@@ -8969,7 +8969,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_EH_B2B-EH-A_1x02_P2.50mm_Vertical"
 			(at 38.1 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -9768,7 +9768,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_EH_B2B-EH-A_1x02_P2.50mm_Vertical"
 			(at 266.7 114.3 0)
 			(hide yes)
 			(show_name no)

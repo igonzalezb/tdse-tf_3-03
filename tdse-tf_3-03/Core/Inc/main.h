@@ -94,8 +94,6 @@ void Error_Handler(void);
 #define S_Hum_Temp_Amb_Pin GPIO_PIN_6
 #define S_Hum_Temp_Amb_GPIO_Port GPIOC
 #define S_Hum_Temp_Amb_EXTI_IRQn EXTI9_5_IRQn
-#define PWM_LED_B_Pin GPIO_PIN_9
-#define PWM_LED_B_GPIO_Port GPIOC
 #define LCD_E_Pin GPIO_PIN_8
 #define LCD_E_GPIO_Port GPIOA
 #define LCD_D7_Pin GPIO_PIN_10
@@ -112,6 +110,8 @@ void Error_Handler(void);
 #define LCD_D5_GPIO_Port GPIOB
 #define LCD_D6_Pin GPIO_PIN_5
 #define LCD_D6_GPIO_Port GPIOB
+#define PWM_LED_B_Pin GPIO_PIN_6
+#define PWM_LED_B_GPIO_Port GPIOB
 #define PWM_LED_G_Pin GPIO_PIN_8
 #define PWM_LED_G_GPIO_Port GPIOB
 #define PWM_LED_R_Pin GPIO_PIN_9

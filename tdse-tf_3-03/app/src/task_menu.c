@@ -48,6 +48,7 @@ uint32_t get_value(task_menu_parameters_t parameter);
 void set_value(task_menu_parameters_t parameter, uint32_t value);
 void test_function(task_menu_test_t current_test);
 void LCD_show(const char *first_row, const char *second_row);
+static void task_menu_refresh_state_led(task_menu_sys_t current_mode);
 
 uint32_t g_task_menu_cnt;
 task_menu_sys_t active_system;
@@ -129,6 +130,8 @@ void task_menu_update(void *parameters) {
 		default:
 			break;
 		}
+
+		task_menu_refresh_state_led(active_system);
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
@@ -381,4 +384,59 @@ void test_function(task_menu_test_t current_test) {
 	default:
 		break;
 	}
+}
+
+
+/**
+ * Actualiza el estado del LED RGB según el modo del sistema.
+ * Se ejecuta solo cuando hay un cambio de modo.
+ */
+static void task_menu_refresh_state_led(task_menu_sys_t current_mode) {
+    static task_menu_sys_t last_mode = (task_menu_sys_t)-1; // Para detectar cambios de modo
+
+    // Si el modo no cambió, sale inmediatamente
+    if (current_mode == last_mode) {
+        return;
+    }
+    last_mode = current_mode;
+
+    // Se traduce el modo del sistema a Colores y Parpadeos
+    switch (current_mode) {
+        case SYS_NORMAL:
+            shared_data.pwm_state_led_red   = 0;
+            shared_data.pwm_state_led_green = 100;
+            shared_data.pwm_state_led_blue  = 0;
+            shared_data.blinking_rate       = STATE_LED_NO_BLINK;
+            break;
+
+        case SYS_SETUP:
+            shared_data.pwm_state_led_red   = 0;
+            shared_data.pwm_state_led_green = 0;
+            shared_data.pwm_state_led_blue  = 100;
+            shared_data.blinking_rate       = STATE_LED_SLOW_BLINK;
+            break;
+
+        case SYS_FAILURE:
+            shared_data.pwm_state_led_red   = 100;
+            shared_data.pwm_state_led_green = 0;
+            shared_data.pwm_state_led_blue  = 0;
+            shared_data.blinking_rate       = STATE_LED_FAST_BLINK;
+            break;
+
+        case SYS_TEST:
+            shared_data.pwm_state_led_red   = 50;
+            shared_data.pwm_state_led_green = 0;
+            shared_data.pwm_state_led_blue  = 50;
+            shared_data.blinking_rate       = STATE_LED_NO_BLINK;
+            break;
+
+        default:
+            shared_data.pwm_state_led_red   = 0;
+            shared_data.pwm_state_led_green = 0;
+            shared_data.pwm_state_led_blue  = 0;
+            shared_data.blinking_rate       = STATE_LED_NO_BLINK;
+            break;
+    }
+
+    shared_data.state_led_data_changed = true;
 }
