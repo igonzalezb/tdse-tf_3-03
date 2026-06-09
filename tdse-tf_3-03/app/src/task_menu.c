@@ -48,11 +48,9 @@ uint32_t get_value(task_menu_parameters_t parameter);
 void set_value(task_menu_parameters_t parameter, uint32_t value);
 void test_function(task_menu_test_t current_test);
 void LCD_show(const char *first_row, const char *second_row);
-static void task_menu_refresh_state_led(task_menu_sys_t current_mode);
-static void task_menu_refresh_buzzer(task_menu_sys_t current_mode);
 
 uint32_t g_task_menu_cnt;
-task_menu_sys_t active_system;
+
 volatile uint32_t g_task_menu_tick_cnt;
 
 void LCD_show(const char *first_row, const char *second_row) {
@@ -72,7 +70,7 @@ void task_menu_init(void *parameters) {
 	task_menu_dta_t *p_task_menu_dta;
 
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
-	active_system = SYS_NORMAL;
+	shared_data.active_system = SYS_NORMAL;
 	init_queue_event_task_menu();
 
 	displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
@@ -115,7 +113,7 @@ void task_menu_update(void *parameters) {
 	while (b_time_update_required) {
 		g_task_menu_cnt++;
 
-		switch (active_system) {
+		switch (shared_data.active_system) {
 		case SYS_NORMAL:
 			task_menu_statechart_normal();
 			break;
@@ -132,9 +130,6 @@ void task_menu_update(void *parameters) {
 			break;
 		}
 
-		task_menu_refresh_state_led(active_system);
-		task_menu_refresh_buzzer(active_system);
-
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
 			g_task_menu_tick_cnt--;
@@ -147,7 +142,7 @@ void task_menu_update(void *parameters) {
 }
 
 void task_menu_statechart_normal(void) {
-	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[active_system];
+	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
 	char second_row[20];
 
 	if (true == any_event_task_menu()) {
@@ -174,7 +169,7 @@ void task_menu_statechart_normal(void) {
 		// Ingreso a Setup
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LOGGER_INFO("BTN_ENTER PRESSED");
-			active_system = SYS_SETUP;
+			shared_data.active_system = SYS_SETUP;
 			p_task_menu_dta->state = ST_SYS_00; // Reiniciar estado de setup
 			p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
 			LCD_show("Configurar:",
@@ -184,7 +179,7 @@ void task_menu_statechart_normal(void) {
 		// Ingreso a Test
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 			LOGGER_INFO("BTN_ESC HOLD");
-			active_system = SYS_TEST;
+			shared_data.active_system = SYS_TEST;
 			p_task_menu_dta->state = ST_SYS_00;
 			p_task_menu_dta->current_test = TEST_NIVEL_AGUA;
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
@@ -206,7 +201,7 @@ void task_menu_statechart_normal(void) {
 }
 
 void task_menu_statechart_setup(void) {
-	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[active_system];
+	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
 	char second_row[20];
 
 	if (true == any_event_task_menu()) {
@@ -242,7 +237,7 @@ void task_menu_statechart_setup(void) {
 						second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
-				active_system = SYS_NORMAL;
+				shared_data.active_system = SYS_NORMAL;
 				p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
 				LCD_show("Saliendo...", "");
 			}
@@ -293,8 +288,9 @@ void task_menu_statechart_setup(void) {
 	}
 }
 
+//TODO: poner active test de shared data
 void task_menu_statechart_test(void) {
-	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[active_system];
+	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
@@ -320,7 +316,7 @@ void task_menu_statechart_test(void) {
 			LCD_show("Test Finalizado",
 					test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
-			active_system = SYS_NORMAL;
+			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
 			LCD_show("Saliendo...", "");
 		}
@@ -331,6 +327,7 @@ void task_menu_statechart_failure(void) {
 	// TODO: Implementar lógica de bloqueo y alertas visuales/sonoras.
 }
 
+//TODO: arreglar la lectura/escritura de memoria.
 uint32_t get_value(task_menu_parameters_t parameter) {
 	// Leer directamente de la memoria mapeada mediante un puntero
 	uint32_t *pConfig = (uint32_t*) FLASH_CONFIG_ADDRESS;
@@ -372,92 +369,24 @@ void test_function(task_menu_test_t current_test) {
 		// Ej: HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_SET);
 		// HAL_Delay(1000);
 		// HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_RESET);
+		LOGGER_INFO("TEST BOMBA");
 		break;
 	case TEST_LUZ:
+		LOGGER_INFO("TEST LUZ");
 		break;
 	case TEST_LED:
+		LOGGER_INFO("TEST LED");
 		break;
 	case TEST_HUM_SUELO:
+		LOGGER_INFO("TEST HUM SUELO");
 		break;
 	case TEST_TEMP:
+		LOGGER_INFO("TEST TEMP");
 		break;
 	case TEST_BUZZER:
+		LOGGER_INFO("TEST BUZZER");
 		break;
 	default:
 		break;
 	}
-}
-
-
-/**
- * Actualiza el estado del LED RGB según el modo del sistema.
- * Se ejecuta solo cuando hay un cambio de modo.
- */
-static void task_menu_refresh_state_led(task_menu_sys_t current_mode) {
-    static task_menu_sys_t last_mode = (task_menu_sys_t)-1; // Para detectar cambios de modo
-
-    // Si el modo no cambió, sale inmediatamente
-    if (current_mode == last_mode) {
-        return;
-    }
-    last_mode = current_mode;
-
-    // Se traduce el modo del sistema a Colores y Parpadeos
-    switch (current_mode) {
-        case SYS_NORMAL:
-            shared_data.pwm_state_led_red   = 0;
-            shared_data.pwm_state_led_green = 100;
-            shared_data.pwm_state_led_blue  = 0;
-            shared_data.blinking_rate       = STATE_LED_NO_BLINK;
-            break;
-
-        case SYS_SETUP:
-            shared_data.pwm_state_led_red   = 0;
-            shared_data.pwm_state_led_green = 0;
-            shared_data.pwm_state_led_blue  = 100;
-            shared_data.blinking_rate       = STATE_LED_SLOW_BLINK;
-            break;
-
-        case SYS_FAILURE:
-            shared_data.pwm_state_led_red   = 100;
-            shared_data.pwm_state_led_green = 0;
-            shared_data.pwm_state_led_blue  = 0;
-            shared_data.blinking_rate       = STATE_LED_FAST_BLINK;
-            break;
-
-        case SYS_TEST:
-            shared_data.pwm_state_led_red   = 50;
-            shared_data.pwm_state_led_green = 0;
-            shared_data.pwm_state_led_blue  = 50;
-            shared_data.blinking_rate       = STATE_LED_NO_BLINK;
-            break;
-
-        default:
-            shared_data.pwm_state_led_red   = 0;
-            shared_data.pwm_state_led_green = 0;
-            shared_data.pwm_state_led_blue  = 0;
-            shared_data.blinking_rate       = STATE_LED_NO_BLINK;
-            break;
-    }
-
-    shared_data.state_led_data_changed = true;
-}
-
-static void task_menu_refresh_buzzer(task_menu_sys_t current_mode){
-    static task_menu_sys_t last_mode = (task_menu_sys_t)-1;
-
-    if (current_mode == last_mode) {
-        return;
-    }
-    last_mode = current_mode;
-
-    // Lógica del actuador
-    if (current_mode == SYS_FAILURE) {
-        shared_data.buzzer_mode = BUZZER_MODE_INTERMITTENT;
-    } else {
-        // En cualquier otro cambio (Normal, Setup, Test), pulso corto
-        shared_data.buzzer_mode = BUZZER_MODE_PULSE;
-    }
-
-    shared_data.buzzer_mode_changed = true;
 }

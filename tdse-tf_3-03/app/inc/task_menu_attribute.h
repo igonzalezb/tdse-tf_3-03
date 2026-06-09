@@ -46,7 +46,8 @@ typedef enum task_menu_test {
 	TEST_HUM_SUELO,
 	TEST_TEMP,
 	TEST_BUZZER,
-	TEST_QTY // Para saber la cantidad de tests
+	TEST_QTY, // Para saber la cantidad de tests
+	TEST_NONE
 } task_menu_test_t;
 
 typedef struct {
