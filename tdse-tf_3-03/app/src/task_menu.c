@@ -288,6 +288,7 @@ void task_menu_statechart_setup(void) {
 	}
 }
 
+//TODO: poner active test de shared data
 void task_menu_statechart_test(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
 
