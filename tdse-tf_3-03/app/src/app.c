@@ -37,6 +37,7 @@
 
 /********************** inclusions *******************************************/
 /* Project includes */
+#include "task_button.h"
 #include "main.h"
 #include "app.h"
 #include "board.h"
@@ -56,7 +57,6 @@
 
 /* Application & Tasks includes */
 #include "board.h"
-#include "task_sensor.h"
 #include "task_menu.h"
 
 /********************** macros and definitions *******************************/
@@ -89,7 +89,7 @@ typedef struct {
 /********************** internal data declaration ****************************/
 const task_cfg_t task_cfg_list[] =
 {
-		{task_sensor_init, task_sensor_update, NULL },
+		{task_button_init, task_button_update, NULL },
 		{task_menu_init, task_menu_update, NULL },
 		{task_humidity_init, task_humidity_update, &shared_data },
 		{task_light_init, task_light_update, &shared_data },
@@ -151,7 +151,7 @@ void app_init(void) {
 	/* Init Tick Counter */
 	g_app_tick_cnt = G_APP_TICK_CNT_INI;
 
-	g_task_sensor_tick_cnt = G_APP_TICK_CNT_INI;
+	g_task_button_tick_cnt = G_APP_TICK_CNT_INI;
 	g_task_menu_tick_cnt = G_APP_TICK_CNT_INI;
 	__asm("CPSIE i");
 	/* enable interrupts */
@@ -216,7 +216,7 @@ void HAL_SYSTICK_Callback(void) {
 	/* Update Tick Counter */
 	g_app_tick_cnt++;
 
-	g_task_sensor_tick_cnt++;
+	g_task_button_tick_cnt++;
 	g_task_menu_tick_cnt++;
 }
 
