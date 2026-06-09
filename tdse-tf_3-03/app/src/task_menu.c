@@ -18,25 +18,24 @@
 #define AUTO_SCROLL_DELAY 			5000
 
 /* Límites de configuración (Ej: 0% a 100%) */
+//todo: integrarlo con shared data
 const uint32_t MAX_VAL[PARAM_QTY] = { 100, 100, 50, 100, 100 };
 const uint32_t MIN_VAL[PARAM_QTY] = { 0, 0, 0, 0, 0 };
 
 static uint32_t last_interaction_tick = AUTO_SCROLL_DELAY;
 
 /* Nombres para mostrar en el LCD */
-const char *param_names[PARAM_QTY] = { "Hum. Suelo", "Hum. Amb.", "Temp. Amb.",
-		"Luz", "Nivel Agua" };
-const char *test_names[TEST_QTY] = { "Test Agua", "Test Bomba", "Test Luz",
-		"Test LED", "Test H.Suelo", "Test Temp", "Test Buzzer" };
+const char *param_names[PARAM_QTY];
+const char *test_names[TEST_QTY];
 
+//todo: ponerlo en init
 uint32_t config_values[PARAM_QTY] = { 40, 50, 25, 60, 20 }; // Valores por defecto
 
-task_menu_dta_t task_menu_dta_list[] = { { DEL_MEN_XX_MIN, ST_SYS_00,
-		EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_NIVEL_AGUA }, {
-		DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0,
-		TEST_NIVEL_AGUA }, { DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,
-		PARAM_HUM_SUELO, 0, TEST_NIVEL_AGUA }, { DEL_MEN_XX_MIN, ST_SYS_00,
-		EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_NIVEL_AGUA } };
+task_menu_dta_t task_menu_dta_list[] = {
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL },
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0,	TEST_WATER_LEVEL },
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,	PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL },
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL } };
 
 #define MENU_DTA_QTY    (sizeof(task_menu_dta_list)/sizeof(task_menu_dta_t))
 
@@ -71,6 +70,7 @@ void task_menu_init(void *parameters) {
 
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 	shared_data.active_system = SYS_NORMAL;
+	shared_data.active_test = TEST_NONE;
 	init_queue_event_task_menu();
 
 	displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
@@ -82,8 +82,28 @@ void task_menu_init(void *parameters) {
 		p_task_menu_dta->event = EV_SYS_BTN_ESC;
 		p_task_menu_dta->flag = false;
 		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
-		p_task_menu_dta->current_test = TEST_NIVEL_AGUA;
+		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 	}
+
+	param_names[PARAM_HUM_SUELO] = "Hum. Suelo";
+	param_names[PARAM_HUM_AMB] = "Hum. Amb.";
+	param_names[PARAM_TEMP_AMB] = "Temp. Amb.";
+	param_names[PARAM_AGUA] = "Nivel Agua";
+	param_names[PARAM_LUZ] = "Luz";
+
+	test_names[TEST_WATER_LEVEL] = "Test Agua";
+	test_names[TEST_LIGHT] = "Test Luz";
+	test_names[TEST_HUMIDITY] = "Test H.Suelo";
+	test_names[TEST_DHT22] = "Test DHT22";
+	test_names[TEST_STATE_LED] = "Test LED";
+	test_names[TEST_BUZZER] = "Test Buzzer";
+	test_names[TEST_PUMP] = "Test Bomba";
+	test_names[TEST_LED_STRIP] = "Test T. LED";
+
+
+
+
+
 	/* Configuracion en memoria*/
 	uint32_t humedad_suelo_guardada = get_value(PARAM_HUM_SUELO);
 	if (humedad_suelo_guardada == 0xFFFFFFFF) {
@@ -154,8 +174,7 @@ void task_menu_statechart_normal(void) {
 		p_task_menu_dta->flag = false;
 
 		// Navegación entre sensores (derecha/izquierda)
-		if (p_task_menu_dta->event
-				== EV_SYS_BTN_RIGHT /*|| p_task_menu_dta->event == EV_SYS_NEXT_TIMER*/) {
+		if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			LOGGER_INFO("BTN_RIGHT PRESSED");
 			p_task_menu_dta->state =
 					(p_task_menu_dta->state == ST_SYS_04) ?
@@ -181,7 +200,7 @@ void task_menu_statechart_normal(void) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
 			p_task_menu_dta->state = ST_SYS_00;
-			p_task_menu_dta->current_test = TEST_NIVEL_AGUA;
+			p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 			return;
 		}
@@ -312,10 +331,13 @@ void task_menu_statechart_test(void) {
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
-			test_function(p_task_menu_dta->current_test);
-			LCD_show("Test Finalizado",
-					test_names[p_task_menu_dta->current_test]);
+			shared_data.active_test = p_task_menu_dta->current_test;
+
+		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && shared_data.active_test != TEST_NONE) {
+			shared_data.active_test = TEST_NONE;
+			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
+			shared_data.active_test = TEST_NONE;
 			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
 			LCD_show("Saliendo...", "");
@@ -358,35 +380,4 @@ void set_value(task_menu_parameters_t parameter, uint32_t value) {
 
 	// 4. Bloquear la Flash por seguridad para evitar escrituras accidentales
 	HAL_FLASH_Lock();
-}
-
-void test_function(task_menu_test_t current_test) {
-	// TODO: Escribir pines de hardware para activar relés, LEDs, o leer forzadamente un ADC.
-	switch (current_test) {
-	case TEST_NIVEL_AGUA:
-		break;
-	case TEST_BOMBA:
-		// Ej: HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_SET);
-		// HAL_Delay(1000);
-		// HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_RESET);
-		LOGGER_INFO("TEST BOMBA");
-		break;
-	case TEST_LUZ:
-		LOGGER_INFO("TEST LUZ");
-		break;
-	case TEST_LED:
-		LOGGER_INFO("TEST LED");
-		break;
-	case TEST_HUM_SUELO:
-		LOGGER_INFO("TEST HUM SUELO");
-		break;
-	case TEST_TEMP:
-		LOGGER_INFO("TEST TEMP");
-		break;
-	case TEST_BUZZER:
-		LOGGER_INFO("TEST BUZZER");
-		break;
-	default:
-		break;
-	}
 }

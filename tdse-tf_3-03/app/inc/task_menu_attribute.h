@@ -11,7 +11,7 @@ extern "C" {
 /* Events to excite Task Menu */
 typedef enum task_menu_ev {
 	//EV_SYS_NONE,
-	EV_SYS_BTN_RIGHT,
+	EV_SYS_BTN_RIGHT = 1,
 	EV_SYS_BTN_LEFT,
 	EV_SYS_BTN_ENTER,
 	EV_SYS_BTN_ESC,
@@ -39,13 +39,14 @@ typedef enum task_menu_parameters {
 
 /* Componentes para el Modo Test */
 typedef enum task_menu_test {
-	TEST_NIVEL_AGUA = 0,
-	TEST_BOMBA,
-	TEST_LUZ,
-	TEST_LED,
-	TEST_HUM_SUELO,
-	TEST_TEMP,
+	TEST_WATER_LEVEL = 0,
+	TEST_LIGHT,
+	TEST_HUMIDITY,
+	TEST_DHT22,
+	TEST_STATE_LED,
 	TEST_BUZZER,
+	TEST_PUMP,
+	TEST_LED_STRIP,
 	TEST_QTY, // Para saber la cantidad de tests
 	TEST_NONE
 } task_menu_test_t;
