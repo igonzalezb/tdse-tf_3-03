@@ -6,6 +6,21 @@
 
 extern ADC_HandleTypeDef hadc1;
 
+/*
+ * Calibracion YL-69:
+ * - YL69_ADC_DRY: valor ADC medido con la tierra seca.
+ * - YL69_ADC_WET: valor ADC medido con la tierra muy humeda/saturada.
+ *
+ * En la mayoria de los modulos YL-69:
+ * - tierra seca  -> ADC mas alto
+ * - tierra humeda -> ADC mas bajo
+ *
+ * Ajustar estos valores segun lo que veas en Live Expressions.
+ */
+#define YL69_ADC_DRY      4095u
+#define YL69_ADC_WET      1700u
+
+
 typedef enum {
     TASK_HUMIDITY_ST_WAIT_NEXT_SAMPLE = 0,
     TASK_HUMIDITY_ST_WAIT_ADC_CONVERSION
@@ -17,6 +32,64 @@ typedef struct {
 } task_humidity_data_t;
 
 static task_humidity_data_t task_humidity_data;
+
+static uint8_t task_humidity_adc_to_percent(uint16_t adc_value)
+{
+    int32_t dry = (int32_t) YL69_ADC_DRY;
+    int32_t wet = (int32_t) YL69_ADC_WET;
+    int32_t adc = (int32_t) adc_value;
+    int32_t percent;
+
+    if (dry == wet) {
+        return 0u;
+    }
+
+    /*
+     * Caso usual del YL-69:
+     * seco  -> ADC alto
+     * mojado -> ADC bajo
+     */
+    if (dry > wet) {
+
+        if (adc >= dry) {
+            return 0u;
+        }
+
+        if (adc <= wet) {
+            return 100u;
+        }
+
+        percent = ((dry - adc) * 100) / (dry - wet);
+    }
+
+    /*
+     * Caso inverso, por si tu modulo/senal queda al reves:
+     * seco  -> ADC bajo
+     * mojado -> ADC alto
+     */
+    else {
+
+        if (adc <= dry) {
+            return 0u;
+        }
+
+        if (adc >= wet) {
+            return 100u;
+        }
+
+        percent = ((adc - dry) * 100) / (wet - dry);
+    }
+
+    if (percent < 0) {
+        percent = 0;
+    }
+    else if (percent > 100) {
+        percent = 100;
+    }
+
+    return (uint8_t) percent;
+}
+
 
 static bool task_humidity_is_wet(uint16_t adc_value, uint16_t threshold)
 {
@@ -35,6 +108,7 @@ void task_humidity_init(void *parameters)
     task_humidity_data.sample_tick_count = HUMIDITY_SAMPLE_TICKS;
 
     shared_data->humidity_adc_value = 0u;
+    shared_data->humidity_percent = 0u;
     shared_data->humidity_threshold = HUMIDITY_THRESHOLD_DEFAULT;
     shared_data->humidity = false;
     shared_data->humidity_changed = false;
@@ -105,6 +179,7 @@ void task_humidity_update(void *parameters)
             shared_data->adc_owner = ADC_OWNER_NONE;
 
             shared_data->humidity_adc_value = adc_value;
+            shared_data->humidity_percent = task_humidity_adc_to_percent(adc_value);
 
             humidity_new = task_humidity_is_wet(
                 shared_data->humidity_adc_value,

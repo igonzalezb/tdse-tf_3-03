@@ -160,8 +160,8 @@ void task_dht22_init(void *parameters)
 
     dht22_set_pin_input_plain();
 
-    shared_data->dht22_humidity_x10 = 0u;
-    shared_data->dht22_temperature_x10 = 0;
+    shared_data->dht22_humidity = 0.0f;
+    shared_data->dht22_temperature = 0.0f;
     shared_data->dht22_valid = false;
     shared_data->dht22_changed = false;
     shared_data->dht22_error = DHT22_ERROR_NONE;
@@ -173,6 +173,8 @@ void task_dht22_update(void *parameters)
     uint32_t now_ms;
     uint16_t humidity_x10;
     int16_t temperature_x10;
+    float humidity;
+    float temperature;
     uint8_t error_code;
     bool changed;
 
@@ -213,12 +215,15 @@ void task_dht22_update(void *parameters)
 
         if (dht22_decode(&humidity_x10, &temperature_x10, &error_code) == true) {
 
-            changed = (!shared_data->dht22_valid) ||
-                      (shared_data->dht22_humidity_x10 != humidity_x10) ||
-                      (shared_data->dht22_temperature_x10 != temperature_x10);
+            humidity = (float)humidity_x10 / 10.0f;
+            temperature = (float)temperature_x10 / 10.0f;
 
-            shared_data->dht22_humidity_x10 = humidity_x10;
-            shared_data->dht22_temperature_x10 = temperature_x10;
+            changed = (!shared_data->dht22_valid) ||
+                      (shared_data->dht22_humidity != humidity) ||
+                      (shared_data->dht22_temperature != temperature);
+
+            shared_data->dht22_humidity = humidity;
+            shared_data->dht22_temperature = temperature;
             shared_data->dht22_valid = true;
             shared_data->dht22_error = DHT22_ERROR_NONE;
             shared_data->dht22_changed = changed;

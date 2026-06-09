@@ -120,39 +120,6 @@ task_dta_t task_dta_list[TASK_QTY];
 /********************** external functions definition ************************/
 void app_init(void) {
 	uint32_t index;
-	shared_data.humidity_adc_value = 0u;  //Inicializacion variables de humedad
-	shared_data.humidity_threshold = HUMIDITY_THRESHOLD_DEFAULT;
-	shared_data.humidity = false;
-	shared_data.humidity_changed = false;
-
-	shared_data.light_adc_value = 0u;   //Inicializacion variables de luz
-	shared_data.light_threshold = LIGHT_THRESHOLD_DEFAULT;
-	shared_data.light = false;
-	shared_data.light_changed = false;
-
-	shared_data.water_level_adc_value = 0u;   //Inicializacion variables de agua
-	shared_data.water_level_threshold = WATER_LEVEL_THRESHOLD_DEFAULT;
-	shared_data.water_level = false;
-	shared_data.water_level_changed = false;
-
-	shared_data.pump_current_adc_value = 0u;
-	shared_data.pump_current_threshold = PUMP_CURRENT_THRESHOLD_DEFAULT;
-	shared_data.pump_current = false;
-	shared_data.pump_current_changed = false;
-
-	shared_data.led_current_adc_value = 0u;
-	shared_data.led_current_threshold = LED_CURRENT_THRESHOLD_DEFAULT;
-	shared_data.led_current = false;
-	shared_data.led_current_changed = false;
-
-	shared_data.adc_busy = false;   //Inicializacion de adc_owner
-	shared_data.adc_owner = ADC_OWNER_NONE;
-
-	shared_data.dht22_humidity_x10 = 0u;
-	shared_data.dht22_temperature_x10 = 0;
-	shared_data.dht22_valid = false;
-	shared_data.dht22_changed = false;
-	shared_data.dht22_error = DHT22_ERROR_NONE;
 
 	/* Print out: Application Initialized */
 	LOGGER_INFO(" ");
