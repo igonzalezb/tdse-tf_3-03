@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "task_menu_attribute.h"
 
 typedef enum {
     ADC_OWNER_NONE = 0,
@@ -74,6 +75,9 @@ typedef struct {
 	// info del buzzer
 	task_buzzer_mode_t buzzer_mode;
 	bool buzzer_mode_changed;
+
+	// Menu: variables
+	task_menu_sys_t active_system;
 
 } shared_data_type;
 
