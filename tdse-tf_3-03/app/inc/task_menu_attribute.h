@@ -10,7 +10,7 @@ extern "C" {
 
 /* Events to excite Task Menu */
 typedef enum task_menu_ev {
-	EV_SYS_NONE,
+	//EV_SYS_NONE,
 	EV_SYS_BTN_RIGHT,
 	EV_SYS_BTN_LEFT,
 	EV_SYS_BTN_ENTER,
