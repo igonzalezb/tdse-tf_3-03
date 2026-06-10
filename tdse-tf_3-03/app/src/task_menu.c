@@ -5,6 +5,7 @@
 #include "app.h"
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
+#include "task_actuator_interface.h"
 #include "display.h"
 
 #include "stm32f1xx_hal.h"
@@ -149,6 +150,25 @@ void task_menu_update(void *parameters) {
 		default:
 			break;
 		}
+		/******************************************************************/
+		/* Codigo para probar el led y el buzzer mediante eventos, borrar */
+		static task_menu_sys_t menu_last_system = (task_menu_sys_t)-1;
+
+		    if (shared_data.active_system != menu_last_system) {
+		        menu_last_system = shared_data.active_system;
+
+		        // Mandamos el evento por la cola
+		        if (shared_data.active_system == SYS_FAILURE) {
+		            put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT);
+		        } else {
+		            put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_PULSE);
+		        }
+
+			}
+
+
+
+		/******************************************************************/
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {

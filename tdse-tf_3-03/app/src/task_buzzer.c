@@ -1,32 +1,22 @@
 #include "main.h"
 #include "app.h"
 #include "task_buzzer.h"
-#include "logger.h"
-#include "task_menu_interface.h" // Acceso la enumeración task_menu_sys_t
+#include "task_actuator_interface.h"
+#include "task_actuator_attribute.h"
 
-// Tiempos en milisegundos
-#define BUZZER_PULSE_MS        80   // Duración del beep corto de confirmación
-#define BUZZER_INTERMITTENT_MS 300  // Velocidad de la alarma de falla (ON/OFF)
+#define BUZZER_PULSE_MS        80
+#define BUZZER_INTERMITTENT_MS 300
 
-// Estados internos del buzzer
-typedef enum buzzer_internal_st {
-    B_STATE_IDLE,
-    B_STATE_PULSE_ON,
-    B_STATE_INT_ON,
-    B_STATE_INT_OFF
-} buzzer_internal_st_t;
 
-// Variables estáticas
-static buzzer_internal_st_t internal_state = B_STATE_IDLE;
-static uint32_t start_tick = 0;
-static task_menu_sys_t last_system = (task_menu_sys_t)-1;
+static task_actuator_dta_t buzzer_dta;
 
-// Prototipos de funciones
+// Prototipos de funciones internas
+static void task_buzzer_statechart(void);
+static void task_buzzer_time_transitions(void);
 static void buzzer_on(void);
 static void buzzer_off(void);
 
-
-// Funciones auxiliares
+// Funciones auxiliares de hardware
 static void buzzer_on(void) {
     HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_SET);
 }
@@ -35,71 +25,94 @@ static void buzzer_off(void) {
     HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_RESET);
 }
 
+
 void task_buzzer_init(void *parameters) {
-    buzzer_off(); // Arranque apagado
+    buzzer_off();
+    buzzer_dta.state = ST_BUZZER_IDLE;
+    buzzer_dta.event_pending = false;
+    buzzer_dta.tick = 0;
 }
 
 void task_buzzer_update(void *parameters) {
-    uint32_t current_tick = HAL_GetTick();
-    task_menu_sys_t current_system = shared_data.active_system;
 
-    // 1. Evaluar cambios de sistema
-    if (current_system != last_system) {
-        last_system = current_system;
-
-        if (current_system == SYS_FAILURE) {
-            buzzer_on();
-            start_tick = current_tick;
-            internal_state = B_STATE_INT_ON;
-        } else {
-            // Genera un pulso corto de confirmación sonora al entrar a Normal, Setup o Test
-            buzzer_on();
-            start_tick = current_tick;
-            internal_state = B_STATE_PULSE_ON;
-        }
+    if (any_event_task_actuator(ID_ACT_BUZZER)) {
+        buzzer_dta.event = (task_buzzer_ev_t)get_event_task_actuator(ID_ACT_BUZZER);
+        buzzer_dta.event_pending = true; // Levantamos la bandera
     }
 
-    // 2. Máquina de estados temporal y lógica de hardware
-    switch (internal_state) {
-        case B_STATE_IDLE:
-            // Si no hay un pulso activo y estamos en modo TEST, obedecemos a la estructura unificada
-        	if (current_system == SYS_TEST && shared_data.active_test == TEST_BUZZER) {
-				buzzer_on();
-			} else {
-				buzzer_off();
-			}
+    if (buzzer_dta.event_pending) {
+    	task_buzzer_statechart();
+    }
+    else{
+		task_buzzer_time_transitions();
+	}
+}
+
+
+static void task_buzzer_statechart(void) {
+    uint32_t current_tick = HAL_GetTick();
+
+	buzzer_dta.event_pending = false;
+
+	switch (buzzer_dta.event) {
+		case EV_BUZZER_PULSE:
+			buzzer_on();
+			buzzer_dta.tick = current_tick;
+			buzzer_dta.state = ST_BUZZER_PULSE_ON;
 			break;
 
-        case B_STATE_PULSE_ON:
-            if ((current_tick - start_tick) >= BUZZER_PULSE_MS) {
+		case EV_BUZZER_INTERMITTENT:
+			buzzer_on();
+			buzzer_dta.tick = current_tick;
+			buzzer_dta.state = ST_BUZZER_INT_ON;
+			break;
+
+		case EV_BUZZER_ON:
+			buzzer_on();
+			buzzer_dta.state = ST_BUZZER_ON;
+			break;
+
+		case EV_BUZZER_OFF:
+		default:
+			buzzer_off();
+			buzzer_dta.state = ST_BUZZER_IDLE;
+			break;
+    }
+
+}
+
+static void task_buzzer_time_transitions(void){
+	uint32_t current_tick = HAL_GetTick();
+
+    switch (buzzer_dta.state) {
+        case ST_BUZZER_IDLE:
+            // No hace nada, espera eventos.
+            break;
+
+        case ST_BUZZER_ON:
+			// No hace nada, espera eventos.
+			break;
+
+        case ST_BUZZER_PULSE_ON:
+            if ((current_tick - buzzer_dta.tick) >= BUZZER_PULSE_MS) {
                 buzzer_off();
-                internal_state = B_STATE_IDLE;
+                buzzer_dta.state = ST_BUZZER_IDLE;
             }
             break;
 
-        case B_STATE_INT_ON:
-            // Resguardo por si el sistema sale de SYS_FAILURE inesperadamente
-            if (current_system != SYS_FAILURE) {
+        case ST_BUZZER_INT_ON:
+            if ((current_tick - buzzer_dta.tick) >= BUZZER_INTERMITTENT_MS) {
                 buzzer_off();
-                internal_state = B_STATE_IDLE;
-                break;
-            }
-            if ((current_tick - start_tick) >= BUZZER_INTERMITTENT_MS) {
-                buzzer_off();
-                start_tick = current_tick;
-                internal_state = B_STATE_INT_OFF;
+                buzzer_dta.tick = current_tick;
+                buzzer_dta.state = ST_BUZZER_INT_OFF;
             }
             break;
 
-        case B_STATE_INT_OFF:
-            if (current_system != SYS_FAILURE) {
-                internal_state = B_STATE_IDLE;
-                break;
-            }
-            if ((current_tick - start_tick) >= BUZZER_INTERMITTENT_MS) {
+        case ST_BUZZER_INT_OFF:
+            if ((current_tick - buzzer_dta.tick) >= BUZZER_INTERMITTENT_MS) {
                 buzzer_on();
-                start_tick = current_tick;
-                internal_state = B_STATE_INT_ON;
+                buzzer_dta.tick = current_tick;
+                buzzer_dta.state = ST_BUZZER_INT_ON;
             }
             break;
     }
