@@ -32,11 +32,11 @@ const char *test_names[TEST_QTY] = { "Test Agua", "Test Bomba", "Test Luz",
 uint32_t config_values[PARAM_QTY] = { 40, 50, 25, 60, 20 }; // Valores por defecto
 
 task_menu_dta_t task_menu_dta_list[] = { { DEL_MEN_XX_MIN, ST_SYS_00,
-		EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_NIVEL_AGUA }, {
+		EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL }, {
 		DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0,
-		TEST_NIVEL_AGUA }, { DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,
-		PARAM_HUM_SUELO, 0, TEST_NIVEL_AGUA }, { DEL_MEN_XX_MIN, ST_SYS_00,
-		EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_NIVEL_AGUA } };
+		TEST_WATER_LEVEL }, { DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,
+		PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL }, { DEL_MEN_XX_MIN, ST_SYS_00,
+		EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL } };
 
 #define MENU_DTA_QTY    (sizeof(task_menu_dta_list)/sizeof(task_menu_dta_t))
 
@@ -82,7 +82,7 @@ void task_menu_init(void *parameters) {
 		p_task_menu_dta->event = EV_SYS_BTN_ESC;
 		p_task_menu_dta->flag = false;
 		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
-		p_task_menu_dta->current_test = TEST_NIVEL_AGUA;
+		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 	}
 	/* Configuracion en memoria*/
 	uint32_t humedad_suelo_guardada = get_value(PARAM_HUM_SUELO);
@@ -181,7 +181,7 @@ void task_menu_statechart_normal(void) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
 			p_task_menu_dta->state = ST_SYS_00;
-			p_task_menu_dta->current_test = TEST_NIVEL_AGUA;
+			p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 			return;
 		}
@@ -363,27 +363,15 @@ void set_value(task_menu_parameters_t parameter, uint32_t value) {
 void test_function(task_menu_test_t current_test) {
 	// TODO: Escribir pines de hardware para activar relés, LEDs, o leer forzadamente un ADC.
 	switch (current_test) {
-	case TEST_NIVEL_AGUA:
+	case TEST_WATER_LEVEL:
 		break;
-	case TEST_BOMBA:
-		// Ej: HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_SET);
-		// HAL_Delay(1000);
-		// HAL_GPIO_WritePin(PUMP_PORT, PUMP_PIN, GPIO_PIN_RESET);
-		LOGGER_INFO("TEST BOMBA");
-		break;
-	case TEST_LUZ:
-		LOGGER_INFO("TEST LUZ");
-		break;
-	case TEST_LED:
-		LOGGER_INFO("TEST LED");
-		break;
-	case TEST_HUM_SUELO:
+	case TEST_STATE_LED:
 		LOGGER_INFO("TEST HUM SUELO");
 		break;
-	case TEST_TEMP:
+	case TEST_BUZZER:
 		LOGGER_INFO("TEST TEMP");
 		break;
-	case TEST_BUZZER:
+	case TEST_PUMP:
 		LOGGER_INFO("TEST BUZZER");
 		break;
 	default:
