@@ -6,6 +6,25 @@
 
 extern ADC_HandleTypeDef hadc1;
 
+/*
+ * Calibracion del sensor de luz analogico.
+ *
+ * LIGHT_ADC_DARK:
+ *   Valor ADC medido con el sensor en oscuridad o con muy poca luz.
+ *
+ * LIGHT_ADC_BRIGHT:
+ *   Valor ADC medido con el sensor con mucha luz.
+ *
+ * Estos valores son de ejemplo. Reemplazalos por los que midas
+ * con shared_data.light_adc_value en Live Expressions.
+ *
+ * La funcion de conversion soporta ambos casos:
+ *   - ADC mas alto con mas luz
+ *   - ADC mas bajo con mas luz
+ */
+#define LIGHT_ADC_DARK      4095u
+#define LIGHT_ADC_BRIGHT    0u
+
 typedef enum {
     TASK_LIGHT_ST_WAIT_NEXT_SAMPLE = 0,
     TASK_LIGHT_ST_WAIT_ADC_CONVERSION
@@ -27,6 +46,55 @@ static bool task_light_is_present(uint16_t adc_value, uint16_t threshold)
 #endif
 }
 
+static uint16_t task_light_adc_to_percent(uint16_t adc_value)
+{
+#if (LIGHT_ADC_BRIGHT == LIGHT_ADC_DARK)
+
+    return 0u;
+
+#elif (LIGHT_ADC_BRIGHT > LIGHT_ADC_DARK)
+
+    /*
+     * Caso 1:
+     *   Oscuro  -> ADC bajo
+     *   Luminoso -> ADC alto
+     */
+    if (adc_value <= LIGHT_ADC_DARK) {
+        return 0u;
+    }
+
+    if (adc_value >= LIGHT_ADC_BRIGHT) {
+        return 100u;
+    }
+
+    return (uint16_t)(
+        (((uint32_t)adc_value - (uint32_t)LIGHT_ADC_DARK) * 100u) /
+        ((uint32_t)LIGHT_ADC_BRIGHT - (uint32_t)LIGHT_ADC_DARK)
+    );
+
+#else
+
+    /*
+     * Caso 2:
+     *   Oscuro  -> ADC alto
+     *   Luminoso -> ADC bajo
+     */
+    if (adc_value >= LIGHT_ADC_DARK) {
+        return 0u;
+    }
+
+    if (adc_value <= LIGHT_ADC_BRIGHT) {
+        return 100u;
+    }
+
+    return (uint16_t)(
+        (((uint32_t)LIGHT_ADC_DARK - (uint32_t)adc_value) * 100u) /
+        ((uint32_t)LIGHT_ADC_DARK - (uint32_t)LIGHT_ADC_BRIGHT)
+    );
+
+#endif
+}
+
 void task_light_init(void *parameters)
 {
     shared_data_type *shared_data = (shared_data_type *) parameters;
@@ -35,6 +103,7 @@ void task_light_init(void *parameters)
     task_light_data.sample_tick_count = LIGHT_SAMPLE_TICKS;
 
     shared_data->light_adc_value = 0u;
+    shared_data->light_percent = 0u;
     shared_data->light_threshold = LIGHT_THRESHOLD_DEFAULT;
     shared_data->light = false;
     shared_data->light_changed = false;
@@ -105,6 +174,7 @@ void task_light_update(void *parameters)
             shared_data->adc_owner = ADC_OWNER_NONE;
 
             shared_data->light_adc_value = adc_value;
+            shared_data->light_percent = task_light_adc_to_percent(adc_value);
 
             light_new = task_light_is_present(
                 shared_data->light_adc_value,

@@ -6,6 +6,17 @@
 
 extern ADC_HandleTypeDef hadc1;
 
+/*
+ * Calibracion del sensor de nivel de agua:
+ * - WATER_LEVEL_ADC_EMPTY: lectura ADC con el sensor seco / sin agua.
+ * - WATER_LEVEL_ADC_FULL:  lectura ADC con el sensor al nivel maximo que quieras tomar como 100%.
+ *
+ * Cambia estos valores segun lo que midas en Live Expressions con:
+ * shared_data.water_level_adc_value
+ */
+#define WATER_LEVEL_ADC_EMPTY    0u
+#define WATER_LEVEL_ADC_FULL     2200u
+
 typedef enum {
     TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE = 0,
     TASK_WATER_LEVEL_ST_WAIT_ADC_CONVERSION
@@ -27,6 +38,50 @@ static bool task_water_level_is_present(uint16_t adc_value, uint16_t threshold)
 #endif
 }
 
+static uint16_t task_water_level_adc_to_percent(uint16_t adc_value)
+{
+    int32_t percent;
+
+    if (WATER_LEVEL_ADC_FULL > WATER_LEVEL_ADC_EMPTY) {
+
+        if (adc_value <= WATER_LEVEL_ADC_EMPTY) {
+            return 0u;
+        }
+
+        if (adc_value >= WATER_LEVEL_ADC_FULL) {
+            return 100u;
+        }
+
+        percent = ((int32_t)adc_value - (int32_t)WATER_LEVEL_ADC_EMPTY) * 100;
+        percent = percent / ((int32_t)WATER_LEVEL_ADC_FULL - (int32_t)WATER_LEVEL_ADC_EMPTY);
+    }
+    else if (WATER_LEVEL_ADC_FULL < WATER_LEVEL_ADC_EMPTY) {
+
+        if (adc_value >= WATER_LEVEL_ADC_EMPTY) {
+            return 0u;
+        }
+
+        if (adc_value <= WATER_LEVEL_ADC_FULL) {
+            return 100u;
+        }
+
+        percent = ((int32_t)WATER_LEVEL_ADC_EMPTY - (int32_t)adc_value) * 100;
+        percent = percent / ((int32_t)WATER_LEVEL_ADC_EMPTY - (int32_t)WATER_LEVEL_ADC_FULL);
+    }
+    else {
+        percent = 0;
+    }
+
+    if (percent < 0) {
+        percent = 0;
+    }
+    else if (percent > 100) {
+        percent = 100;
+    }
+
+    return (uint16_t)percent;
+}
+
 void task_water_level_init(void *parameters)
 {
     shared_data_type *shared_data = (shared_data_type *) parameters;
@@ -35,6 +90,7 @@ void task_water_level_init(void *parameters)
     task_water_level_data.sample_tick_count = WATER_LEVEL_SAMPLE_TICKS;
 
     shared_data->water_level_adc_value = 0u;
+    shared_data->water_level_percent = 0u;
     shared_data->water_level_threshold = WATER_LEVEL_THRESHOLD_DEFAULT;
     shared_data->water_level = false;
     shared_data->water_level_changed = false;
@@ -105,6 +161,7 @@ void task_water_level_update(void *parameters)
             shared_data->adc_owner = ADC_OWNER_NONE;
 
             shared_data->water_level_adc_value = adc_value;
+            shared_data->water_level_percent = task_water_level_adc_to_percent(adc_value);
 
             water_level_new = task_water_level_is_present(
                 shared_data->water_level_adc_value,

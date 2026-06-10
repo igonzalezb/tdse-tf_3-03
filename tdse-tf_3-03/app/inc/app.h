@@ -21,16 +21,19 @@ typedef enum {
 typedef struct {
     uint16_t humidity_adc_value; // shared_data.humidity_adc_value ---> valor de adc medido
     uint16_t humidity_threshold; // shared_data.humidity_threshold ---> valor de threshold para determinar si esta humedo
+    uint8_t humidity_percent;
     bool humidity; //
-    bool humidity_changed; //
+    bool humidity_changed;//
 
     uint16_t light_adc_value;
     uint16_t light_threshold; // Lo mismo q en humidity
+    uint16_t light_percent;
     bool light;
     bool light_changed;
 
     uint16_t water_level_adc_value;
     uint16_t water_level_threshold;
+    uint16_t water_level_percent;
     bool water_level;
     bool water_level_changed;
 
@@ -44,8 +47,8 @@ typedef struct {
     bool led_current;
     bool led_current_changed;
 
-    uint16_t dht22_humidity_x10;
-    int16_t  dht22_temperature_x10;
+    uint16_t dht22_humidity;
+    int16_t  dht22_temperature;
     bool dht22_valid;
     bool dht22_changed;
     uint8_t dht22_error;
