@@ -18,18 +18,6 @@ typedef enum {
 	ADC_OWNER_LED_CURRENT
 } adc_owner_t;
 
-typedef enum task_state_led_blinking {
-	STATE_LED_NO_BLINK,
-	STATE_LED_SLOW_BLINK,
-	STATE_LED_FAST_BLINK,
-} task_state_led_blinking_t;
-
-typedef enum task_buzzer_mode{
-    BUZZER_MODE_OFF,
-    BUZZER_MODE_PULSE,         // Un solo beep corto al cambiar de menú
-    BUZZER_MODE_INTERMITTENT   // Alarma continua para error
-} task_buzzer_mode_t;
-
 typedef struct {
     uint16_t humidity_adc_value; // shared_data.humidity_adc_value ---> valor de adc medido
     uint16_t humidity_threshold; // shared_data.humidity_threshold ---> valor de threshold para determinar si esta humedo
@@ -67,17 +55,6 @@ typedef struct {
 
     bool adc_busy;  // Esta el adc usandose?
     adc_owner_t adc_owner; //Quien lo esta usando
-
-    //info del led de estado
-    uint16_t pwm_state_led_red;
-	uint16_t pwm_state_led_green;
-	uint16_t pwm_state_led_blue;
-	task_state_led_blinking_t blinking_rate;
-	bool state_led_data_changed;
-
-	// info del buzzer
-	task_buzzer_mode_t buzzer_mode;
-	bool buzzer_mode_changed;
 
 	// Menu: variables
 	task_menu_sys_t active_system;

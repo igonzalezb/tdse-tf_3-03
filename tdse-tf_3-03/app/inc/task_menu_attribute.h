@@ -39,16 +39,16 @@ typedef enum task_menu_parameters {
 
 /* Componentes para el Modo Test */
 typedef enum task_menu_test {
-	TEST_WATER_LEVEL = 0,
-	TEST_LIGHT,
-	TEST_HUMIDITY,
-	TEST_DHT22,
-	TEST_STATE_LED,
-	TEST_BUZZER,
-	TEST_PUMP,
-	TEST_LED_STRIP,
-	TEST_QTY, // Para saber la cantidad de tests
-	TEST_NONE
+	TEST_WATER_LEVEL = 0,	// sensor de nivel de agua
+	TEST_LIGHT,				// sensor de luz
+	TEST_HUMIDITY,			// sensor de humedad de suelo
+	TEST_DHT22,				// sensor de humedad y temperatura ambiente (PUEDE NO ESTAR)
+	TEST_STATE_LED,			// led de estado
+	TEST_BUZZER,			// buzzer
+	TEST_PUMP,				// bomba de agua
+	TEST_LED_STRIP,			// tira led
+	TEST_QTY, 				// para saber la cantidad de tests
+	TEST_NONE				// no se está testeando nada
 } task_menu_test_t;
 
 typedef struct {
