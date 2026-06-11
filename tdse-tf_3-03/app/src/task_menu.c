@@ -150,25 +150,39 @@ void task_menu_update(void *parameters) {
 		default:
 			break;
 		}
-		/******************************************************************/
-		/* Codigo para probar el led y el buzzer mediante eventos, borrar */
+
+		/* PARA PROBAR LED Y BUZZER CON EVENTOS */
 		static task_menu_sys_t menu_last_system = (task_menu_sys_t)-1;
 
+		    // Solo entramos acá si hubo un CAMBIO REAL de estado
 		    if (shared_data.active_system != menu_last_system) {
 		        menu_last_system = shared_data.active_system;
 
-		        // Mandamos el evento por la cola
+		        // Disparamos eventos al Buzzer
 		        if (shared_data.active_system == SYS_FAILURE) {
 		            put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT);
 		        } else {
 		            put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_PULSE);
 		        }
 
-			}
+		        // Disparamos eventos al LED
+		        switch (shared_data.active_system) {
+		            case SYS_NORMAL:
+		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+		                break;
+		            case SYS_SETUP:
+		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_SETUP);
+		                break;
+		            case SYS_FAILURE:
+		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE);
+		                break;
+		            case SYS_TEST:
+		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_TEST);
+		                break;
+		        }
+		    }
 
-
-
-		/******************************************************************/
+		    /*****************************************************************************************/
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
@@ -196,6 +210,7 @@ void task_menu_statechart_normal(void) {
 		// Navegación entre sensores (derecha/izquierda)
 		if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			LOGGER_INFO("BTN_RIGHT PRESSED");
+			shared_data.active_system = SYS_FAILURE;
 			p_task_menu_dta->state =
 					(p_task_menu_dta->state == ST_SYS_04) ?
 							ST_SYS_00 : p_task_menu_dta->state + 1;
