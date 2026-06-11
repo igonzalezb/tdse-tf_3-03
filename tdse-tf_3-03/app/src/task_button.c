@@ -15,7 +15,7 @@
 #define DEL_BTN_XX_MIN              0ul
 #define DEL_BTN_XX_MED              25ul
 #define DEL_BTN_XX_MAX              50ul
-#define DEL_BTN_XX_HOLD             3000ul
+#define DEL_BTN_XX_HOLD             1500ul
 
 /* Mapeo de botones a eventos del menú de la Smartceta */
 task_button_cfg_t task_button_cfg_list[] = {

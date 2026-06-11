@@ -97,8 +97,8 @@ const task_cfg_t task_cfg_list[] =
 		{task_pump_current_init, task_pump_current_update, &shared_data },
 		{task_led_current_init, task_led_current_update, &shared_data },
 		{task_dht22_init, task_dht22_update, &shared_data },
-		{task_state_led_init, task_state_led_update, &shared_data },
-		{task_buzzer_init, task_buzzer_update, &shared_data },
+		{task_state_led_init, task_state_led_update, NULL },
+		{task_buzzer_init, task_buzzer_update, NULL },
 };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
