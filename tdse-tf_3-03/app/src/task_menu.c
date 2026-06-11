@@ -151,7 +151,8 @@ void task_menu_update(void *parameters) {
 			break;
 		}
 
-		/* PARA PROBAR LED Y BUZZER CON EVENTOS */
+		/*↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓BORRAR↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓*/
+		/* PARA PROBAR LED Y BUZZER CON EVENTOS BORRAR */
 		static task_menu_sys_t menu_last_system = (task_menu_sys_t)-1;
 
 		    // Solo entramos acá si hubo un CAMBIO REAL de estado
@@ -182,7 +183,7 @@ void task_menu_update(void *parameters) {
 		        }
 		    }
 
-		    /*****************************************************************************************/
+		    /*↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑BORRAR↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑*/
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
@@ -210,7 +211,6 @@ void task_menu_statechart_normal(void) {
 		// Navegación entre sensores (derecha/izquierda)
 		if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			LOGGER_INFO("BTN_RIGHT PRESSED");
-			shared_data.active_system = SYS_FAILURE;
 			p_task_menu_dta->state =
 					(p_task_menu_dta->state == ST_SYS_04) ?
 							ST_SYS_00 : p_task_menu_dta->state + 1;
