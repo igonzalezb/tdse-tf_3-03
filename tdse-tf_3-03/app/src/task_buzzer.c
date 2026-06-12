@@ -2,21 +2,21 @@
 #include "app.h"
 #include "task_buzzer.h"
 #include "task_actuator_interface.h"
-#include "task_actuator_attribute.h"
-
-#define BUZZER_PULSE_MS        80
-#define BUZZER_INTERMITTENT_MS 300
 
 
+uint16_t const BUZZER_PATTERNS_QTY = (sizeof(buzzer_patterns) / sizeof(buzzer_patterns[0]));
+
+// Variables estáticas de control de estado interno
 static task_actuator_dta_t buzzer_dta;
+static const buzzer_pattern_t *current_pattern = NULL;
+static uint32_t remaining_pulses = 0;
 
-// Prototipos de funciones internas
+// Prototipos de funciones internas de hardware y software
 static void task_buzzer_statechart(void);
-static void task_buzzer_time_transitions(void);
 static void buzzer_on(void);
 static void buzzer_off(void);
 
-// Funciones auxiliares de hardware
+// Funciones auxiliares de abstracción de hardware
 static void buzzer_on(void) {
     HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_SET);
 }
@@ -25,95 +25,98 @@ static void buzzer_off(void) {
     HAL_GPIO_WritePin(Buzzer_GPIO_Port, Buzzer_Pin, GPIO_PIN_RESET);
 }
 
-
 void task_buzzer_init(void *parameters) {
     buzzer_off();
     buzzer_dta.state = ST_BUZZER_IDLE;
     buzzer_dta.event_pending = false;
     buzzer_dta.tick = 0;
+    current_pattern = NULL;
+    remaining_pulses = 0;
 }
 
 void task_buzzer_update(void *parameters) {
-
+    // Captura de eventos desde la cola genérica de actuadores
     if (any_event_task_actuator(ID_ACT_BUZZER)) {
         buzzer_dta.event = (task_buzzer_ev_t)get_event_task_actuator(ID_ACT_BUZZER);
-        buzzer_dta.event_pending = true; // Levantamos la bandera
+        buzzer_dta.event_pending = true;
     }
 
-    if (buzzer_dta.event_pending) {
-    	task_buzzer_statechart();
-    }
-    else{
-		task_buzzer_time_transitions();
-	}
+    // Ejecución de la máquina de estados
+    task_buzzer_statechart();
 }
-
 
 static void task_buzzer_statechart(void) {
     uint32_t current_tick = HAL_GetTick();
 
-	buzzer_dta.event_pending = false;
+    if (buzzer_dta.event_pending) {
+        buzzer_dta.event_pending = false;
 
-	switch (buzzer_dta.event) {
-		case EV_BUZZER_PULSE:
-			buzzer_on();
-			buzzer_dta.tick = current_tick;
-			buzzer_dta.state = ST_BUZZER_PULSE_ON;
-			break;
+        // Búsqueda del evento dentro de la tabla de patrones
+        current_pattern = NULL;
+        for (int i = 0; i < BUZZER_PATTERNS_QTY; i++) {
+            if (buzzer_patterns[i].event == buzzer_dta.event) {
+                current_pattern = &buzzer_patterns[i];
+                break;
+            }
+        }
 
-		case EV_BUZZER_INTERMITTENT:
-			buzzer_on();
-			buzzer_dta.tick = current_tick;
-			buzzer_dta.state = ST_BUZZER_INT_ON;
-			break;
-
-		case EV_BUZZER_ON:
-			buzzer_on();
-			buzzer_dta.state = ST_BUZZER_ON;
-			break;
-
-		case EV_BUZZER_OFF:
-		default:
-			buzzer_off();
-			buzzer_dta.state = ST_BUZZER_IDLE;
-			break;
+        // Si el evento existe en la tabla de configuración
+		if (current_pattern != NULL) {
+			if (current_pattern->mode == BUZZER_MODE_OFF) {
+				buzzer_off();
+				buzzer_dta.state = ST_BUZZER_IDLE;
+			} else if (current_pattern->mode == BUZZER_MODE_ON) {
+				buzzer_on();
+				buzzer_dta.state = ST_BUZZER_ON;
+			} else {
+				// Modo Intermitente/Ráfagas: Encendemos el buzzer y seteamos los contadores
+				buzzer_on();
+				buzzer_dta.tick = current_tick;
+				remaining_pulses = current_pattern->pulses;
+				buzzer_dta.state = ST_BUZZER_INT_ON; // Usamos el estado genérico de sonido activo
+			}
+		} else {
+            // Evento inválido o no configurado: Apagado por seguridad
+            buzzer_off();
+            buzzer_dta.state = ST_BUZZER_IDLE;
+        }
+        return;
     }
 
-}
-
-static void task_buzzer_time_transitions(void){
-	uint32_t current_tick = HAL_GetTick();
-
+    // --- 2. TRANSICIONES DE TIEMPO (Máquina de Blink Genérica) ---
     switch (buzzer_dta.state) {
         case ST_BUZZER_IDLE:
-            // No hace nada, espera eventos.
-            break;
-
         case ST_BUZZER_ON:
-			// No hace nada, espera eventos.
-			break;
+            break; // No requieren control temporal secuencial
 
-        case ST_BUZZER_PULSE_ON:
-            if ((current_tick - buzzer_dta.tick) >= BUZZER_PULSE_MS) {
-                buzzer_off();
-                buzzer_dta.state = ST_BUZZER_IDLE;
-            }
-            break;
-
-        case ST_BUZZER_INT_ON:
-            if ((current_tick - buzzer_dta.tick) >= BUZZER_INTERMITTENT_MS) {
+        case ST_BUZZER_INT_ON: // Período en el que el sonido está activo
+            if ((current_tick - buzzer_dta.tick) >= current_pattern->ton_ms) {
                 buzzer_off();
                 buzzer_dta.tick = current_tick;
-                buzzer_dta.state = ST_BUZZER_INT_OFF;
+
+                // Si es un patrón con cantidad de pulsos limitada, descontamos uno
+                if (remaining_pulses > 0) {
+                    remaining_pulses--;
+                }
+
+                // Si terminamos la ráfaga de pulsos, volvemos a IDLE
+                if (current_pattern->pulses > 0 && remaining_pulses == 0) {
+                    buzzer_dta.state = ST_BUZZER_IDLE;
+                } else {
+                    buzzer_dta.state = ST_BUZZER_INT_OFF;
+                }
             }
             break;
 
-        case ST_BUZZER_INT_OFF:
-            if ((current_tick - buzzer_dta.tick) >= BUZZER_INTERMITTENT_MS) {
+        case ST_BUZZER_INT_OFF: // Período de silencio entre pulsos
+            if ((current_tick - buzzer_dta.tick) >= current_pattern->toff_ms) {
                 buzzer_on();
                 buzzer_dta.tick = current_tick;
                 buzzer_dta.state = ST_BUZZER_INT_ON;
             }
+            break;
+
+        default:
             break;
     }
 }

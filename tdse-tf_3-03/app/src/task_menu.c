@@ -151,39 +151,6 @@ void task_menu_update(void *parameters) {
 			break;
 		}
 
-		/*↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓BORRAR↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓*/
-		/* PARA PROBAR LED Y BUZZER CON EVENTOS BORRAR */
-		static task_menu_sys_t menu_last_system = (task_menu_sys_t)-1;
-
-		    // Solo entramos acá si hubo un CAMBIO REAL de estado
-		    if (shared_data.active_system != menu_last_system) {
-		        menu_last_system = shared_data.active_system;
-
-		        // Disparamos eventos al Buzzer
-		        if (shared_data.active_system == SYS_FAILURE) {
-		            put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT);
-		        } else {
-		            put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_PULSE);
-		        }
-
-		        // Disparamos eventos al LED
-		        switch (shared_data.active_system) {
-		            case SYS_NORMAL:
-		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
-		                break;
-		            case SYS_SETUP:
-		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_SETUP);
-		                break;
-		            case SYS_FAILURE:
-		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE);
-		                break;
-		            case SYS_TEST:
-		                put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_TEST);
-		                break;
-		        }
-		    }
-
-		    /*↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑BORRAR↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑*/
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {

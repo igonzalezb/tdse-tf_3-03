@@ -22,8 +22,9 @@ typedef enum task_actuator_id{
 typedef enum task_buzzer_ev{
     EV_BUZZER_OFF = 0,				// Apagar el buzzer (modo silencioso)
 	EV_BUZZER_ON,					// Encender el buzzer (modo test)
-    EV_BUZZER_PULSE,				// Generar un pulso de buzzer
-    EV_BUZZER_INTERMITTENT			// Generar intermitencia por tiempo indefinido, (modo falla)
+    EV_BUZZER_1PULSE,				// Un pulso de buzzer (cambios de sistema)
+    EV_BUZZER_INTERMITTENT,			// Intermitencia por tiempo indefinido, (modo falla)
+	EV_BUZZER_2PULSE				// Dos pulsos de buzzer
 } task_buzzer_ev_t;
 
 typedef enum task_buzzer_st{
@@ -33,11 +34,43 @@ typedef enum task_buzzer_st{
     ST_BUZZER_INT_OFF,
 	ST_BUZZER_ON
 } task_buzzer_st_t;
+
+// Modos de operación del buzzer
+typedef enum {
+    BUZZER_MODE_OFF,	// siempre apagado
+    BUZZER_MODE_ON,		// siempre encendido
+    BUZZER_MODE_BLINK	// intermitencia [1, inf)
+} buzzer_mode_t;
+
+// Estructura de configuración del patrón
+typedef struct {
+    task_buzzer_ev_t event;      // Evento que dispara este patrón
+    buzzer_mode_t    mode;       // Modo operacional (Apagado, Fijo o Intermitente)
+    uint32_t         ton_ms;     // Tiempo de encendido del pulso
+    uint32_t         toff_ms;    // Tiempo de apagado entre pulsos
+    uint16_t         pulses;     // Cantidad de pulsos (0 = intermitente)
+} buzzer_pattern_t;
+
+/**********************************************************************************************/
+// Patrones para cada evento
+
+static const buzzer_pattern_t buzzer_patterns[] = {
+    // Evento,                  Modo,               Ton (ms)	Toff (ms) 	Pulses
+    { EV_BUZZER_OFF,            BUZZER_MODE_OFF,    0,    		0,         	0 },  // Silencio total
+    { EV_BUZZER_ON,             BUZZER_MODE_ON,     0,  		0,         	0 },  // Sonido continuo (Modo Test)
+    { EV_BUZZER_1PULSE, 		BUZZER_MODE_BLINK,  80, 		0,			1 },  // 1 Beep corto
+    { EV_BUZZER_INTERMITTENT,	BUZZER_MODE_BLINK,  300,		300,		0 },  // Intermitencia (Modo Falla)
+    { EV_BUZZER_2PULSE, 		BUZZER_MODE_BLINK,  80,			80,			2 }   // 2 Beeps cortos
+};
+/**********************************************************************************************/
+
 /*==============================================================================================*/
 
 
+
+
 /*==============================================================================================*/
-/* Eventos específicos para el STATE_LED */
+/* Eventos y estados específicos para el STATE_LED */
 typedef enum task_state_led_ev{
     EV_STATE_LED_SYS_NORMAL,
 	EV_STATE_LED_SYS_SETUP,
@@ -85,11 +118,22 @@ static const state_led_pattern_t led_patterns[] = {
 /*==============================================================================================*/
 
 
+/*==============================================================================================*/
+/* Eventos y estados específicos para la BOMBA */
 
 typedef enum task_pump_ev{
     EV_PUMP_OFF = 0,
 	EV_PUMP_ON
 } task_pump_ev_t;
+
+typedef enum {
+    ST_PUMP_IDLE,
+    ST_PUMP_RAMP_UP,
+    ST_PUMP_ON,
+    ST_PUMP_RAMP_DOWN
+} task_pump_st_t;
+
+/*==============================================================================================*/
 
 typedef enum task_led_strip_ev{
     EV_LED_STRIP_OFF = 0,
