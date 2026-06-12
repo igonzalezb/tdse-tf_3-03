@@ -16,18 +16,11 @@ static task_actuator_dta_t state_led_dta;
 static const state_led_pattern_t *current_pattern = NULL;
 
 // Funciones internas
-static void apply_led_colors(uint16_t pwm_red, uint16_t pwm_green, uint16_t pwm_blue);
+static void apply_led_colors(uint16_t, uint16_t, uint16_t);
 static void task_state_led_statechart(void);
 
 // Constantes
 uint16_t const LED_PATTERNS_QTY = (sizeof(led_patterns) / sizeof(led_patterns[0]));
-
-
-static void apply_led_colors(uint16_t pwm_red, uint16_t pwm_green, uint16_t pwm_blue) {
-    __HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_RED, pwm_red);
-    __HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_GREEN, pwm_green);
-    __HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_BLUE, pwm_blue);
-}
 
 
 void task_state_led_init(void *parameters) {
@@ -40,6 +33,15 @@ void task_state_led_init(void *parameters) {
     state_led_dta.state = ST_STATE_LED_IDLE;
     state_led_dta.event_pending = false;
     current_pattern = NULL;
+}
+
+void task_state_led_update(void *parameters) {
+    if (any_event_task_actuator(ID_ACT_STATE_LED)) {
+        state_led_dta.event = get_event_task_actuator(ID_ACT_STATE_LED);
+        state_led_dta.event_pending = true;
+    }
+
+    task_state_led_statechart();
 }
 
 static void task_state_led_statechart(void) {
@@ -101,11 +103,8 @@ static void task_state_led_statechart(void) {
     }
 }
 
-void task_state_led_update(void *parameters) {
-    if (any_event_task_actuator(ID_ACT_STATE_LED)) {
-        state_led_dta.event = get_event_task_actuator(ID_ACT_STATE_LED);
-        state_led_dta.event_pending = true;
-    }
-
-    task_state_led_statechart();
+static void apply_led_colors(uint16_t pwm_red, uint16_t pwm_green, uint16_t pwm_blue) {
+    __HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_RED, pwm_red);
+    __HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_GREEN, pwm_green);
+    __HAL_TIM_SET_COMPARE(&TIMER_STATE_LED, CHANNEL_LED_BLUE, pwm_blue);
 }
