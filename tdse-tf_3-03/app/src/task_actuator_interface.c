@@ -10,7 +10,7 @@ typedef struct {
     uint32_t queue[MAX_EVENTS];
 } queue_t;
 
-// Creamos un array de colas: una para cada actuador
+// Una cola para cada actuador
 static queue_t actuator_queues[ID_ACT_QTY];
 
 void init_queue_event_task_actuator(void) {
