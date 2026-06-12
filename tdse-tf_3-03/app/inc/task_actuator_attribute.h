@@ -16,6 +16,15 @@ typedef enum task_actuator_id{
 	ID_ACT_QTY // Cantidad total de actuadores
 } task_actuator_id_t;
 
+typedef struct {
+    uint32_t state;           // Estado actual de la máquina de estados
+    uint32_t event;           // Último evento recibido de la cola
+    bool     event_pending;   // Bandera que avisa si hay un nuevo evento por procesar
+    uint32_t tick;            // Temporizador general para no usar delays
+} task_actuator_dta_t;
+
+
+
 /*==============================================================================================*/
 /* Eventos y estados específicos para el BUZZER */
 
@@ -118,6 +127,10 @@ static const state_led_pattern_t led_patterns[] = {
 /*==============================================================================================*/
 
 
+
+
+
+
 /*==============================================================================================*/
 /* Eventos y estados específicos para la BOMBA */
 
@@ -126,7 +139,7 @@ typedef enum task_pump_ev{
 	EV_PUMP_ON
 } task_pump_ev_t;
 
-typedef enum {
+typedef enum task_pump_st{
     ST_PUMP_IDLE,
     ST_PUMP_RAMP_UP,
     ST_PUMP_ON,
@@ -135,17 +148,21 @@ typedef enum {
 
 /*==============================================================================================*/
 
+
+
+/*==============================================================================================*/
+/* Eventos y estados específicos para la TIRA LED */
+
 typedef enum task_led_strip_ev{
     EV_LED_STRIP_OFF = 0,
 	EV_LED_STRIP_ON
 } task_led_strip_ev_t;
 
-typedef struct {
-    uint32_t state;           // Estado actual de la máquina de estados
-    uint32_t event;           // Último evento recibido de la cola
-    bool     event_pending;   // Bandera que avisa si hay un nuevo evento por procesar
-    uint32_t tick;            // Temporizador general para no usar delays
-} task_actuator_dta_t;
+typedef enum task_led_strip_st{
+    ST_LED_STRIP_ON,
+    ST_LED_STRIP_OFF
+} task_led_strip_st_t;
+
 
 
 
