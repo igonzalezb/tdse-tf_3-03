@@ -3,6 +3,31 @@
 #include "task_buzzer.h"
 #include "task_actuator_interface.h"
 
+/**********************************************************************************************/
+
+// Estructura de configuración de los patrones
+typedef struct {
+    task_buzzer_ev_t event;      // Evento que dispara este patrón
+    buzzer_mode_t    mode;       // Modo operacional (Apagado, Fijo o Intermitente)
+    uint32_t         ton_ms;     // Tiempo de encendido del pulso
+    uint32_t         toff_ms;    // Tiempo de apagado entre pulsos
+    uint16_t         pulses;     // Cantidad de pulsos (0 = intermitente)
+} buzzer_pattern_t;
+
+
+// Patrones para cada evento
+
+static const buzzer_pattern_t buzzer_patterns[] = {
+    // Evento,                  Modo,               Ton (ms)	Toff (ms) 	Pulses
+    { EV_BUZZER_OFF,            BUZZER_MODE_OFF,    0,    		0,         	0 },  // Silencio total
+    { EV_BUZZER_ON,             BUZZER_MODE_ON,     0,  		0,         	0 },  // Sonido continuo (Modo Test)
+    { EV_BUZZER_1PULSE, 		BUZZER_MODE_BLINK,  80, 		0,			1 },  // 1 Beep corto
+    { EV_BUZZER_INTERMITTENT,	BUZZER_MODE_BLINK,  300,		300,		0 },  // Intermitencia (Modo Falla)
+    { EV_BUZZER_2PULSE, 		BUZZER_MODE_BLINK,  80,			80,			2 }   // 2 Beeps cortos
+};
+
+/**********************************************************************************************/
+
 
 uint16_t const BUZZER_PATTERNS_QTY = (sizeof(buzzer_patterns) / sizeof(buzzer_patterns[0]));
 
@@ -15,6 +40,7 @@ static uint32_t remaining_pulses = 0;
 static void task_buzzer_statechart(void);
 static void buzzer_on(void);
 static void buzzer_off(void);
+
 
 // Funciones auxiliares de abstracción de hardware
 static void buzzer_on(void) {

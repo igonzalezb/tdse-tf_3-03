@@ -51,26 +51,7 @@ typedef enum {
     BUZZER_MODE_BLINK	// intermitencia [1, inf)
 } buzzer_mode_t;
 
-// Estructura de configuración del patrón
-typedef struct {
-    task_buzzer_ev_t event;      // Evento que dispara este patrón
-    buzzer_mode_t    mode;       // Modo operacional (Apagado, Fijo o Intermitente)
-    uint32_t         ton_ms;     // Tiempo de encendido del pulso
-    uint32_t         toff_ms;    // Tiempo de apagado entre pulsos
-    uint16_t         pulses;     // Cantidad de pulsos (0 = intermitente)
-} buzzer_pattern_t;
 
-/**********************************************************************************************/
-// Patrones para cada evento
-
-static const buzzer_pattern_t buzzer_patterns[] = {
-    // Evento,                  Modo,               Ton (ms)	Toff (ms) 	Pulses
-    { EV_BUZZER_OFF,            BUZZER_MODE_OFF,    0,    		0,         	0 },  // Silencio total
-    { EV_BUZZER_ON,             BUZZER_MODE_ON,     0,  		0,         	0 },  // Sonido continuo (Modo Test)
-    { EV_BUZZER_1PULSE, 		BUZZER_MODE_BLINK,  80, 		0,			1 },  // 1 Beep corto
-    { EV_BUZZER_INTERMITTENT,	BUZZER_MODE_BLINK,  300,		300,		0 },  // Intermitencia (Modo Falla)
-    { EV_BUZZER_2PULSE, 		BUZZER_MODE_BLINK,  80,			80,			2 }   // 2 Beeps cortos
-};
 /**********************************************************************************************/
 
 /*==============================================================================================*/
@@ -81,11 +62,12 @@ static const buzzer_pattern_t buzzer_patterns[] = {
 /*==============================================================================================*/
 /* Eventos y estados específicos para el STATE_LED */
 typedef enum task_state_led_ev{
+	EV_STATE_LED_OFF,
+	EV_STATE_LED_ON,				// Encender el led (modo test)
     EV_STATE_LED_SYS_NORMAL,
 	EV_STATE_LED_SYS_SETUP,
     EV_STATE_LED_SYS_FAILURE,
     EV_STATE_LED_SYS_TEST,
-	EV_STATE_LED_ON,				// Encender el led (modo test)
 	EV_STATE_LED_WATER				// Regar
 } task_state_led_ev_t;
 
@@ -96,33 +78,7 @@ typedef enum task_state_led_st{
     ST_STATE_LED_BLINK_OFF
 } task_state_led_st_t;
 
-typedef struct {
-    task_state_led_ev_t event;           	// Evento que dispara este patrón
-    uint16_t            red;        		// Intensidad Rojo (0-100)
-    uint16_t            green;      		// Intensidad Verde (0-100)
-    uint16_t            blue;       		// Intensidad Azul (0-100)
-    uint32_t            blinking_period;	// Tiempo de parpadeo (0 = Fijo)
-} state_led_pattern_t;
 
-// Tiempos de parpadeo
-typedef enum blinking_period_ms {
-	STATE_LED_NO_BLINK   = 0,
-	STATE_LED_FAST_BLINK = 150,
-	STATE_LED_SLOW_BLINK = 500
-} blinking_period_ms_t;
-
-/**********************************************************************************************/
-// Patrones para cada evento
-static const state_led_pattern_t led_patterns[] = {
-    // Evento,                  R,   	G,   	B,  	Blink_ms
-    { EV_STATE_LED_SYS_NORMAL,	0,   	100, 	0,  	STATE_LED_NO_BLINK   },	// Verde Fijo
-    { EV_STATE_LED_SYS_SETUP,	0,   	0,   	75, 	STATE_LED_SLOW_BLINK }, // Azul Lento
-    { EV_STATE_LED_SYS_FAILURE,	100,	0,   	0,  	STATE_LED_FAST_BLINK }, // Rojo Rápido
-    { EV_STATE_LED_SYS_TEST,	50,  	0,   	50, 	STATE_LED_NO_BLINK   }, // Violeta Fijo
-    { EV_STATE_LED_ON,			100, 	100, 	100,	STATE_LED_NO_BLINK   }, // Blanco Fijo
-    { EV_STATE_LED_WATER, 		17,   	95, 	100,	STATE_LED_FAST_BLINK }  // Celeste regante
-};
-/**********************************************************************************************/
 
 /*==============================================================================================*/
 
