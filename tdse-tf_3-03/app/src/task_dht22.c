@@ -162,8 +162,6 @@ void task_dht22_init(void *parameters)
 
     shared_data->dht22_humidity = 0.0f;
     shared_data->dht22_temperature = 0.0f;
-    shared_data->dht22_valid = false;
-    shared_data->dht22_changed = false;
     shared_data->dht22_error = DHT22_ERROR_NONE;
 }
 
@@ -176,9 +174,6 @@ void task_dht22_update(void *parameters)
     float humidity;
     float temperature;
     uint8_t error_code;
-    bool changed;
-
-    shared_data->dht22_changed = false;
     now_ms = HAL_GetTick();
 
     switch (task_dht22_data.state)
@@ -218,22 +213,12 @@ void task_dht22_update(void *parameters)
             humidity = (float)humidity_x10 / 10.0f;
             temperature = (float)temperature_x10 / 10.0f;
 
-            changed = (!shared_data->dht22_valid) ||
-                      (shared_data->dht22_humidity != humidity) ||
-                      (shared_data->dht22_temperature != temperature);
-
             shared_data->dht22_humidity = humidity;
             shared_data->dht22_temperature = temperature;
-            shared_data->dht22_valid = true;
             shared_data->dht22_error = DHT22_ERROR_NONE;
-            shared_data->dht22_changed = changed;
         }
         else {
-            changed = shared_data->dht22_valid;
-
-            shared_data->dht22_valid = false;
             shared_data->dht22_error = error_code;
-            shared_data->dht22_changed = changed;
         }
 
         task_dht22_data.last_sample_ms = now_ms;
