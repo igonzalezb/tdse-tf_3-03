@@ -37,6 +37,14 @@ typedef enum task_menu_parameters {
 	PARAM_QTY //Para saber la cantidad de parámetros
 } task_menu_parameters_t;
 
+typedef enum task_menu_config {
+	CONFIG_SOUNDS,
+	CONFIG_LIGHT,
+	CONFIG_WATER_LEVEL,
+	CONFIG_HUMIDITY,
+	CONFIG_QTY //Para saber la cantidad de parámetros configurables
+} task_menu_config_t;
+
 /* Componentes para el Modo Test */
 typedef enum task_menu_test {
 	TEST_WATER_LEVEL = 0,	// sensor de nivel de agua
@@ -59,6 +67,7 @@ typedef struct {
 	task_menu_parameters_t current_parameter;
 	uint32_t current_value;
 	task_menu_test_t current_test;
+	task_menu_config_t current_config;
 } task_menu_dta_t;
 
 extern task_menu_dta_t task_menu_dta_list[];
