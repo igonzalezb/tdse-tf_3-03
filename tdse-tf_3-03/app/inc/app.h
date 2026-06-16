@@ -40,10 +40,6 @@ typedef struct {
 	// Menu: variables
 	task_menu_sys_t active_system;
 
-	task_menu_test_t active_test;
-
-
-
 } shared_data_type;
 
 extern shared_data_type shared_data;
