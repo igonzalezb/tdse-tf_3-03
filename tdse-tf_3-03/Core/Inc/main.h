@@ -91,7 +91,7 @@ void Error_Handler(void);
 #define Btn_Prev_GPIO_Port GPIOB
 #define Btn_Enter_Pin GPIO_PIN_15
 #define Btn_Enter_GPIO_Port GPIOB
-#define S_Hum_Temp_Amb_Pin GPIO_PIN_6
+#define S_Hum_Temp_Amb_Pin GPIO_PIN_8
 #define S_Hum_Temp_Amb_GPIO_Port GPIOC
 #define S_Hum_Temp_Amb_EXTI_IRQn EXTI9_5_IRQn
 #define LCD_E_Pin GPIO_PIN_8
