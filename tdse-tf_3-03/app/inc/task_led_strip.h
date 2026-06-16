@@ -1,18 +1,18 @@
-#ifndef TASK_INC_TASK_STATE_LED_H_
-#define TASK_INC_TASK_STATE_LED_H_
+#ifndef TASK_INC_TASK_LED_STRIP_H_
+#define TASK_INC_TASK_LED_STRIP_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /********************** external functions declaration ***********************/
-extern void task_state_led_init(void *parameters);
-extern void task_state_led_update(void *parameters);
+extern void task_led_strip_init(void *parameters);
+extern void task_led_strip_update(void *parameters);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TASK_INC_TASK_STATE_LED_H_ */
+#endif /* TASK_INC_TASK_LED_STRIP_H_ */
 
 /********************** end of file ******************************************/

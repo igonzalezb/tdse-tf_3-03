@@ -5,6 +5,7 @@
 #include "app.h"
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
+#include "task_actuator_interface.h"
 #include "display.h"
 
 #include "stm32f1xx_hal.h"
@@ -175,6 +176,7 @@ void task_menu_update(void *parameters) {
 		default:
 			break;
 		}
+
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
