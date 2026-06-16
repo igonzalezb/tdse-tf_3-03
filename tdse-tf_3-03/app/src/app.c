@@ -93,7 +93,7 @@ typedef struct {
 const task_cfg_t task_cfg_list[] =
 {
 		{task_button_init, task_button_update, NULL },
-		{task_menu_init, task_menu_update, NULL },
+		{task_menu_init, task_menu_update, &shared_data },
 		{task_humidity_init, task_humidity_update, &shared_data },
 		{task_light_init, task_light_update, &shared_data },
 		{task_water_level_init, task_water_level_update, &shared_data },

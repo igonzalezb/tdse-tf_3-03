@@ -17,26 +17,31 @@
 #define G_TASK_MEN_TICK_CNT_INI     0ul
 #define DEL_MEN_XX_MIN              0ul
 #define AUTO_SCROLL_DELAY 			5000
+#define PUMP_CHECK_DELAY 			20000
+#define LIGHT_CHECK_DELAY 			10000
 
-/* Límites de configuración (Ej: 0% a 100%) */
-//todo: integrarlo con shared data
-const uint32_t MAX_VAL[PARAM_QTY] = { 100, 100, 50, 100, 100 };
-const uint32_t MIN_VAL[PARAM_QTY] = { 0, 0, 0, 0, 0 };
 
-static uint32_t last_interaction_tick = AUTO_SCROLL_DELAY;
+
+static uint32_t last_scroll_tick = AUTO_SCROLL_DELAY;
+static uint32_t last_pump_tick = AUTO_SCROLL_DELAY;
+static uint32_t last_light_tick = AUTO_SCROLL_DELAY;
 
 /* Nombres para mostrar en el LCD */
 const char *param_names[PARAM_QTY];
 const char *test_names[TEST_QTY];
+const char *config_names[TEST_QTY];
 
-//todo: ponerlo en init
-uint32_t config_values[PARAM_QTY] = { 40, 50, 25, 60, 20 }; // Valores por defecto
+/* Valores de configuracion*/
+uint16_t config_values[CONFIG_QTY];
+/* Límites de configuración (Ej: 0% a 100%) */
+uint32_t MAX_VAL[CONFIG_QTY];
+uint32_t MIN_VAL[CONFIG_QTY];
 
 task_menu_dta_t task_menu_dta_list[] = {
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL },
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0,	TEST_WATER_LEVEL },
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,	PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL },
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL } };
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS},
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0,	TEST_WATER_LEVEL, CONFIG_SOUNDS },
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,	PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS },
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS } };
 
 #define MENU_DTA_QTY    (sizeof(task_menu_dta_list)/sizeof(task_menu_dta_t))
 
@@ -44,8 +49,11 @@ void task_menu_statechart_normal(void);
 void task_menu_statechart_setup(void);
 void task_menu_statechart_failure(void);
 void task_menu_statechart_test(void);
-uint32_t get_value(task_menu_parameters_t parameter);
-void set_value(task_menu_parameters_t parameter, uint32_t value);
+char* get_sensor_value(task_menu_parameters_t parameter);
+uint32_t read_memory_value(task_menu_config_t parameter);
+//uint16_t get_threshold_value(task_menu_config_t parameter);
+//void set_sensor_threshold(task_menu_config_t parameter, uint16_t value);
+void save_memory_value(task_menu_config_t parameter, uint16_t value);
 void test_function(task_menu_test_t current_test);
 void LCD_show(const char *first_row, const char *second_row);
 
@@ -68,10 +76,8 @@ void LCD_show(const char *first_row, const char *second_row) {
 void task_menu_init(void *parameters) {
 	uint32_t index;
 	task_menu_dta_t *p_task_menu_dta;
-
+	//shared_data_type *shared_data = (shared_data_type *) parameters;
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
-	shared_data.active_system = SYS_NORMAL;
-	shared_data.active_test = TEST_NONE;
 	init_queue_event_task_menu();
 
 	displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
@@ -85,6 +91,8 @@ void task_menu_init(void *parameters) {
 		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
 		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 	}
+	shared_data.active_system = SYS_NORMAL;
+	shared_data.active_test = TEST_NONE;
 
 	param_names[PARAM_HUM_SUELO] = "Hum. Suelo";
 	param_names[PARAM_HUM_AMB] = "Hum. Amb.";
@@ -101,27 +109,45 @@ void task_menu_init(void *parameters) {
 	test_names[TEST_PUMP] = "Test Bomba";
 	test_names[TEST_LED_STRIP] = "Test T. LED";
 
+	config_names[CONFIG_LIGHT] = "Luz";
+	config_names[CONFIG_SOUNDS] = "Sonidos";
+	config_names[CONFIG_WATER_LEVEL] = "Nivel Agua";
+	config_names[CONFIG_HUMIDITY] = "Humedad Suelo";
+
+	config_values[CONFIG_LIGHT] = 50;
+	config_values[CONFIG_SOUNDS] = 1;
+	config_values[CONFIG_WATER_LEVEL] = 60;
+	config_values[CONFIG_HUMIDITY] = 70;
+
+	MAX_VAL[CONFIG_LIGHT] = 100;
+	MAX_VAL[CONFIG_SOUNDS] = 1;
+	MAX_VAL[CONFIG_WATER_LEVEL] = 100;
+	MAX_VAL[CONFIG_HUMIDITY] = 100;
+	MIN_VAL[CONFIG_LIGHT] = 0;
+	MIN_VAL[CONFIG_SOUNDS] = 0;
+	MIN_VAL[CONFIG_WATER_LEVEL] = 0;
+	MIN_VAL[CONFIG_HUMIDITY] = 0;
 
 
-
-
+	//TODO: init memoria, cargar datos en shared.data?
 	/* Configuracion en memoria*/
-	uint32_t humedad_suelo_guardada = get_value(PARAM_HUM_SUELO);
-	if (humedad_suelo_guardada == 0xFFFFFFFF) {
-		LOGGER_INFO("PRIMERA VER CONFIGURANDO");
-		for (int i = 0; i < PARAM_QTY; i++) {
-			set_value(i, config_values[i]);
-		}
-	} else {
-		LOGGER_INFO("OBTENIENDO VALORES DE MEMORIA");
-		for (int i = 0; i < PARAM_QTY; i++) {
-			config_values[i] = get_value(i);
-		}
-	}
+//	uint32_t humedad_suelo_guardada = read_memory_value(PARAM_HUM_SUELO);
+//	if (humedad_suelo_guardada == 0xFFFFFFFF) {
+//		LOGGER_INFO("PRIMERA VER CONFIGURANDO");
+//		for (int i = 0; i < PARAM_QTY; i++) {
+//			save_memory_value(i, config_values[i]);
+//		}
+//	} else {
+//		LOGGER_INFO("OBTENIENDO VALORES DE MEMORIA");
+//		for (int i = 0; i < PARAM_QTY; i++) {
+//			config_values[i] = read_memory_value(i);
+//		}
+//	}
 
 }
 
 void task_menu_update(void *parameters) {
+	//shared_data_type *shared_data = (shared_data_type *) parameters;
 	bool b_time_update_required = false;
 
 	__asm("CPSID i");
@@ -165,7 +191,6 @@ void task_menu_update(void *parameters) {
 
 void task_menu_statechart_normal(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
-	char second_row[20];
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
@@ -175,50 +200,61 @@ void task_menu_statechart_normal(void) {
 	if (p_task_menu_dta->flag) {
 		p_task_menu_dta->flag = false;
 
-		// Navegación entre sensores (derecha/izquierda)
+		// Navegación entre botones (derecha/izquierda)
 		if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			LOGGER_INFO("BTN_RIGHT PRESSED");
-			p_task_menu_dta->state =
-					(p_task_menu_dta->state == ST_SYS_04) ?
-							ST_SYS_00 : p_task_menu_dta->state + 1;
+			p_task_menu_dta->current_parameter =
+					(p_task_menu_dta->current_parameter == (PARAM_QTY-1)) ?
+							0 : p_task_menu_dta->current_parameter + 1;
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 			LOGGER_INFO("BTN_LEFT PRESSED");
-			p_task_menu_dta->state =
-					(p_task_menu_dta->state == ST_SYS_00) ?
-							ST_SYS_04 : p_task_menu_dta->state - 1;
+			p_task_menu_dta->current_parameter =
+					(p_task_menu_dta->current_parameter == 0) ?
+							(PARAM_QTY-1) : p_task_menu_dta->current_parameter - 1;
 		}
 		// Ingreso a Setup
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LOGGER_INFO("BTN_ENTER PRESSED");
 			shared_data.active_system = SYS_SETUP;
-			p_task_menu_dta->state = ST_SYS_00; // Reiniciar estado de setup
-			p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
-			LCD_show("Configurar:",
-					param_names[p_task_menu_dta->current_parameter]);
+			p_task_menu_dta->current_parameter = 0;
+			LCD_show("Configurar:",	config_names[0]);
 			return;
 		}
 		// Ingreso a Test
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
-			p_task_menu_dta->state = ST_SYS_00;
-			p_task_menu_dta->current_test = TEST_WATER_LEVEL;
-			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
+			p_task_menu_dta->current_parameter = 0;
+			LCD_show("Modo Test:", test_names[0]);
 			return;
 		}
-		last_interaction_tick = HAL_GetTick();
-		// Actualizar pantalla según el estado actual
-		// TODO: Leer los valores reales desde la estructura shared_data
-		snprintf(second_row, sizeof(second_row), "--");
-		LCD_show(param_names[p_task_menu_dta->state], second_row);
-	} else if ((HAL_GetTick() - last_interaction_tick) >= AUTO_SCROLL_DELAY) {
-		p_task_menu_dta->state =
-				(p_task_menu_dta->state == ST_SYS_04) ?
-						ST_SYS_00 : p_task_menu_dta->state + 1;
-		snprintf(second_row, sizeof(second_row), "--");
-		LCD_show(param_names[p_task_menu_dta->state], second_row);
-		last_interaction_tick = HAL_GetTick();
+		last_scroll_tick = HAL_GetTick();
+
+		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
+	} else if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
+		p_task_menu_dta->current_parameter =
+				(p_task_menu_dta->current_parameter == PARAM_QTY) ?
+						0 : p_task_menu_dta->state + 1;
+		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
+		last_scroll_tick = HAL_GetTick();
 	}
+	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
+			//TODO: apago luz
+			if (shared_data.light_percent <= shared_data.light_threshold)
+			{
+				//TODO: prender luz.
+			}
+			last_light_tick = HAL_GetTick();
+		}
+	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) /*|| bomba_prendida*/) {
+		//TODO: verificar si esta prendido que lo apague. que prenda/apague cuando llega un +-30% del threshold
+		if (shared_data.water_level_percent >= shared_data.water_level_threshold
+				&& shared_data.light_percent < shared_data.light_threshold)
+		{
+			//TODO: prender bomba.
+		}
+		last_pump_tick = HAL_GetTick();
+		}
 }
 
 void task_menu_statechart_setup(void) {
@@ -237,29 +273,29 @@ void task_menu_statechart_setup(void) {
 
 			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
-				p_task_menu_dta->current_parameter =
-						(p_task_menu_dta->current_parameter + 1) % PARAM_QTY;
+				p_task_menu_dta->current_config =
+						(p_task_menu_dta->current_config + 1) % CONFIG_QTY;
 				LCD_show("Configurar:",
-						param_names[p_task_menu_dta->current_parameter]);
+						config_names[p_task_menu_dta->current_config]);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 				LOGGER_INFO("BTN_LEFT PRESSED");
-				p_task_menu_dta->current_parameter =
-						(p_task_menu_dta->current_parameter == 0) ?
-								(PARAM_QTY - 1) :
-								(p_task_menu_dta->current_parameter - 1);
+				p_task_menu_dta->current_config =
+						(p_task_menu_dta->current_config == 0) ?
+								(CONFIG_QTY - 1) :
+								(p_task_menu_dta->current_config - 1);
 				LCD_show("Configurar:",
-						param_names[p_task_menu_dta->current_parameter]);
+						config_names[p_task_menu_dta->current_config]);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 				p_task_menu_dta->state = ST_SYS_01;
-				snprintf(second_row, sizeof(second_row), "> %lu",
-						config_values[p_task_menu_dta->current_parameter]);
-				LCD_show(param_names[p_task_menu_dta->current_parameter],
-						second_row);
+
+				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
+				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				shared_data.active_system = SYS_NORMAL;
-				p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
+				p_task_menu_dta->state = ST_SYS_00;
+				p_task_menu_dta->current_config = 0;
 				LCD_show("Saliendo...", "");
 			}
 		}
@@ -269,38 +305,38 @@ void task_menu_statechart_setup(void) {
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
 
+			//config_values[p_task_menu_dta->current_config];
+
 			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
-				if (config_values[p_task_menu_dta->current_parameter]
-						< MAX_VAL[p_task_menu_dta->current_parameter]) {
-					config_values[p_task_menu_dta->current_parameter]++;
+				if (config_values[p_task_menu_dta->current_config]
+						< MAX_VAL[p_task_menu_dta->current_config]) {
+					config_values[p_task_menu_dta->current_config]++;
 				}
-				snprintf(second_row, sizeof(second_row), "> %lu",
-						config_values[p_task_menu_dta->current_parameter]);
-				LCD_show(param_names[p_task_menu_dta->current_parameter],
-						second_row);
+				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
+				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 				LOGGER_INFO("BTN_LEFT PRESSED");
-				if (config_values[p_task_menu_dta->current_parameter]
-						> MIN_VAL[p_task_menu_dta->current_parameter]) {
-					config_values[p_task_menu_dta->current_parameter]--;
+				if (config_values[p_task_menu_dta->current_config]
+						> MIN_VAL[p_task_menu_dta->current_config]) {
+					config_values[p_task_menu_dta->current_config]--;
 				}
-				snprintf(second_row, sizeof(second_row), "> %lu",
-						config_values[p_task_menu_dta->current_parameter]);
-				LCD_show(param_names[p_task_menu_dta->current_parameter],
-						second_row);
+				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
+				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
-				set_value(p_task_menu_dta->current_parameter,
-						config_values[p_task_menu_dta->current_parameter]);
+
+				save_memory_value(p_task_menu_dta->current_config,
+						config_values[p_task_menu_dta->current_config]);
 				p_task_menu_dta->state = ST_SYS_00;
 				LCD_show("Guardado!",
-						param_names[p_task_menu_dta->current_parameter]);
+						config_names[p_task_menu_dta->current_config]);
+				//todo: beep?
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				p_task_menu_dta->state = ST_SYS_00;
 				LCD_show("Configurar:",
-						param_names[p_task_menu_dta->current_parameter]);
+						config_names[p_task_menu_dta->current_config]);
 			}
 		}
 		break;
@@ -309,7 +345,7 @@ void task_menu_statechart_setup(void) {
 	}
 }
 
-//TODO: poner active test de shared data
+//TODO: ACTIVAR ACTUADORES CON LOS TESTS.
 void task_menu_statechart_test(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
 
@@ -342,6 +378,7 @@ void task_menu_statechart_test(void) {
 			shared_data.active_test = TEST_NONE;
 			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
+			p_task_menu_dta->current_test = 0;
 			LCD_show("Saliendo...", "");
 		}
 	}
@@ -351,8 +388,54 @@ void task_menu_statechart_failure(void) {
 	// TODO: Implementar lógica de bloqueo y alertas visuales/sonoras.
 }
 
+char* get_sensor_value(task_menu_parameters_t parameter) {
+    static char value[12];
+
+    switch (parameter) {
+        case PARAM_HUM_SUELO:
+            snprintf(value, sizeof(value), "%u%%", shared_data.humidity_percent);
+            break;
+        case PARAM_HUM_AMB:
+            snprintf(value, sizeof(value), "%u%%", shared_data.dht22_humidity);
+            break;
+        case PARAM_LUZ:
+            snprintf(value, sizeof(value), "%u%%", shared_data.light_percent);
+            break;
+        case PARAM_AGUA:
+            snprintf(value, sizeof(value), "%u%%", shared_data.water_level_percent);
+            break;
+        case PARAM_TEMP_AMB:
+            snprintf(value, sizeof(value), "%u C", shared_data.dht22_temperature);
+            break;
+        default:
+            snprintf(value, sizeof(value), "---");
+            break;
+    }
+    return value;
+}
+
+//uint16_t get_threshold_value(task_menu_config_t parameter) {
+//    switch (parameter) {
+//        case CONFIG_HUMIDITY: return shared_data.humidity_threshold;
+//        case CONFIG_LIGHT: return shared_data.light_threshold;
+//        case CONFIG_WATER_LEVEL: return shared_data.water_level_threshold;
+//        case CONFIG_SOUNDS: return shared_data.sounds_on;
+//        default: return -1;
+//    }
+//}
+//
+//void set_sensor_threshold(task_menu_config_t parameter, uint16_t value) {
+//    switch (parameter) {
+//        case CONFIG_HUMIDITY: shared_data.humidity_threshold = value; break;
+//        case CONFIG_LIGHT: shared_data.light_threshold = value; break;
+//        case CONFIG_WATER_LEVEL: shared_data.water_level_threshold = value; break;
+//        case CONFIG_SOUNDS: shared_data.sounds_on = value; break;
+//        default: break;
+//    }
+//}
+
 //TODO: arreglar la lectura/escritura de memoria.
-uint32_t get_value(task_menu_parameters_t parameter) {
+uint32_t read_memory_value(task_menu_config_t parameter) {
 	// Leer directamente de la memoria mapeada mediante un puntero
 	uint32_t *pConfig = (uint32_t*) FLASH_CONFIG_ADDRESS;
 
@@ -360,26 +443,26 @@ uint32_t get_value(task_menu_parameters_t parameter) {
 	return pConfig[parameter];
 }
 
-void set_value(task_menu_parameters_t parameter, uint32_t value) {
-	// 1. Desbloquear la Flash para permitir modificaciones
-	HAL_FLASH_Unlock();
-
-	// 2. Configurar el borrado de la PÁGINA (Específico para F1)
-	FLASH_EraseInitTypeDef EraseInitStruct;
-	uint32_t PageError = 0;
-
-	EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
-	EraseInitStruct.PageAddress = FLASH_CONFIG_ADDRESS;
-	EraseInitStruct.NbPages = 1; // Solo borramos nuestra página de configuración
-
-	// Ejecutar el borrado
-	HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
-
-	// 3. Escribir el nuevo valor
-	// Calculamos el offset multiplicando el parámetro por 4 (cada uint32_t ocupa 4 bytes)
-	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
-			FLASH_CONFIG_ADDRESS + (parameter * 4), value);
-
-	// 4. Bloquear la Flash por seguridad para evitar escrituras accidentales
-	HAL_FLASH_Lock();
+void save_memory_value(task_menu_config_t parameter, uint16_t value) {
+//	// 1. Desbloquear la Flash para permitir modificaciones
+//	HAL_FLASH_Unlock();
+//
+//	// 2. Configurar el borrado de la PÁGINA (Específico para F1)
+//	FLASH_EraseInitTypeDef EraseInitStruct;
+//	uint32_t PageError = 0;
+//
+//	EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+//	EraseInitStruct.PageAddress = FLASH_CONFIG_ADDRESS;
+//	EraseInitStruct.NbPages = 1; // Solo borramos nuestra página de configuración
+//
+//	// Ejecutar el borrado
+//	HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
+//
+//	// 3. Escribir el nuevo valor
+//	// Calculamos el offset multiplicando el parámetro por 4 (cada uint32_t ocupa 4 bytes)
+//	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
+//			FLASH_CONFIG_ADDRESS + (parameter * 4), value);
+//
+//	// 4. Bloquear la Flash por seguridad para evitar escrituras accidentales
+//	HAL_FLASH_Lock();
 }
