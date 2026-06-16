@@ -12,14 +12,13 @@ extern ADC_HandleTypeDef hadc1;
  * - YL69_ADC_WET: valor ADC medido con la tierra muy humeda/saturada.
  *
  * En la mayoria de los modulos YL-69:
- * - tierra seca  -> ADC mas alto
+ * - tierra seca   -> ADC mas alto
  * - tierra humeda -> ADC mas bajo
  *
  * Ajustar estos valores segun lo que veas en Live Expressions.
  */
 #define YL69_ADC_DRY      4095u
 #define YL69_ADC_WET      1700u
-
 
 typedef enum {
     TASK_HUMIDITY_ST_WAIT_NEXT_SAMPLE = 0,
@@ -46,7 +45,7 @@ static uint8_t task_humidity_adc_to_percent(uint16_t adc_value)
 
     /*
      * Caso usual del YL-69:
-     * seco  -> ADC alto
+     * seco   -> ADC alto
      * mojado -> ADC bajo
      */
     if (dry > wet) {
@@ -64,7 +63,7 @@ static uint8_t task_humidity_adc_to_percent(uint16_t adc_value)
 
     /*
      * Caso inverso, por si tu modulo/senal queda al reves:
-     * seco  -> ADC bajo
+     * seco   -> ADC bajo
      * mojado -> ADC alto
      */
     else {
@@ -90,16 +89,6 @@ static uint8_t task_humidity_adc_to_percent(uint16_t adc_value)
     return (uint8_t) percent;
 }
 
-
-static bool task_humidity_is_wet(uint16_t adc_value, uint16_t threshold)
-{
-#if (HUMIDITY_WET_BELOW_THRESHOLD == 1u)
-    return (adc_value < threshold);
-#else
-    return (adc_value > threshold);
-#endif
-}
-
 void task_humidity_init(void *parameters)
 {
     shared_data_type *shared_data = (shared_data_type *) parameters;
@@ -107,11 +96,11 @@ void task_humidity_init(void *parameters)
     task_humidity_data.state = TASK_HUMIDITY_ST_WAIT_NEXT_SAMPLE;
     task_humidity_data.sample_tick_count = HUMIDITY_SAMPLE_TICKS;
 
-    shared_data->humidity_adc_value = 0u;
+    /*
+     * Esta tarea solo publica el porcentaje de humedad.
+     * No comparte el ADC crudo, thresholds ni booleanos de estado.
+     */
     shared_data->humidity_percent = 0u;
-    shared_data->humidity_threshold = HUMIDITY_THRESHOLD_DEFAULT;
-    shared_data->humidity = false;
-    shared_data->humidity_changed = false;
 }
 
 void task_humidity_update(void *parameters)
@@ -119,10 +108,7 @@ void task_humidity_update(void *parameters)
     shared_data_type *shared_data = (shared_data_type *) parameters;
     HAL_StatusTypeDef hal_status;
     uint16_t adc_value;
-    bool humidity_new;
     ADC_ChannelConfTypeDef sConfig = {0};
-
-    shared_data->humidity_changed = false;
 
     switch (task_humidity_data.state)
     {
@@ -154,7 +140,8 @@ void task_humidity_update(void *parameters)
         hal_status = HAL_ADC_Start(&hadc1);
         if (hal_status == HAL_OK) {
             task_humidity_data.state = TASK_HUMIDITY_ST_WAIT_ADC_CONVERSION;
-        } else {
+        }
+        else {
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
         }
@@ -178,20 +165,10 @@ void task_humidity_update(void *parameters)
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
 
-            shared_data->humidity_adc_value = adc_value;
+            /*
+             * Unico dato publicado por esta task.
+             */
             shared_data->humidity_percent = task_humidity_adc_to_percent(adc_value);
-
-            humidity_new = task_humidity_is_wet(
-                shared_data->humidity_adc_value,
-                shared_data->humidity_threshold
-            );
-
-            if (humidity_new != shared_data->humidity) {
-                shared_data->humidity = humidity_new;
-                shared_data->humidity_changed = true;
-            }
-
-//            HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, shared_data->humidity ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
             task_humidity_data.state = TASK_HUMIDITY_ST_WAIT_NEXT_SAMPLE;
         }

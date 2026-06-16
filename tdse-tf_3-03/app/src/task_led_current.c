@@ -11,6 +11,25 @@
 #include "task_led_current.h"
 extern ADC_HandleTypeDef hadc1;
 
+/*
+ * Calibracion del sensor de corriente del LED:
+ *
+ * LED_CURRENT_ADC_NO_CURRENT:
+ *   Valor ADC medido cuando el LED esta apagado o no circula corriente.
+ *
+ * LED_CURRENT_ADC_MAX_CURRENT:
+ *   Valor ADC medido con la corriente maxima que quieras tomar como 100%.
+ *
+ * Estos valores son de ejemplo. Reemplazalos por los que midas
+ * temporalmente durante la calibracion, si necesitás ajustar la escala.
+ *
+ * La funcion de conversion soporta ambos casos:
+ *   - ADC mas alto con mas corriente
+ *   - ADC mas bajo con mas corriente
+ */
+#define LED_CURRENT_ADC_NO_CURRENT     0u
+#define LED_CURRENT_ADC_MAX_CURRENT    4095u
+
 typedef enum {
     TASK_LED_CURRENT_ST_WAIT_NEXT_SAMPLE = 0,
     TASK_LED_CURRENT_ST_WAIT_ADC_CONVERSION
@@ -23,13 +42,63 @@ typedef struct {
 
 static task_led_current_data_t task_led_current_data;
 
-static bool task_led_current_is_present(uint16_t adc_value, uint16_t threshold)
+static uint16_t task_led_current_adc_to_percent(uint16_t adc_value)
 {
-#if (LED_CURRENT_PRESENT_ABOVE_THRESHOLD == 1u)
-    return (adc_value > threshold);
-#else
-    return (adc_value < threshold);
-#endif
+    int32_t adc_no_current = (int32_t) LED_CURRENT_ADC_NO_CURRENT;
+    int32_t adc_max_current = (int32_t) LED_CURRENT_ADC_MAX_CURRENT;
+    int32_t adc = (int32_t) adc_value;
+    int32_t percent;
+
+    if (adc_no_current == adc_max_current) {
+        return 0u;
+    }
+
+    /*
+     * Caso 1:
+     *   Sin corriente -> ADC bajo
+     *   Mas corriente -> ADC alto
+     */
+    if (adc_max_current > adc_no_current) {
+
+        if (adc <= adc_no_current) {
+            return 0u;
+        }
+
+        if (adc >= adc_max_current) {
+            return 100u;
+        }
+
+        percent = ((adc - adc_no_current) * 100) /
+                  (adc_max_current - adc_no_current);
+    }
+
+    /*
+     * Caso 2:
+     *   Sin corriente -> ADC alto
+     *   Mas corriente -> ADC bajo
+     */
+    else {
+
+        if (adc >= adc_no_current) {
+            return 0u;
+        }
+
+        if (adc <= adc_max_current) {
+            return 100u;
+        }
+
+        percent = ((adc_no_current - adc) * 100) /
+                  (adc_no_current - adc_max_current);
+    }
+
+    if (percent < 0) {
+        percent = 0;
+    }
+    else if (percent > 100) {
+        percent = 100;
+    }
+
+    return (uint16_t) percent;
 }
 
 void task_led_current_init(void *parameters)
@@ -39,10 +108,7 @@ void task_led_current_init(void *parameters)
     task_led_current_data.state = TASK_LED_CURRENT_ST_WAIT_NEXT_SAMPLE;
     task_led_current_data.sample_tick_count = LED_CURRENT_SAMPLE_TICKS;
 
-    shared_data->led_current_adc_value = 0u;
-    shared_data->led_current_threshold = LED_CURRENT_THRESHOLD_DEFAULT;
-    shared_data->led_current = false;
-    shared_data->led_current_changed = false;
+    shared_data->led_current_percent = 0u;
 }
 
 void task_led_current_update(void *parameters)
@@ -51,10 +117,6 @@ void task_led_current_update(void *parameters)
     HAL_StatusTypeDef hal_status;
     ADC_ChannelConfTypeDef sConfig = {0};
     uint16_t adc_value;
-    bool led_current_new;
-
-    shared_data->led_current_changed = false;
-
     switch (task_led_current_data.state)
     {
     case TASK_LED_CURRENT_ST_WAIT_NEXT_SAMPLE:
@@ -109,17 +171,8 @@ void task_led_current_update(void *parameters)
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
 
-            shared_data->led_current_adc_value = adc_value;
-
-            led_current_new = task_led_current_is_present(
-                shared_data->led_current_adc_value,
-                shared_data->led_current_threshold
-            );
-
-            if (led_current_new != shared_data->led_current) {
-                shared_data->led_current = led_current_new;
-                shared_data->led_current_changed = true;
-            }
+            shared_data->led_current_percent =
+                (uint8_t) task_led_current_adc_to_percent(adc_value);
 
             task_led_current_data.state = TASK_LED_CURRENT_ST_WAIT_NEXT_SAMPLE;
         }

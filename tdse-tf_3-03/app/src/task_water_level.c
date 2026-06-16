@@ -11,8 +11,9 @@ extern ADC_HandleTypeDef hadc1;
  * - WATER_LEVEL_ADC_EMPTY: lectura ADC con el sensor seco / sin agua.
  * - WATER_LEVEL_ADC_FULL:  lectura ADC con el sensor al nivel maximo que quieras tomar como 100%.
  *
- * Cambia estos valores segun lo que midas en Live Expressions con:
- * shared_data.water_level_adc_value
+ * Ajusta estos valores segun las mediciones reales de tu sensor.
+ * Esta task solo publica el porcentaje en:
+ * shared_data.water_level_percent
  */
 #define WATER_LEVEL_ADC_EMPTY    0u
 #define WATER_LEVEL_ADC_FULL     2200u
@@ -29,16 +30,7 @@ typedef struct {
 
 static task_water_level_data_t task_water_level_data;
 
-static bool task_water_level_is_present(uint16_t adc_value, uint16_t threshold)
-{
-#if (WATER_LEVEL_PRESENT_ABOVE_THRESHOLD == 1u)
-    return (adc_value > threshold);
-#else
-    return (adc_value < threshold);
-#endif
-}
-
-static uint16_t task_water_level_adc_to_percent(uint16_t adc_value)
+static uint8_t task_water_level_adc_to_percent(uint16_t adc_value)
 {
     int32_t percent;
 
@@ -79,7 +71,7 @@ static uint16_t task_water_level_adc_to_percent(uint16_t adc_value)
         percent = 100;
     }
 
-    return (uint16_t)percent;
+    return (uint8_t)percent;
 }
 
 void task_water_level_init(void *parameters)
@@ -89,11 +81,7 @@ void task_water_level_init(void *parameters)
     task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
     task_water_level_data.sample_tick_count = WATER_LEVEL_SAMPLE_TICKS;
 
-    shared_data->water_level_adc_value = 0u;
     shared_data->water_level_percent = 0u;
-    shared_data->water_level_threshold = WATER_LEVEL_THRESHOLD_DEFAULT;
-    shared_data->water_level = false;
-    shared_data->water_level_changed = false;
 }
 
 void task_water_level_update(void *parameters)
@@ -102,9 +90,6 @@ void task_water_level_update(void *parameters)
     HAL_StatusTypeDef hal_status;
     ADC_ChannelConfTypeDef sConfig = {0};
     uint16_t adc_value;
-    bool water_level_new;
-
-    shared_data->water_level_changed = false;
 
     switch (task_water_level_data.state)
     {
@@ -160,18 +145,7 @@ void task_water_level_update(void *parameters)
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
 
-            shared_data->water_level_adc_value = adc_value;
             shared_data->water_level_percent = task_water_level_adc_to_percent(adc_value);
-
-            water_level_new = task_water_level_is_present(
-                shared_data->water_level_adc_value,
-                shared_data->water_level_threshold
-            );
-
-            if (water_level_new != shared_data->water_level) {
-                shared_data->water_level = water_level_new;
-                shared_data->water_level_changed = true;
-            }
 
             task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
         }
