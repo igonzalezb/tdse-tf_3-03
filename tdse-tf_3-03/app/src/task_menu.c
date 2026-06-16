@@ -36,6 +36,7 @@ uint16_t config_values[CONFIG_QTY];
 /* Límites de configuración (Ej: 0% a 100%) */
 uint32_t MAX_VAL[CONFIG_QTY];
 uint32_t MIN_VAL[CONFIG_QTY];
+bool pump_on;
 
 task_menu_dta_t task_menu_dta_list[] = {
 		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS},
@@ -89,8 +90,10 @@ void task_menu_init(void *parameters) {
 		p_task_menu_dta->event = EV_SYS_BTN_ESC;
 		p_task_menu_dta->flag = false;
 		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
+		p_task_menu_dta->current_value = 0;
 		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 	}
+	pump_on = false;
 	shared_data.active_system = SYS_NORMAL;
 	shared_data.active_test = TEST_NONE;
 
@@ -216,6 +219,8 @@ void task_menu_statechart_normal(void) {
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LOGGER_INFO("BTN_ENTER PRESSED");
 			shared_data.active_system = SYS_SETUP;
+			put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE);
+			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_SETUP);
 			p_task_menu_dta->current_parameter = 0;
 			LCD_show("Configurar:",	config_names[0]);
 			return;
@@ -224,6 +229,8 @@ void task_menu_statechart_normal(void) {
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
+			put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT);
+			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE);
 			p_task_menu_dta->current_parameter = 0;
 			LCD_show("Modo Test:", test_names[0]);
 			return;
@@ -234,25 +241,54 @@ void task_menu_statechart_normal(void) {
 	} else if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
 		p_task_menu_dta->current_parameter =
 				(p_task_menu_dta->current_parameter == PARAM_QTY) ?
-						0 : p_task_menu_dta->state + 1;
+						0 : p_task_menu_dta->current_parameter + 1;
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
 		last_scroll_tick = HAL_GetTick();
 	}
-	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
-			//TODO: apago luz
-			if (shared_data.light_percent <= shared_data.light_threshold)
-			{
-				//TODO: prender luz.
+		if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
+				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+				if (shared_data.light_percent <= config_values[CONFIG_LIGHT])
+				{
+					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
+				}
+				else if ((shared_data.light_percent) >= (config_values[CONFIG_LIGHT] + 10))
+				{
+					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+				}
+				last_light_tick = HAL_GetTick();
 			}
-			last_light_tick = HAL_GetTick();
+	//	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
+//			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+//			if ((shared_data.light_percent - p_task_menu_dta->current_value) <= config_values[CONFIG_LIGHT])
+//			{
+//				p_task_menu_dta->current_value = shared_data.light_percent;
+//				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
+//				p_task_menu_dta->current_value = shared_data.light_percent - p_task_menu_dta->current_value;
+//			}
+//			else if ((shared_data.light_percent - last_value) >= (config_values[CONFIG_LIGHT] + 10))
+//			{
+//				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+//				p_task_menu_dta->current_value = 0;
+//			}
+//			last_light_tick = HAL_GetTick();
+//		}
+	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || pump_on) {
+		if (pump_on && shared_data.humidity_percent < (config_values[CONFIG_HUMIDITY]+10)){
+			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
+			put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE);
+			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+			pump_on = false;
 		}
-	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) /*|| bomba_prendida*/) {
-		//TODO: verificar si esta prendido que lo apague. que prenda/apague cuando llega un +-30% del threshold
-		if (shared_data.water_level_percent >= shared_data.water_level_threshold
-				&& shared_data.light_percent < shared_data.light_threshold)
+		else if (shared_data.water_level_percent >= config_values[CONFIG_WATER_LEVEL]
+				&& shared_data.humidity_percent < config_values[CONFIG_HUMIDITY])
 		{
-			//TODO: prender bomba.
+			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
+			put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE);
+			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_WATER);
+			pump_on = true;
+
 		}
+
 		last_pump_tick = HAL_GetTick();
 		}
 }
@@ -288,7 +324,6 @@ void task_menu_statechart_setup(void) {
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 				p_task_menu_dta->state = ST_SYS_01;
-
 				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
 				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
@@ -296,6 +331,8 @@ void task_menu_statechart_setup(void) {
 				shared_data.active_system = SYS_NORMAL;
 				p_task_menu_dta->state = ST_SYS_00;
 				p_task_menu_dta->current_config = 0;
+				put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE);
+				put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
 				LCD_show("Saliendo...", "");
 			}
 		}
@@ -331,7 +368,7 @@ void task_menu_statechart_setup(void) {
 				p_task_menu_dta->state = ST_SYS_00;
 				LCD_show("Guardado!",
 						config_names[p_task_menu_dta->current_config]);
-				//todo: beep?
+				put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				p_task_menu_dta->state = ST_SYS_00;
@@ -379,6 +416,8 @@ void task_menu_statechart_test(void) {
 			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
 			p_task_menu_dta->current_test = 0;
+			put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE);
+			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
 			LCD_show("Saliendo...", "");
 		}
 	}
