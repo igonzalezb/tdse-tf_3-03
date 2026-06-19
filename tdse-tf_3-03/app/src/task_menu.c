@@ -136,6 +136,10 @@ void task_menu_init(void *parameters) {
 	MIN_VAL[CONFIG_HUMIDITY] = 0;
 
 
+	config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+	put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+
+
 	//TODO: init memoria, cargar datos en shared.data?
 	/* Configuracion en memoria*/
 //	uint32_t humedad_suelo_guardada = read_memory_value(PARAM_HUM_SUELO);
