@@ -10,6 +10,10 @@
 
 #include "stm32f1xx_hal.h"
 
+//TODO: ver que pasa cuando voy pasando de sistema con el parametro activo.
+// muestra siempre el 0 o muestra el ultimo en el que estaba. como cada sistema tiene el current
+
+
 // Dirección de la Página 127 (última página de 1KB en la STM32F103RB)
 #define FLASH_CONFIG_ADDRESS 0x0801FC00
 
@@ -95,7 +99,6 @@ void task_menu_init(void *parameters) {
 	}
 	pump_on = false;
 	shared_data.active_system = SYS_NORMAL;
-	shared_data.active_test = TEST_NONE;
 
 	param_names[PARAM_HUM_SUELO] = "Hum. Suelo";
 	param_names[PARAM_HUM_AMB] = "Hum. Amb.";
@@ -117,6 +120,7 @@ void task_menu_init(void *parameters) {
 	config_names[CONFIG_WATER_LEVEL] = "Nivel Agua";
 	config_names[CONFIG_HUMIDITY] = "Humedad Suelo";
 
+	//TODO: cambiar algunos parametros para que sea poco-medio-mucho
 	config_values[CONFIG_LIGHT] = 50;
 	config_values[CONFIG_SOUNDS] = 1;
 	config_values[CONFIG_WATER_LEVEL] = 60;
@@ -130,6 +134,10 @@ void task_menu_init(void *parameters) {
 	MIN_VAL[CONFIG_SOUNDS] = 0;
 	MIN_VAL[CONFIG_WATER_LEVEL] = 0;
 	MIN_VAL[CONFIG_HUMIDITY] = 0;
+
+
+	config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+	put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
 
 
 	//TODO: init memoria, cargar datos en shared.data?
@@ -256,7 +264,7 @@ void task_menu_statechart_normal(void) {
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				}
 				last_light_tick = HAL_GetTick();
-			}
+		}
 	//	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
 //			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 //			if ((shared_data.light_percent - p_task_menu_dta->current_value) <= config_values[CONFIG_LIGHT])
@@ -406,16 +414,65 @@ void task_menu_statechart_test(void) {
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
-			shared_data.active_test = p_task_menu_dta->current_test;
+			switch (p_task_menu_dta->current_test) {
+				case TEST_WATER_LEVEL:
+					break;
+				case TEST_LIGHT:
+					break;
+				case TEST_HUMIDITY:
+					break;
+				case TEST_DHT22:
+					break;
+				case TEST_STATE_LED:
+					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_ON);
+					break;
+				case TEST_BUZZER:
+					put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_ON);
+					break;
+				case TEST_PUMP:
+					put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
+					break;
+				case TEST_LED_STRIP:
+					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
+					break;
 
-		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && shared_data.active_test != TEST_NONE) {
-			shared_data.active_test = TEST_NONE;
+					break;
+				default:
+					break;
+			}
+		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && p_task_menu_dta->current_test != TEST_NONE) {
+
+			switch (p_task_menu_dta->current_test) {
+				case TEST_WATER_LEVEL:
+					break;
+				case TEST_LIGHT:
+					break;
+				case TEST_HUMIDITY:
+					break;
+				case TEST_DHT22:
+					break;
+				case TEST_STATE_LED:
+					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_OFF);
+					break;
+				case TEST_BUZZER:
+					put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_OFF);
+					break;
+				case TEST_PUMP:
+					put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
+					break;
+				case TEST_LED_STRIP:
+					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+					break;
+
+					break;
+				default:
+					break;
+			}
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
-			shared_data.active_test = TEST_NONE;
+			p_task_menu_dta->current_test = TEST_NONE;
 			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
-			p_task_menu_dta->current_test = 0;
 			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
 			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
 			LCD_show("Saliendo...", "");
@@ -452,26 +509,6 @@ char* get_sensor_value(task_menu_parameters_t parameter) {
     }
     return value;
 }
-
-//uint16_t get_threshold_value(task_menu_config_t parameter) {
-//    switch (parameter) {
-//        case CONFIG_HUMIDITY: return shared_data.humidity_threshold;
-//        case CONFIG_LIGHT: return shared_data.light_threshold;
-//        case CONFIG_WATER_LEVEL: return shared_data.water_level_threshold;
-//        case CONFIG_SOUNDS: return shared_data.sounds_on;
-//        default: return -1;
-//    }
-//}
-//
-//void set_sensor_threshold(task_menu_config_t parameter, uint16_t value) {
-//    switch (parameter) {
-//        case CONFIG_HUMIDITY: shared_data.humidity_threshold = value; break;
-//        case CONFIG_LIGHT: shared_data.light_threshold = value; break;
-//        case CONFIG_WATER_LEVEL: shared_data.water_level_threshold = value; break;
-//        case CONFIG_SOUNDS: shared_data.sounds_on = value; break;
-//        default: break;
-//    }
-//}
 
 //TODO: arreglar la lectura/escritura de memoria.
 uint32_t read_memory_value(task_menu_config_t parameter) {
