@@ -20,7 +20,7 @@ typedef enum {
 
 typedef struct {
 
-    uint8_t humidity_percent;
+    uint16_t humidity_percent;
 
     uint16_t light_percent;
 
@@ -31,7 +31,7 @@ typedef struct {
     uint16_t led_current_percent;
 
     uint16_t dht22_humidity;
-    int16_t  dht22_temperature;
+    int16_t dht22_temperature;
     uint8_t dht22_error;
 
     bool adc_busy;  // Esta el adc usandose?

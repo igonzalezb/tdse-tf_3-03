@@ -64,6 +64,7 @@ Mcu.UserConstants=
 Mcu.UserName=STM32F103RBTx
 MxCube.Version=6.15.0
 MxDb.Version=DB.6.0.150
+NVIC.ADC1_2_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:true\:false\:false
 NVIC.DebugMonitor_IRQn=true\:0\:0\:false\:false\:true\:true\:false\:false
 NVIC.EXTI9_5_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true

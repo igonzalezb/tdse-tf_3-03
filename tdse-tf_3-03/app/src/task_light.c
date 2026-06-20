@@ -1,3 +1,8 @@
+/*
+ * task_light_it.c
+ *
+ * Version de task_light.c usando interrupcion del ADC.
+ */
 #include "main.h"
 #include "app.h"
 #include "board.h"
@@ -8,22 +13,14 @@ extern ADC_HandleTypeDef hadc1;
 
 /*
  * Calibracion del sensor de luz analogico.
- *
- * LIGHT_ADC_DARK:
- *   Valor ADC medido con el sensor en oscuridad o con muy poca luz.
- *
- * LIGHT_ADC_BRIGHT:
- *   Valor ADC medido con el sensor con mucha luz.
- *
- * Estos valores son de ejemplo. Reemplazalos por los que midas
- * para tu sensor y tu conexion.
- *
- * La funcion de conversion soporta ambos casos:
- *   - ADC mas alto con mas luz
- *   - ADC mas bajo con mas luz
+ * LIGHT_ADC_DARK: valor ADC en oscuridad.
+ * LIGHT_ADC_BRIGHT: valor ADC con mucha luz.
  */
 #define LIGHT_ADC_DARK      4095u
 #define LIGHT_ADC_BRIGHT    0u
+
+/* Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms. */
+#define LIGHT_ADC_TIMEOUT_TICKS    10u
 
 typedef enum {
     TASK_LIGHT_ST_WAIT_NEXT_SAMPLE = 0,
@@ -33,9 +30,15 @@ typedef enum {
 typedef struct {
     task_light_state_t state;
     uint32_t sample_tick_count;
+    uint32_t adc_wait_tick_count;
 } task_light_data_t;
 
 static task_light_data_t task_light_data;
+
+/* Variables escritas por interrupcion y leidas por el task. */
+static volatile bool task_light_adc_ready = false;
+static volatile bool task_light_adc_error_flag = false;
+static volatile uint16_t task_light_adc_value = 0u;
 
 static uint8_t task_light_adc_to_percent(uint16_t adc_value)
 {
@@ -45,11 +48,7 @@ static uint8_t task_light_adc_to_percent(uint16_t adc_value)
 
 #elif (LIGHT_ADC_BRIGHT > LIGHT_ADC_DARK)
 
-    /*
-     * Caso 1:
-     *   Oscuro   -> ADC bajo
-     *   Luminoso -> ADC alto
-     */
+    /* Oscuro -> ADC bajo, luminoso -> ADC alto. */
     if (adc_value <= LIGHT_ADC_DARK) {
         return 0u;
     }
@@ -65,11 +64,7 @@ static uint8_t task_light_adc_to_percent(uint16_t adc_value)
 
 #else
 
-    /*
-     * Caso 2:
-     *   Oscuro   -> ADC alto
-     *   Luminoso -> ADC bajo
-     */
+    /* Oscuro -> ADC alto, luminoso -> ADC bajo. */
     if (adc_value >= LIGHT_ADC_DARK) {
         return 0u;
     }
@@ -92,6 +87,11 @@ void task_light_init(void *parameters)
 
     task_light_data.state = TASK_LIGHT_ST_WAIT_NEXT_SAMPLE;
     task_light_data.sample_tick_count = LIGHT_SAMPLE_TICKS;
+    task_light_data.adc_wait_tick_count = 0u;
+
+    task_light_adc_ready = false;
+    task_light_adc_error_flag = false;
+    task_light_adc_value = 0u;
 
     shared_data->light_percent = 0u;
 }
@@ -127,15 +127,22 @@ void task_light_update(void *parameters)
             break;
         }
 
+        task_light_adc_ready = false;
+        task_light_adc_error_flag = false;
+        task_light_data.adc_wait_tick_count = 0u;
+
         shared_data->adc_busy = true;
         shared_data->adc_owner = ADC_OWNER_LIGHT;
 
-        hal_status = HAL_ADC_Start(&hadc1);
+        /* Inicio no bloqueante: el ADC avisa por interrupcion cuando termina. */
+        hal_status = HAL_ADC_Start_IT(&hadc1);
         if (hal_status == HAL_OK) {
             task_light_data.state = TASK_LIGHT_ST_WAIT_ADC_CONVERSION;
-        } else {
+        }
+        else {
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
+            task_light_data.state = TASK_LIGHT_ST_WAIT_NEXT_SAMPLE;
         }
 
         break;
@@ -143,16 +150,17 @@ void task_light_update(void *parameters)
     case TASK_LIGHT_ST_WAIT_ADC_CONVERSION:
 
         if (shared_data->adc_owner != ADC_OWNER_LIGHT) {
+            task_light_adc_ready = false;
+            task_light_adc_error_flag = false;
             task_light_data.state = TASK_LIGHT_ST_WAIT_NEXT_SAMPLE;
             break;
         }
 
-        hal_status = HAL_ADC_PollForConversion(&hadc1, 0u);
+        if (task_light_adc_ready == true) {
+            adc_value = task_light_adc_value;
+            task_light_adc_ready = false;
 
-        if (hal_status == HAL_OK) {
-
-            adc_value = (uint16_t) HAL_ADC_GetValue(&hadc1);
-            HAL_ADC_Stop(&hadc1);
+            HAL_ADC_Stop_IT(&hadc1);
 
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
@@ -160,9 +168,24 @@ void task_light_update(void *parameters)
             shared_data->light_percent = task_light_adc_to_percent(adc_value);
 
             task_light_data.state = TASK_LIGHT_ST_WAIT_NEXT_SAMPLE;
+            break;
         }
-        else if (hal_status == HAL_ERROR) {
-            HAL_ADC_Stop(&hadc1);
+
+        if (task_light_adc_error_flag == true) {
+            task_light_adc_error_flag = false;
+
+            HAL_ADC_Stop_IT(&hadc1);
+
+            shared_data->adc_busy = false;
+            shared_data->adc_owner = ADC_OWNER_NONE;
+
+            task_light_data.state = TASK_LIGHT_ST_WAIT_NEXT_SAMPLE;
+            break;
+        }
+
+        task_light_data.adc_wait_tick_count++;
+        if (task_light_data.adc_wait_tick_count >= LIGHT_ADC_TIMEOUT_TICKS) {
+            HAL_ADC_Stop_IT(&hadc1);
 
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
@@ -175,6 +198,18 @@ void task_light_update(void *parameters)
     default:
         task_light_data.state = TASK_LIGHT_ST_WAIT_NEXT_SAMPLE;
         task_light_data.sample_tick_count = 0u;
+        task_light_data.adc_wait_tick_count = 0u;
         break;
     }
+}
+
+void task_light_adc_conversion_complete(uint16_t adc_value)
+{
+    task_light_adc_value = adc_value;
+    task_light_adc_ready = true;
+}
+
+void task_light_adc_error(void)
+{
+    task_light_adc_error_flag = true;
 }

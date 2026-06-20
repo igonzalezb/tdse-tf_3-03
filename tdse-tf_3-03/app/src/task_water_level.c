@@ -1,3 +1,8 @@
+/*
+ * task_water_level_it.c
+ *
+ * Version de task_water_level.c usando interrupcion del ADC.
+ */
 #include <stdbool.h>
 #include "main.h"
 #include "app.h"
@@ -9,14 +14,13 @@ extern ADC_HandleTypeDef hadc1;
 /*
  * Calibracion del sensor de nivel de agua:
  * - WATER_LEVEL_ADC_EMPTY: lectura ADC con el sensor seco / sin agua.
- * - WATER_LEVEL_ADC_FULL:  lectura ADC con el sensor al nivel maximo que quieras tomar como 100%.
- *
- * Ajusta estos valores segun las mediciones reales de tu sensor.
- * Esta task solo publica el porcentaje en:
- * shared_data.water_level_percent
+ * - WATER_LEVEL_ADC_FULL: lectura ADC al nivel maximo tomado como 100%.
  */
 #define WATER_LEVEL_ADC_EMPTY    0u
 #define WATER_LEVEL_ADC_FULL     2200u
+
+/* Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms. */
+#define WATER_LEVEL_ADC_TIMEOUT_TICKS    10u
 
 typedef enum {
     TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE = 0,
@@ -26,9 +30,15 @@ typedef enum {
 typedef struct {
     task_water_level_state_t state;
     uint32_t sample_tick_count;
+    uint32_t adc_wait_tick_count;
 } task_water_level_data_t;
 
 static task_water_level_data_t task_water_level_data;
+
+/* Variables escritas por interrupcion y leidas por el task. */
+static volatile bool task_water_level_adc_ready = false;
+static volatile bool task_water_level_adc_error_flag = false;
+static volatile uint16_t task_water_level_adc_value = 0u;
 
 static uint8_t task_water_level_adc_to_percent(uint16_t adc_value)
 {
@@ -80,6 +90,11 @@ void task_water_level_init(void *parameters)
 
     task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
     task_water_level_data.sample_tick_count = WATER_LEVEL_SAMPLE_TICKS;
+    task_water_level_data.adc_wait_tick_count = 0u;
+
+    task_water_level_adc_ready = false;
+    task_water_level_adc_error_flag = false;
+    task_water_level_adc_value = 0u;
 
     shared_data->water_level_percent = 0u;
 }
@@ -115,15 +130,22 @@ void task_water_level_update(void *parameters)
             break;
         }
 
+        task_water_level_adc_ready = false;
+        task_water_level_adc_error_flag = false;
+        task_water_level_data.adc_wait_tick_count = 0u;
+
         shared_data->adc_busy = true;
         shared_data->adc_owner = ADC_OWNER_WATER_LEVEL;
 
-        hal_status = HAL_ADC_Start(&hadc1);
+        /* Inicio no bloqueante: el ADC avisa por interrupcion cuando termina. */
+        hal_status = HAL_ADC_Start_IT(&hadc1);
         if (hal_status == HAL_OK) {
             task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_ADC_CONVERSION;
-        } else {
+        }
+        else {
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
+            task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
         }
 
         break;
@@ -131,16 +153,17 @@ void task_water_level_update(void *parameters)
     case TASK_WATER_LEVEL_ST_WAIT_ADC_CONVERSION:
 
         if (shared_data->adc_owner != ADC_OWNER_WATER_LEVEL) {
+            task_water_level_adc_ready = false;
+            task_water_level_adc_error_flag = false;
             task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
             break;
         }
 
-        hal_status = HAL_ADC_PollForConversion(&hadc1, 0u);
+        if (task_water_level_adc_ready == true) {
+            adc_value = task_water_level_adc_value;
+            task_water_level_adc_ready = false;
 
-        if (hal_status == HAL_OK) {
-
-            adc_value = (uint16_t) HAL_ADC_GetValue(&hadc1);
-            HAL_ADC_Stop(&hadc1);
+            HAL_ADC_Stop_IT(&hadc1);
 
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
@@ -148,9 +171,24 @@ void task_water_level_update(void *parameters)
             shared_data->water_level_percent = task_water_level_adc_to_percent(adc_value);
 
             task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
+            break;
         }
-        else if (hal_status == HAL_ERROR) {
-            HAL_ADC_Stop(&hadc1);
+
+        if (task_water_level_adc_error_flag == true) {
+            task_water_level_adc_error_flag = false;
+
+            HAL_ADC_Stop_IT(&hadc1);
+
+            shared_data->adc_busy = false;
+            shared_data->adc_owner = ADC_OWNER_NONE;
+
+            task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
+            break;
+        }
+
+        task_water_level_data.adc_wait_tick_count++;
+        if (task_water_level_data.adc_wait_tick_count >= WATER_LEVEL_ADC_TIMEOUT_TICKS) {
+            HAL_ADC_Stop_IT(&hadc1);
 
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
@@ -163,6 +201,18 @@ void task_water_level_update(void *parameters)
     default:
         task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
         task_water_level_data.sample_tick_count = 0u;
+        task_water_level_data.adc_wait_tick_count = 0u;
         break;
     }
+}
+
+void task_water_level_adc_conversion_complete(uint16_t adc_value)
+{
+    task_water_level_adc_value = adc_value;
+    task_water_level_adc_ready = true;
+}
+
+void task_water_level_adc_error(void)
+{
+    task_water_level_adc_error_flag = true;
 }

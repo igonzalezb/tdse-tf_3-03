@@ -1,8 +1,18 @@
 /*
- * task_pump_current.c
+ * task_pump_current_it.c
  *
- *  Created on: Apr 27, 2026
- *      Author: fmjgo
+ * Version alternativa de task_pump_current.c usando interrupcion del ADC.
+ *
+ * Cambios principales respecto a la version con polling:
+ * - Reemplaza HAL_ADC_Start() por HAL_ADC_Start_IT().
+ * - El fin de conversion se atiende mediante task_pump_current_adc_conversion_complete(),
+ *   llamada desde un unico router de callbacks del ADC.
+ * - El task ya no llama a HAL_ADC_PollForConversion().
+ * - Se agrega un timeout simple para no dejar tomado el ADC si falla la interrupcion.
+ *
+ * Importante:
+ * Para usar varios tasks ADC por interrupcion, compilar tambien task_adc_callback_router.c
+ * y no definir HAL_ADC_ConvCpltCallback() en cada task por separado.
  */
 #include <stdbool.h>
 #include "main.h"
@@ -11,6 +21,7 @@
 #include "task_pump_current.h"
 
 extern ADC_HandleTypeDef hadc1;
+extern shared_data_type shared_data;
 
 /*
  * Constantes de calibracion para convertir la lectura ADC a porcentaje.
@@ -18,8 +29,14 @@ extern ADC_HandleTypeDef hadc1;
  * - PUMP_CURRENT_ADC_NO_CURRENT: bomba apagada / sin corriente
  * - PUMP_CURRENT_ADC_MAX_CURRENT: bomba encendida en condicion normal/maxima
  */
-#define PUMP_CURRENT_ADC_NO_CURRENT     0u
-#define PUMP_CURRENT_ADC_MAX_CURRENT    4095u
+#define PUMP_CURRENT_ADC_NO_CURRENT       0u
+#define PUMP_CURRENT_ADC_MAX_CURRENT      4095u
+
+/*
+ * Timeout de seguridad para no quedar esperando eternamente una interrupcion.
+ * Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms.
+ */
+#define PUMP_CURRENT_ADC_TIMEOUT_TICKS    10u
 
 typedef enum {
     TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE = 0,
@@ -29,9 +46,18 @@ typedef enum {
 typedef struct {
     task_pump_current_state_t state;
     uint32_t sample_tick_count;
+    uint32_t adc_wait_tick_count;
 } task_pump_current_data_t;
 
 static task_pump_current_data_t task_pump_current_data;
+
+/*
+ * Estas variables las escribe la interrupcion y las lee el task.
+ * Por eso son volatile.
+ */
+static volatile bool task_pump_current_adc_ready = false;
+static volatile bool task_pump_current_adc_error_flag = false;
+static volatile uint16_t task_pump_current_adc_value = 0u;
 
 static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
 {
@@ -76,17 +102,22 @@ static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
 
 void task_pump_current_init(void *parameters)
 {
-    shared_data_type *shared_data = (shared_data_type *) parameters;
+    shared_data_type *shared_data_ptr = (shared_data_type *) parameters;
 
     task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
     task_pump_current_data.sample_tick_count = PUMP_CURRENT_SAMPLE_TICKS;
+    task_pump_current_data.adc_wait_tick_count = 0u;
 
-    shared_data->pump_current_percent = 0u;
+    task_pump_current_adc_ready = false;
+    task_pump_current_adc_error_flag = false;
+    task_pump_current_adc_value = 0u;
+
+    shared_data_ptr->pump_current_percent = 0u;
 }
 
 void task_pump_current_update(void *parameters)
 {
-    shared_data_type *shared_data = (shared_data_type *) parameters;
+    shared_data_type *shared_data_ptr = (shared_data_type *) parameters;
     HAL_StatusTypeDef hal_status;
     ADC_ChannelConfTypeDef sConfig = {0};
     uint16_t adc_value;
@@ -102,7 +133,7 @@ void task_pump_current_update(void *parameters)
 
         task_pump_current_data.sample_tick_count = 0u;
 
-        if (shared_data->adc_busy == true) {
+        if (shared_data_ptr->adc_busy == true) {
             break;
         }
 
@@ -115,45 +146,68 @@ void task_pump_current_update(void *parameters)
             break;
         }
 
-        shared_data->adc_busy = true;
-        shared_data->adc_owner = ADC_OWNER_PUMP_CURRENT;
+        task_pump_current_adc_ready = false;
+        task_pump_current_adc_error_flag = false;
+        task_pump_current_data.adc_wait_tick_count = 0u;
 
-        hal_status = HAL_ADC_Start(&hadc1);
+        shared_data_ptr->adc_busy = true;
+        shared_data_ptr->adc_owner = ADC_OWNER_PUMP_CURRENT;
+
+        /* Inicio no bloqueante: el ADC avisa por interrupcion cuando termina. */
+        hal_status = HAL_ADC_Start_IT(&hadc1);
         if (hal_status == HAL_OK) {
             task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_ADC_CONVERSION;
         } else {
-            shared_data->adc_busy = false;
-            shared_data->adc_owner = ADC_OWNER_NONE;
+            shared_data_ptr->adc_busy = false;
+            shared_data_ptr->adc_owner = ADC_OWNER_NONE;
+            task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
         }
 
         break;
 
     case TASK_PUMP_CURRENT_ST_WAIT_ADC_CONVERSION:
 
-        if (shared_data->adc_owner != ADC_OWNER_PUMP_CURRENT) {
+        if (shared_data_ptr->adc_owner != ADC_OWNER_PUMP_CURRENT) {
+            task_pump_current_adc_ready = false;
+            task_pump_current_adc_error_flag = false;
             task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
             break;
         }
 
-        hal_status = HAL_ADC_PollForConversion(&hadc1, 0u);
+        if (task_pump_current_adc_ready == true) {
+            adc_value = task_pump_current_adc_value;
+            task_pump_current_adc_ready = false;
 
-        if (hal_status == HAL_OK) {
+            HAL_ADC_Stop_IT(&hadc1);
 
-            adc_value = (uint16_t) HAL_ADC_GetValue(&hadc1);
-            HAL_ADC_Stop(&hadc1);
+            shared_data_ptr->adc_busy = false;
+            shared_data_ptr->adc_owner = ADC_OWNER_NONE;
 
-            shared_data->adc_busy = false;
-            shared_data->adc_owner = ADC_OWNER_NONE;
-
-            shared_data->pump_current_percent = task_pump_current_adc_to_percent(adc_value);
+            shared_data_ptr->pump_current_percent = task_pump_current_adc_to_percent(adc_value);
 
             task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
+            break;
         }
-        else if (hal_status == HAL_ERROR) {
-            HAL_ADC_Stop(&hadc1);
 
-            shared_data->adc_busy = false;
-            shared_data->adc_owner = ADC_OWNER_NONE;
+        if (task_pump_current_adc_error_flag == true) {
+            task_pump_current_adc_error_flag = false;
+
+            HAL_ADC_Stop_IT(&hadc1);
+
+            shared_data_ptr->adc_busy = false;
+            shared_data_ptr->adc_owner = ADC_OWNER_NONE;
+
+            task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
+            break;
+        }
+
+        /* Timeout de seguridad por si no llega nunca HAL_ADC_ConvCpltCallback(). */
+        task_pump_current_data.adc_wait_tick_count++;
+        if (task_pump_current_data.adc_wait_tick_count >= PUMP_CURRENT_ADC_TIMEOUT_TICKS) {
+            HAL_ADC_Stop_IT(&hadc1);
+
+            shared_data_ptr->adc_busy = false;
+            shared_data_ptr->adc_owner = ADC_OWNER_NONE;
 
             task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
         }
@@ -163,6 +217,19 @@ void task_pump_current_update(void *parameters)
     default:
         task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
         task_pump_current_data.sample_tick_count = 0u;
+        task_pump_current_data.adc_wait_tick_count = 0u;
         break;
     }
+}
+
+
+void task_pump_current_adc_conversion_complete(uint16_t adc_value)
+{
+    task_pump_current_adc_value = adc_value;
+    task_pump_current_adc_ready = true;
+}
+
+void task_pump_current_adc_error(void)
+{
+    task_pump_current_adc_error_flag = true;
 }
