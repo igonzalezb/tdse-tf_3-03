@@ -248,7 +248,7 @@ void task_menu_statechart_normal(void) {
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
 	} else if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
 		p_task_menu_dta->current_parameter =
-				(p_task_menu_dta->current_parameter == PARAM_QTY) ?
+				(p_task_menu_dta->current_parameter == (PARAM_QTY-1)) ?
 						0 : p_task_menu_dta->current_parameter + 1;
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
 		last_scroll_tick = HAL_GetTick();
