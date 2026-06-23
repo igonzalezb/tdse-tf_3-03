@@ -85,6 +85,7 @@ void task_menu_init(void *parameters) {
 	//uint32_t index;
 	//task_menu_dta_t *p_task_menu_dta;
 	//shared_data_type *shared_data = (shared_data_type *) parameters;
+	last_scroll_tick = HAL_GetTick();
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
 
@@ -134,7 +135,7 @@ void task_menu_init(void *parameters) {
 	MAX_VAL[CONFIG_HUMIDITY] = 100;
 	MIN_VAL[CONFIG_LIGHT] = 0;
 	MIN_VAL[CONFIG_SOUNDS] = 0;
-	MIN_VAL[CONFIG_WATER_LEVEL] = 0;
+	MIN_VAL[CONFIG_WATER_LEVEL] = 15;
 	MIN_VAL[CONFIG_HUMIDITY] = 0;
 
 	// Inicializo el buzzer y el Led de estados en modo normal.
@@ -224,7 +225,7 @@ void task_menu_statechart_normal(void) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
 			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE);
+			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_TEST);
 			p_task_menu_dta->current_parameter = 0;
 			LCD_show("Modo Test:", test_names[0]);
 			return;
@@ -503,7 +504,7 @@ void config_load_from_flash(void) {
     uint16_t defaults[CONFIG_QTY];
     defaults[CONFIG_SOUNDS] = 1;
     defaults[CONFIG_LIGHT] = 50;
-    defaults[CONFIG_WATER_LEVEL] = 60;
+    defaults[CONFIG_WATER_LEVEL] = 40;
     defaults[CONFIG_HUMIDITY] = 70;
 
     uint16_t *flash_ptr = (uint16_t *)FLASH_CONFIG_ADDRESS;
