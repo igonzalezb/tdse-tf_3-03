@@ -47,13 +47,8 @@ uint32_t MIN_VAL[CONFIG_QTY];
 bool pump_on = false;
 bool testing = false;
 
-task_menu_dta_t task_menu_dta_list[] = {
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS},
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0,	TEST_WATER_LEVEL, CONFIG_SOUNDS },
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false,	PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS },
-		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS } };
-
-#define MENU_DTA_QTY    (sizeof(task_menu_dta_list)/sizeof(task_menu_dta_t))
+task_menu_dta_t task_menu_dta =
+		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS};
 
 void task_menu_statechart_normal(void);
 void task_menu_statechart_setup(void);
@@ -188,7 +183,7 @@ void task_menu_update(void *parameters) {
 }
 
 void task_menu_statechart_normal(void) {
-	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
+	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
@@ -289,7 +284,7 @@ void task_menu_statechart_normal(void) {
 }
 
 void task_menu_statechart_setup(void) {
-	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
+	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
 	char second_row[20];
 
 	if (true == any_event_task_menu()) {
@@ -380,7 +375,7 @@ void task_menu_statechart_setup(void) {
 
 //TODO: TERMINAR DE HACER TESTS.
 void task_menu_statechart_test(void) {
-	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
+	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
