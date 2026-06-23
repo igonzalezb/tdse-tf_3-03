@@ -6,7 +6,7 @@
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
 #include "task_actuator_interface.h"
-#include "display.h"
+#include "task_display.h"
 
 #include "stm32f1xx_hal.h"
 
@@ -58,23 +58,10 @@ char* get_sensor_value(task_menu_parameters_t parameter);
 void config_load_from_flash(void);
 void config_save_element_to_flash(uint16_t param_index, uint16_t value);
 void test_function(task_menu_test_t current_test);
-void LCD_show(const char *first_row, const char *second_row);
 
 uint32_t g_task_menu_cnt;
 
 volatile uint32_t g_task_menu_tick_cnt;
-
-void LCD_show(const char *first_row, const char *second_row) {
-	displayCharPositionWrite(0, 0);
-	displayStringWrite("                    ");
-	displayCharPositionWrite(0, 1);
-	displayStringWrite("                    ");
-
-	displayCharPositionWrite(0, 0);
-	displayStringWrite(first_row);
-	displayCharPositionWrite(0, 1);
-	displayStringWrite(second_row);
-}
 
 void task_menu_init(void *parameters) {
 	//uint32_t index;
@@ -83,9 +70,6 @@ void task_menu_init(void *parameters) {
 	last_scroll_tick = HAL_GetTick();
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
-
-	displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
-	LCD_show("    SMARTCETA   ", "   Iniciando...  ");
 	init_queue_event_task_menu();
 	config_load_from_flash();
 
