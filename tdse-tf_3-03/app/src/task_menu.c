@@ -103,8 +103,8 @@ void task_menu_init(void *parameters) {
 	param_names[PARAM_HUM_SUELO] = "Hum. Suelo";
 	param_names[PARAM_HUM_AMB] = "Hum. Amb.";
 	param_names[PARAM_TEMP_AMB] = "Temp. Amb.";
-	param_names[PARAM_AGUA] = "Nivel Agua";
 	param_names[PARAM_LUZ] = "Luz";
+	param_names[PARAM_AGUA] = "Nivel Agua";
 
 	test_names[TEST_WATER_LEVEL] = "Test Agua";
 	test_names[TEST_LIGHT] = "Test Luz";
@@ -115,14 +115,14 @@ void task_menu_init(void *parameters) {
 	test_names[TEST_PUMP] = "Test Bomba";
 	test_names[TEST_LED_STRIP] = "Test T. LED";
 
-	config_names[CONFIG_LIGHT] = "Luz";
 	config_names[CONFIG_SOUNDS] = "Sonidos";
+	config_names[CONFIG_LIGHT] = "Luz";
 	config_names[CONFIG_WATER_LEVEL] = "Nivel Agua";
 	config_names[CONFIG_HUMIDITY] = "Humedad Suelo";
 
 	//TODO: cambiar algunos parametros para que sea poco-medio-mucho
-	config_values[CONFIG_LIGHT] = 50;
 	config_values[CONFIG_SOUNDS] = 1;
+	config_values[CONFIG_LIGHT] = 50;
 	config_values[CONFIG_WATER_LEVEL] = 60;
 	config_values[CONFIG_HUMIDITY] = 70;
 
