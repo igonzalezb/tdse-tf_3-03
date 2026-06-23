@@ -15,7 +15,8 @@ typedef enum task_menu_ev {
 	EV_SYS_BTN_LEFT,
 	EV_SYS_BTN_ENTER,
 	EV_SYS_BTN_ESC,
-	EV_SYS_BTN_ESC_HOLD
+	EV_SYS_BTN_ESC_HOLD,
+	EV_SYS_FAILURE
 } task_menu_ev_t;
 
 /* State of Task Menu */

@@ -8,6 +8,8 @@
 #include "app.h"
 #include "board.h"
 #include "task_led_current.h"
+#include "task_menu_attribute.h"
+#include "task_menu_interface.h"
 
 extern ADC_HandleTypeDef hadc1;
 
@@ -21,6 +23,13 @@ extern ADC_HandleTypeDef hadc1;
 
 /* Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms. */
 #define LED_CURRENT_ADC_TIMEOUT_TICKS    10u
+
+/* Limites para generar falla por sobrecorriente de LED.
+ * Cuando supera LIMIT se genera EV_SYS_FAILURE.
+ * Cuando baja de CLEAR se limpia el flag de falla.
+ */
+#define LED_CURRENT_OVERCURRENT_LIMIT_PERCENT    80u
+//#define LED_CURRENT_OVERCURRENT_CLEAR_PERCENT    70u  Si se usa histeresis
 
 typedef enum {
     TASK_LED_CURRENT_ST_WAIT_NEXT_SAMPLE = 0,
@@ -39,6 +48,8 @@ static task_led_current_data_t task_led_current_data;
 static volatile bool task_led_current_adc_ready = false;
 static volatile bool task_led_current_adc_error_flag = false;
 static volatile uint16_t task_led_current_adc_value = 0u;
+
+static bool task_led_current_failure_active = false;
 
 static uint16_t task_led_current_adc_to_percent(uint16_t adc_value)
 {
@@ -101,8 +112,10 @@ void task_led_current_init(void *parameters)
     task_led_current_adc_ready = false;
     task_led_current_adc_error_flag = false;
     task_led_current_adc_value = 0u;
+    task_led_current_failure_active = false;
 
     shared_data->led_current_percent = 0u;
+    shared_data->led_current_failure = false;
 }
 
 void task_led_current_update(void *parameters)
@@ -175,6 +188,24 @@ void task_led_current_update(void *parameters)
             shared_data->adc_owner = ADC_OWNER_NONE;
 
             shared_data->led_current_percent = task_led_current_adc_to_percent(adc_value);
+
+            if ((task_led_current_failure_active == false) &&
+                (shared_data->led_current_percent >= LED_CURRENT_OVERCURRENT_LIMIT_PERCENT)) {
+
+                task_led_current_failure_active = true;
+                shared_data->led_current_failure = true;
+
+                put_event_task_menu(EV_SYS_FAILURE);
+            }
+
+            /* Con esto comentado, el task no levanta la flag de falla. Se encarga el modo falla.
+            if ((task_led_current_failure_active == true) &&
+                (shared_data->led_current_percent <= LED_CURRENT_OVERCURRENT_CLEAR_PERCENT)) {
+
+                task_led_current_failure_active = false;
+                shared_data->led_current_failure = false;
+            }
+			*/
 
             task_led_current_data.state = TASK_LED_CURRENT_ST_WAIT_NEXT_SAMPLE;
             break;

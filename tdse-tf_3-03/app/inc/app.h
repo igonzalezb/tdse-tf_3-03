@@ -23,10 +23,13 @@ typedef struct {
     uint16_t humidity_percent;
 
     uint16_t light_percent;
+    bool led_current_failure;
 
     uint16_t water_level_percent;
+    bool water_level_failure;
 
     uint16_t pump_current_percent;
+    bool pump_current_failure;
 
     uint16_t led_current_percent;
 

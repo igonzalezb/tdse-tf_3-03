@@ -8,6 +8,8 @@
 #include "app.h"
 #include "board.h"
 #include "task_water_level.h"
+#include "task_menu_attribute.h"
+#include "task_menu_interface.h"
 
 extern ADC_HandleTypeDef hadc1;
 
@@ -22,6 +24,13 @@ extern ADC_HandleTypeDef hadc1;
 /* Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms. */
 #define WATER_LEVEL_ADC_TIMEOUT_TICKS    10u
 
+/* Falla por bajo nivel de agua.
+ * Se dispara cuando el nivel baja a WATER_LEVEL_LOW_LIMIT_PERCENT o menos.
+ * Se limpia recien cuando sube a WATER_LEVEL_LOW_CLEAR_PERCENT o mas.
+ */
+#define WATER_LEVEL_LOW_LIMIT_PERCENT    10u
+// #define WATER_LEVEL_LOW_CLEAR_PERCENT    30u Descomentar si se usa histeresis
+
 typedef enum {
     TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE = 0,
     TASK_WATER_LEVEL_ST_WAIT_ADC_CONVERSION
@@ -34,6 +43,8 @@ typedef struct {
 } task_water_level_data_t;
 
 static task_water_level_data_t task_water_level_data;
+
+static bool task_water_level_failure_active = false;
 
 /* Variables escritas por interrupcion y leidas por el task. */
 static volatile bool task_water_level_adc_ready = false;
@@ -95,8 +106,10 @@ void task_water_level_init(void *parameters)
     task_water_level_adc_ready = false;
     task_water_level_adc_error_flag = false;
     task_water_level_adc_value = 0u;
+    task_water_level_failure_active = false;
 
     shared_data->water_level_percent = 0u;
+    shared_data->water_level_failure = false;
 }
 
 void task_water_level_update(void *parameters)
@@ -169,6 +182,24 @@ void task_water_level_update(void *parameters)
             shared_data->adc_owner = ADC_OWNER_NONE;
 
             shared_data->water_level_percent = task_water_level_adc_to_percent(adc_value);
+
+            if ((task_water_level_failure_active == false) &&
+                (shared_data->water_level_percent <= WATER_LEVEL_LOW_LIMIT_PERCENT)) {
+
+                task_water_level_failure_active = true;
+                shared_data->water_level_failure = true;
+
+                put_event_task_menu(EV_SYS_FAILURE);
+            }
+
+            /* Comentado para que no baje la flag de falla
+            if ((task_water_level_failure_active == true) &&
+                (shared_data->water_level_percent >= WATER_LEVEL_LOW_CLEAR_PERCENT)) {
+
+                task_water_level_failure_active = false;
+                shared_data->water_level_failure = false;
+            }
+			*/
 
             task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
             break;

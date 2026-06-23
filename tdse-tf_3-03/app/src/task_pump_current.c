@@ -19,6 +19,8 @@
 #include "app.h"
 #include "board.h"
 #include "task_pump_current.h"
+#include "task_menu_attribute.h"
+#include "task_menu_interface.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern shared_data_type shared_data;
@@ -37,6 +39,14 @@ extern shared_data_type shared_data;
  * Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms.
  */
 #define PUMP_CURRENT_ADC_TIMEOUT_TICKS    10u
+
+/*
+ * Limites para generar falla por sobrecorriente.
+ * Ajustar segun calibracion real del sensor de corriente.
+ * Se usa histeresis para no generar eventos repetidos cerca del limite.
+ */
+#define PUMP_CURRENT_OVERCURRENT_LIMIT_PERCENT    90u
+//#define PUMP_CURRENT_OVERCURRENT_CLEAR_PERCENT    80u  Si se usa histeresis
 
 typedef enum {
     TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE = 0,
@@ -58,6 +68,8 @@ static task_pump_current_data_t task_pump_current_data;
 static volatile bool task_pump_current_adc_ready = false;
 static volatile bool task_pump_current_adc_error_flag = false;
 static volatile uint16_t task_pump_current_adc_value = 0u;
+
+static bool task_pump_current_overcurrent_active = false;
 
 static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
 {
@@ -111,8 +123,10 @@ void task_pump_current_init(void *parameters)
     task_pump_current_adc_ready = false;
     task_pump_current_adc_error_flag = false;
     task_pump_current_adc_value = 0u;
+    task_pump_current_overcurrent_active = false;
 
     shared_data_ptr->pump_current_percent = 0u;
+    shared_data_ptr->pump_current_failure = false;
 }
 
 void task_pump_current_update(void *parameters)
@@ -184,6 +198,30 @@ void task_pump_current_update(void *parameters)
             shared_data_ptr->adc_owner = ADC_OWNER_NONE;
 
             shared_data_ptr->pump_current_percent = task_pump_current_adc_to_percent(adc_value);
+
+            /*
+             * Generacion de falla generica para el menu.
+             * El evento es generico: EV_SYS_FAILURE.
+             * El origen especifico queda indicado por shared_data_ptr->pump_current_failure.
+             */
+            if ((task_pump_current_overcurrent_active == false) &&
+                (shared_data_ptr->pump_current_percent >= PUMP_CURRENT_OVERCURRENT_LIMIT_PERCENT)) {
+
+                task_pump_current_overcurrent_active = true;
+                shared_data_ptr->pump_current_failure = true;
+
+                put_event_task_menu(EV_SYS_FAILURE);
+            }
+
+            /* Con esto comentado, el sensor no baja el flag de falla. Se lo deja al modo falla
+             *
+            if ((task_pump_current_overcurrent_active == true) &&
+                (shared_data_ptr->pump_current_percent <= PUMP_CURRENT_OVERCURRENT_CLEAR_PERCENT)) {
+
+                task_pump_current_overcurrent_active = false;
+                shared_data_ptr->pump_current_failure = false;
+            }
+			*/
 
             task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
             break;
