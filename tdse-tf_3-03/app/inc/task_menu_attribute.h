@@ -55,8 +55,7 @@ typedef enum task_menu_test {
 	TEST_BUZZER,			// buzzer
 	TEST_PUMP,				// bomba de agua
 	TEST_LED_STRIP,			// tira led
-	TEST_QTY, 				// para saber la cantidad de tests
-	TEST_NONE				// no se está testeando nada
+	TEST_QTY 				// para saber la cantidad de tests
 } task_menu_test_t;
 
 typedef struct {

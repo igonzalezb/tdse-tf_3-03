@@ -14,8 +14,12 @@
 // muestra siempre el 0 o muestra el ultimo en el que estaba. como cada sistema tiene el current
 
 
-// Dirección de la Página 127 (última página de 1KB en la STM32F103RB)
-#define FLASH_CONFIG_ADDRESS 0x0801FC00
+#define FLASH_CONFIG_ADDRESS 0x0801FC00 // Página 127 (1KB)
+#define PAGE_SIZE_BYTES      1024
+
+// Cada registro ahora son 2 Half-Words (4 bytes en total): [Index][Value]
+#define SLOT_SIZE_BYTES      4
+#define MAX_SLOTS            (PAGE_SIZE_BYTES / SLOT_SIZE_BYTES) // 256 slots
 
 #define G_TASK_MEN_CNT_INI          0ul
 #define G_TASK_MEN_TICK_CNT_INI     0ul
@@ -40,7 +44,8 @@ uint16_t config_values[CONFIG_QTY];
 /* Límites de configuración (Ej: 0% a 100%) */
 uint32_t MAX_VAL[CONFIG_QTY];
 uint32_t MIN_VAL[CONFIG_QTY];
-bool pump_on;
+bool pump_on = false;
+bool testing = false;
 
 task_menu_dta_t task_menu_dta_list[] = {
 		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS},
@@ -55,10 +60,8 @@ void task_menu_statechart_setup(void);
 void task_menu_statechart_failure(void);
 void task_menu_statechart_test(void);
 char* get_sensor_value(task_menu_parameters_t parameter);
-uint32_t read_memory_value(task_menu_config_t parameter);
-//uint16_t get_threshold_value(task_menu_config_t parameter);
-//void set_sensor_threshold(task_menu_config_t parameter, uint16_t value);
-void save_memory_value(task_menu_config_t parameter, uint16_t value);
+void config_load_from_flash(void);
+void config_save_element_to_flash(uint16_t param_index, uint16_t value);
 void test_function(task_menu_test_t current_test);
 void LCD_show(const char *first_row, const char *second_row);
 
@@ -79,25 +82,28 @@ void LCD_show(const char *first_row, const char *second_row) {
 }
 
 void task_menu_init(void *parameters) {
-	uint32_t index;
-	task_menu_dta_t *p_task_menu_dta;
+	//uint32_t index;
+	//task_menu_dta_t *p_task_menu_dta;
 	//shared_data_type *shared_data = (shared_data_type *) parameters;
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
-	init_queue_event_task_menu();
+
 
 	displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
 	LCD_show("    SMARTCETA   ", "   Iniciando...  ");
+	init_queue_event_task_menu();
+	config_load_from_flash();
 
-	for (index = 0; MENU_DTA_QTY > index; index++) {
-		p_task_menu_dta = &task_menu_dta_list[index];
-		p_task_menu_dta->state = ST_SYS_00;
-		p_task_menu_dta->event = EV_SYS_BTN_ESC;
-		p_task_menu_dta->flag = false;
-		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
-		p_task_menu_dta->current_value = 0;
-		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
-	}
+//	for (index = 0; MENU_DTA_QTY > index; index++) {
+//		p_task_menu_dta = &task_menu_dta_list[index];
+//		p_task_menu_dta->state = ST_SYS_00;
+//		p_task_menu_dta->event = EV_SYS_BTN_ESC;
+//		p_task_menu_dta->flag = false;
+//		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
+//		p_task_menu_dta->current_value = 0;
+//		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
+//	}
 	pump_on = false;
+	testing = false;
 	shared_data.active_system = SYS_NORMAL;
 
 	param_names[PARAM_HUM_SUELO] = "Hum. Suelo";
@@ -121,10 +127,6 @@ void task_menu_init(void *parameters) {
 	config_names[CONFIG_HUMIDITY] = "Humedad Suelo";
 
 	//TODO: cambiar algunos parametros para que sea poco-medio-mucho
-	config_values[CONFIG_SOUNDS] = 1;
-	config_values[CONFIG_LIGHT] = 50;
-	config_values[CONFIG_WATER_LEVEL] = 60;
-	config_values[CONFIG_HUMIDITY] = 70;
 
 	MAX_VAL[CONFIG_LIGHT] = 100;
 	MAX_VAL[CONFIG_SOUNDS] = 1;
@@ -135,25 +137,9 @@ void task_menu_init(void *parameters) {
 	MIN_VAL[CONFIG_WATER_LEVEL] = 0;
 	MIN_VAL[CONFIG_HUMIDITY] = 0;
 
-
+	// Inicializo el buzzer y el Led de estados en modo normal.
 	config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
 	put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
-
-
-	//TODO: init memoria, cargar datos en shared.data?
-	/* Configuracion en memoria*/
-//	uint32_t humedad_suelo_guardada = read_memory_value(PARAM_HUM_SUELO);
-//	if (humedad_suelo_guardada == 0xFFFFFFFF) {
-//		LOGGER_INFO("PRIMERA VER CONFIGURANDO");
-//		for (int i = 0; i < PARAM_QTY; i++) {
-//			save_memory_value(i, config_values[i]);
-//		}
-//	} else {
-//		LOGGER_INFO("OBTENIENDO VALORES DE MEMORIA");
-//		for (int i = 0; i < PARAM_QTY; i++) {
-//			config_values[i] = read_memory_value(i);
-//		}
-//	}
 
 }
 
@@ -253,7 +239,7 @@ void task_menu_statechart_normal(void) {
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
 		last_scroll_tick = HAL_GetTick();
 	}
-		if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
+	else if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
 				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				if (shared_data.light_percent <= config_values[CONFIG_LIGHT])
 				{
@@ -280,7 +266,7 @@ void task_menu_statechart_normal(void) {
 //			}
 //			last_light_tick = HAL_GetTick();
 //		}
-	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || pump_on) {
+	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || pump_on) {
 		if (pump_on && shared_data.humidity_percent < (config_values[CONFIG_HUMIDITY]+10)){
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
@@ -318,7 +304,8 @@ void task_menu_statechart_setup(void) {
 			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
 				p_task_menu_dta->current_config =
-						(p_task_menu_dta->current_config + 1) % CONFIG_QTY;
+						(p_task_menu_dta->current_config == (CONFIG_QTY - 1)) ?
+								0 : p_task_menu_dta->current_config + 1;
 				LCD_show("Configurar:",
 						config_names[p_task_menu_dta->current_config]);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
@@ -332,8 +319,8 @@ void task_menu_statechart_setup(void) {
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 				p_task_menu_dta->state = ST_SYS_01;
-				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
-				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
+				snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				shared_data.active_system = SYS_NORMAL;
@@ -358,20 +345,20 @@ void task_menu_statechart_setup(void) {
 						< MAX_VAL[p_task_menu_dta->current_config]) {
 					config_values[p_task_menu_dta->current_config]++;
 				}
-				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
-				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
+				snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 				LOGGER_INFO("BTN_LEFT PRESSED");
 				if (config_values[p_task_menu_dta->current_config]
 						> MIN_VAL[p_task_menu_dta->current_config]) {
 					config_values[p_task_menu_dta->current_config]--;
 				}
-				snprintf(second_row, sizeof(second_row), "> %ui", config_values[p_task_menu_dta->current_config]);
-				LCD_show(param_names[p_task_menu_dta->current_config], second_row);
+				snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 
-				save_memory_value(p_task_menu_dta->current_config,
+				config_save_element_to_flash(p_task_menu_dta->current_config,
 						config_values[p_task_menu_dta->current_config]);
 				p_task_menu_dta->state = ST_SYS_00;
 				LCD_show("Guardado!",
@@ -390,7 +377,7 @@ void task_menu_statechart_setup(void) {
 	}
 }
 
-//TODO: ACTIVAR ACTUADORES CON LOS TESTS.
+//TODO: TERMINAR DE HACER TESTS.
 void task_menu_statechart_test(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta_list[shared_data.active_system];
 
@@ -440,7 +427,8 @@ void task_menu_statechart_test(void) {
 				default:
 					break;
 			}
-		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && p_task_menu_dta->current_test != TEST_NONE) {
+			testing = true;
+		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && testing) {
 
 			switch (p_task_menu_dta->current_test) {
 				case TEST_WATER_LEVEL:
@@ -468,9 +456,9 @@ void task_menu_statechart_test(void) {
 				default:
 					break;
 			}
+			testing = false;
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
-			p_task_menu_dta->current_test = TEST_NONE;
 			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
 			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
@@ -510,35 +498,107 @@ char* get_sensor_value(task_menu_parameters_t parameter) {
     return value;
 }
 
-//TODO: arreglar la lectura/escritura de memoria.
-uint32_t read_memory_value(task_menu_config_t parameter) {
-	// Leer directamente de la memoria mapeada mediante un puntero
-	uint32_t *pConfig = (uint32_t*) FLASH_CONFIG_ADDRESS;
+void config_load_from_flash(void) {
+    // 1. Definimos los valores por defecto en una estructura/arreglo temporal
+    uint16_t defaults[CONFIG_QTY];
+    defaults[CONFIG_SOUNDS] = 1;
+    defaults[CONFIG_LIGHT] = 50;
+    defaults[CONFIG_WATER_LEVEL] = 60;
+    defaults[CONFIG_HUMIDITY] = 70;
 
-	// Retornamos el valor usando el parámetro como índice (offset)
-	return pConfig[parameter];
+    uint16_t *flash_ptr = (uint16_t *)FLASH_CONFIG_ADDRESS;
+
+    // 2. CHEQUEO CRÍTICO: ¿El mismísimo primer slot de la Flash está vacío (0xFFFF)?
+    // Si el índice del primer slot es 0xFFFF, significa que la memoria NUNCA fue escrita.
+    if (flash_ptr[0] == 0xFFFF) {
+
+        HAL_FLASH_Unlock();
+
+        // Escribimos los 5 parámetros por defecto consecutivos para inicializar la memoria
+        for (uint16_t j = 0; j < CONFIG_QTY; j++) {
+            uint32_t addr = FLASH_CONFIG_ADDRESS + (j * SLOT_SIZE_BYTES);
+
+            // Guardamos el par: [Índice, Valor]
+            HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr, j);
+            HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr + 2, defaults[j]);
+
+            // También los cargamos en el arreglo activo de la RAM que usa tu menú
+            config_values[j] = defaults[j];
+        }
+
+        HAL_FLASH_Lock();
+        return; // Inicialización de fábrica terminada. Salimos.
+    }
+
+    // 3. CASO NORMAL: Si la Flash NO estaba vacía, procesamos el historial como antes
+    // (Cargamos los defaults en RAM primero por seguridad si algún índice falta)
+    for (int j = 0; j < CONFIG_QTY; j++) {
+        config_values[j] = defaults[j];
+    }
+
+    // Recorremos los slots aplicando los cambios cronológicamente
+    for (int i = 0; i < MAX_SLOTS; i++) {
+        uint32_t offset = i * 2;
+        uint16_t param_idx = flash_ptr[offset];
+        uint16_t param_val = flash_ptr[offset + 1];
+
+        if (param_idx == 0xFFFF) {
+            break; // Fin del historial de cambios
+        }
+
+        if (param_idx < CONFIG_QTY) {
+            config_values[param_idx] = param_val;
+        }
+    }
 }
 
-void save_memory_value(task_menu_config_t parameter, uint16_t value) {
-//	// 1. Desbloquear la Flash para permitir modificaciones
-//	HAL_FLASH_Unlock();
-//
-//	// 2. Configurar el borrado de la PÁGINA (Específico para F1)
-//	FLASH_EraseInitTypeDef EraseInitStruct;
-//	uint32_t PageError = 0;
-//
-//	EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
-//	EraseInitStruct.PageAddress = FLASH_CONFIG_ADDRESS;
-//	EraseInitStruct.NbPages = 1; // Solo borramos nuestra página de configuración
-//
-//	// Ejecutar el borrado
-//	HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
-//
-//	// 3. Escribir el nuevo valor
-//	// Calculamos el offset multiplicando el parámetro por 4 (cada uint32_t ocupa 4 bytes)
-//	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
-//			FLASH_CONFIG_ADDRESS + (parameter * 4), value);
-//
-//	// 4. Bloquear la Flash por seguridad para evitar escrituras accidentales
-//	HAL_FLASH_Lock();
+void config_save_element_to_flash(uint16_t param_index, uint16_t value) {
+    uint16_t *flash_ptr = (uint16_t *)FLASH_CONFIG_ADDRESS;
+    int target_slot_index = -1;
+
+    // 1. Buscar el primer slot vacío (donde el índice sea 0xFFFF)
+    for (int i = 0; i < MAX_SLOTS; i++) {
+        if (flash_ptr[i * 2] == 0xFFFF) {
+            target_slot_index = i;
+            break;
+        }
+    }
+
+    HAL_FLASH_Unlock();
+
+    // 2. Si la página se llenó (256 cambios acumulados), hay que consolidar y borrar
+    if (target_slot_index == -1) {
+        // Guardamos el cambio actual en el arreglo antes de consolidar
+        config_values[param_index] = value;
+
+        FLASH_EraseInitTypeDef EraseInitStruct;
+        uint32_t PageError = 0;
+
+        EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+        EraseInitStruct.PageAddress = FLASH_CONFIG_ADDRESS;
+        EraseInitStruct.NbPages = 1;
+
+        // Borramos la página (toma ~30ms, pasa 1 vez cada 256 guardados)
+        HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
+
+        // Al borrar la página perdimos el historial, así que reescribimos
+        // el estado actual completo de los 5 parámetros para que sirva de base limpia.
+        for (uint16_t j = 0; j < CONFIG_QTY; j++) {
+            uint32_t addr = FLASH_CONFIG_ADDRESS + (j * SLOT_SIZE_BYTES);
+            HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr, j);
+            HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr + 2, config_values[j]);
+        }
+
+        HAL_FLASH_Lock();
+        return; // Ya guardamos todo, podemos salir
+    }
+
+    // 3. Caso normal: Hay espacio libre. Escribimos solo el par [Index, Value]
+    uint32_t base_address = FLASH_CONFIG_ADDRESS + (target_slot_index * SLOT_SIZE_BYTES);
+
+    // Escribimos primero el valor y al final el índice (buena práctica por si se corta la luz a medias)
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, base_address + 2, value);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, base_address, param_index);
+
+    HAL_FLASH_Lock();
 }
