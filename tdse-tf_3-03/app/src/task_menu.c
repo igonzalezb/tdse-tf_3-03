@@ -328,15 +328,12 @@ void task_menu_statechart_setup(void) {
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
 
-			//config_values[p_task_menu_dta->current_config];
-
 			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
-				if (config_values[p_task_menu_dta->current_config]
-						< MAX_VAL[p_task_menu_dta->current_config]) {
-					config_values[p_task_menu_dta->current_config]++;
-				}
 
+				(config_values[p_task_menu_dta->current_config]
+						== MAX_VAL[p_task_menu_dta->current_config]) ? config_values[p_task_menu_dta->current_config] = 0:
+					config_values[p_task_menu_dta->current_config]++;
 				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
 				{
 					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
@@ -349,10 +346,9 @@ void task_menu_statechart_setup(void) {
 
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 				LOGGER_INFO("BTN_LEFT PRESSED");
-				if (config_values[p_task_menu_dta->current_config]
-						> MIN_VAL[p_task_menu_dta->current_config]) {
-					config_values[p_task_menu_dta->current_config]--;
-				}
+				(config_values[p_task_menu_dta->current_config] == MIN_VAL[p_task_menu_dta->current_config]) ?
+						config_values[p_task_menu_dta->current_config] = MAX_VAL[p_task_menu_dta->current_config]:
+									config_values[p_task_menu_dta->current_config]--;
 				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
 				{
 					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
