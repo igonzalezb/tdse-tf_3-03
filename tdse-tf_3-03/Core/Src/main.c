@@ -88,7 +88,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
   #if (1 == LOGGER_CONFIG_USE_SEMIHOSTING)
 
-  initialise_monitor_handles();
+
+	initialise_monitor_handles();
 
   #endif
 

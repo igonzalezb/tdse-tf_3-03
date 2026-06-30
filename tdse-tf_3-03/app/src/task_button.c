@@ -154,7 +154,28 @@ static void task_button_statechart(void) {
 				}
 			}
 			break;
+		case ST_BTN_XX_DOWN:
+				if (EV_BTN_XX_DOWN == p_task_button_dta->event) {
+					// Solo descontamos si es mayor a 0
+					if (p_task_button_dta->tick_hold > DEL_BTN_XX_MIN) {
+						p_task_button_dta->tick_hold--;
 
+						// Justo en el instante que llega a 0, enviamos el evento UNA vez
+						if (DEL_BTN_XX_MIN == p_task_button_dta->tick_hold) {
+							task_button_put_menu_event_if_valid(p_task_button_cfg->signal_hold);
+						}
+					}
+					// Si ya es 0, no hace nada. Se queda esperando a que sueltes el botón.
+				}
+
+				if (EV_BTN_XX_UP == p_task_button_dta->event) {
+					p_task_button_dta->state = ST_BTN_XX_RISING;
+					p_task_button_dta->tick = p_task_button_cfg->tick_max;
+					p_task_button_dta->tick_hold = p_task_button_cfg->tick_hold_max; // Acá se resetea para el próximo HOLD
+				}
+				break;
+/*
+ * case original
 		case ST_BTN_XX_DOWN:
 			if (EV_BTN_XX_DOWN == p_task_button_dta->event) {
 				if (DEL_BTN_XX_MIN == p_task_button_dta->tick_hold) {
@@ -171,6 +192,7 @@ static void task_button_statechart(void) {
 				p_task_button_dta->tick_hold = p_task_button_cfg->tick_hold_max;
 			}
 			break;
+*/
 
 		case ST_BTN_XX_RISING:
 			if (EV_BTN_XX_UP == p_task_button_dta->event) {
