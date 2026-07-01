@@ -52,6 +52,8 @@
 #include "task_buzzer.h"
 #include "task_pump.h"
 #include "task_led_strip.h"
+#include "task_system_failure.h"
+
 #include "task_display.h"
 
 /* Demo includes */
@@ -105,6 +107,7 @@ const task_cfg_t task_cfg_list[] =
 		{task_buzzer_init, task_buzzer_update, NULL },
 		{task_pump_init, task_pump_update, NULL },
 		{task_led_strip_init, task_led_strip_update, NULL },
+		{task_system_failure_init, task_system_failure_update, &shared_data },
 };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))

@@ -1,7 +1,7 @@
 #include "task_actuator_interface.h"
 
-#define EVENT_UNDEFINED (0xFFFFFFFF)
-#define MAX_EVENTS      (8) // Tamaño de cada cola individual
+#define EVENT_UNDEFINED (255)
+#define MAX_EVENTS      (16) // Tamaño de cada cola individual
 
 typedef struct {
     uint32_t head;
@@ -25,32 +25,32 @@ void init_queue_event_task_actuator(void) {
 }
 
 void put_event_task_actuator(task_actuator_id_t id, uint32_t event) {
-    // Protección ante desborde de ID por seguridad
+    // Protección ante desborde de ID
     if (id >= ID_ACT_QTY) return;
 
-    queue_t *p_q = &actuator_queues[id];
+    queue_t *queues = &actuator_queues[id];
 
-    // Si la cola está llena, podrías descartar o manejar el error. Aquí sobreescribe/avanza.
-    p_q->count++;
-    p_q->queue[p_q->head++] = event;
+    // Si la cola está llena, sobreescribe.
+    queues->count++;
+    queues->queue[queues->head++] = event;
 
-    if (MAX_EVENTS == p_q->head) {
-        p_q->head = 0;
+    if (MAX_EVENTS == queues->head) {
+        queues->head = 0;
     }
 }
 
 uint32_t get_event_task_actuator(task_actuator_id_t id) {
     if (id >= ID_ACT_QTY) return EVENT_UNDEFINED;
 
-    queue_t *p_q = &actuator_queues[id];
+    queue_t *queues = &actuator_queues[id];
     uint32_t event = EVENT_UNDEFINED;
 
-    if (p_q->count > 0) {
-        p_q->count--;
-        event = p_q->queue[p_q->tail++];
+    if (queues->count > 0) {
+        queues->count--;
+        event = queues->queue[queues->tail++];
 
-        if (MAX_EVENTS == p_q->tail) {
-            p_q->tail = 0;
+        if (MAX_EVENTS == queues->tail) {
+            queues->tail = 0;
         }
     }
     return event;

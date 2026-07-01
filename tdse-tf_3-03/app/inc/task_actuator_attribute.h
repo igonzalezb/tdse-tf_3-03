@@ -67,6 +67,7 @@ typedef enum task_state_led_ev{
     EV_STATE_LED_SYS_NORMAL,
 	EV_STATE_LED_SYS_SETUP,
     EV_STATE_LED_SYS_FAILURE,
+	EV_STATE_LED_SYS_LOCKED,
     EV_STATE_LED_SYS_TEST,
 	EV_STATE_LED_WATER				// Regar
 } task_state_led_ev_t;

@@ -6,6 +6,8 @@
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
 #include "task_actuator_interface.h"
+#include "display.h"
+#include "task_system_failure.h"
 #include "task_display.h"
 
 #include "stm32f1xx_hal.h"
@@ -34,6 +36,9 @@ static uint32_t last_scroll_tick = AUTO_SCROLL_DELAY;
 static uint32_t last_pump_tick = AUTO_SCROLL_DELAY;
 static uint32_t last_light_tick = AUTO_SCROLL_DELAY;
 
+// para el modo falla
+static system_failure_type current_display_fault = FAULT_NONE;
+
 /* Nombres para mostrar en el LCD */
 const char *param_names[PARAM_QTY];
 const char *test_names[TEST_QTY];
@@ -45,7 +50,9 @@ uint16_t config_values[CONFIG_QTY];
 uint32_t MAX_VAL[CONFIG_QTY];
 uint32_t MIN_VAL[CONFIG_QTY];
 bool pump_on = false;
+bool led_strip_on = false;
 bool testing = false;
+
 
 task_menu_dta_t task_menu_dta =
 		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS};
@@ -71,6 +78,7 @@ void task_menu_init(void *parameters) {
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
 	init_queue_event_task_menu();
+	init_queue_event_task_actuator(); // Va acá esto?
 	config_load_from_flash();
 
 //	for (index = 0; MENU_DTA_QTY > index; index++) {
@@ -83,6 +91,7 @@ void task_menu_init(void *parameters) {
 //		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 //	}
 	pump_on = false;
+	led_strip_on = false;
 	testing = false;
 	shared_data.active_system = SYS_NORMAL;
 
@@ -471,9 +480,107 @@ void task_menu_statechart_test(void) {
 	}
 }
 
-void task_menu_statechart_failure(void) {
-	// TODO: Implementar lógica de bloqueo y alertas visuales/sonoras.
+void task_menu_statechart_failure(void){
+    task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
+    // Para no llamar a LCD_Show() innecesariamente
+    bool update_display = false;
+
+    // Estados del modo falla
+    bool is_locked = task_system_failure_is_locked();
+    bool ready_to_restore = task_system_failure_can_restore();
+
+    switch (p_task_menu_dta->state) {
+    	// Apagar bomba y tira LED la primera vez, para no obturar de eventos al actuador
+		case ST_SYS_00:
+			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
+			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+			pump_on = false;
+			led_strip_on = false;
+
+			if (is_locked) put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_LOCKED);
+
+			current_display_fault = task_system_failure_get_valid_fault(FAULT_NONE);
+			last_scroll_tick = HAL_GetTick();
+			update_display = true;
+
+			p_task_menu_dta->state = ST_SYS_01; // ST 01 = procesamiento de fallas y pantallas LCD
+			break;
+
+		case ST_SYS_01:
+			// Validar que la falla en pantalla siga existiendo
+			system_failure_type valid_fault = task_system_failure_get_valid_fault(current_display_fault);
+
+			if (valid_fault != current_display_fault) {
+			    current_display_fault = valid_fault;
+			    update_display = true;
+			}
+
+			// Leer eventos pendientes
+			if (true == any_event_task_menu()) {
+				p_task_menu_dta->flag = true;
+				p_task_menu_dta->event = get_event_task_menu();
+			}
+
+			// Procesar Botones
+			if (p_task_menu_dta->flag) {
+				p_task_menu_dta->flag = false;
+
+				if (ready_to_restore && p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
+					task_system_failure_clear_all();
+					shared_data.active_system = SYS_NORMAL;
+					config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+					put_event_task_menu(EV_SYS_BTN_ESC);
+					p_task_menu_dta->state = ST_SYS_00;
+					current_display_fault = FAULT_NONE;
+					return;
+				}
+
+				if (!is_locked) {
+					if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+						current_display_fault = task_system_failure_get_next(current_display_fault);
+						last_scroll_tick = HAL_GetTick();
+						update_display = true;
+					}
+					else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
+						current_display_fault = task_system_failure_get_prev(current_display_fault);
+						last_scroll_tick = HAL_GetTick();
+						update_display = true;
+					}
+				}
+			}
+
+			// Autoscroll
+			if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
+				last_scroll_tick = HAL_GetTick();
+				update_display = true;
+
+				if (!is_locked) {
+					current_display_fault = task_system_failure_get_next(current_display_fault);
+				}
+			}
+			break;
+		case ST_SYS_02: break;
+		case ST_SYS_03: break;
+		case ST_SYS_04: break;
+		default: break;
+    }
+
+	if (update_display) {
+		if (is_locked) {
+			LCD_show("SistemaBloqueado", task_system_failure_get_name(current_display_fault));
+		}
+		else if (current_display_fault == FAULT_RESTORE) {
+			LCD_show("Para restaurar", "mantenga ESCAPE");
+		}
+		else {
+			char row1[21];
+			sprintf(row1, "FALLA CODIGO: %02d", current_display_fault);
+			LCD_show(row1, task_system_failure_get_name(current_display_fault));
+		}
+	}
 }
+
 
 char* get_sensor_value(task_menu_parameters_t parameter) {
     static char value[12];

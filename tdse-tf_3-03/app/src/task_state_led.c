@@ -1,5 +1,4 @@
 #include "main.h"
-//#include "app.h"
 #include "task_state_led.h"
 #include "task_actuator_interface.h"
 
@@ -37,6 +36,7 @@ static const state_led_pattern_t led_patterns[] = {
     { EV_STATE_LED_SYS_NORMAL,	0,   	100, 	0,  	STATE_LED_NO_BLINK   },	// Verde Fijo
     { EV_STATE_LED_SYS_SETUP,	0,   	0,   	75, 	STATE_LED_SLOW_BLINK }, // Azul Lento
     { EV_STATE_LED_SYS_FAILURE,	100,	0,   	0,  	STATE_LED_FAST_BLINK }, // Rojo Rápido
+	{ EV_STATE_LED_SYS_LOCKED,	100,  	0,   	0, 		STATE_LED_NO_BLINK   }, // Rojo Fijo
     { EV_STATE_LED_SYS_TEST,	50,  	0,   	50, 	STATE_LED_NO_BLINK   }, // Violeta Fijo
     { EV_STATE_LED_WATER, 		17,   	95, 	100,	STATE_LED_FAST_BLINK }  // Celeste regante
 };
