@@ -8,6 +8,7 @@
 #define MAX_TEMP 35
 #define MIN_TEMP 5
 #define MAX_CURRENT 90
+#define MIN_CURRENT 1
 #define MIN_WATER_LEVEL 10
 
 /** Variables estáticas **/
@@ -28,7 +29,9 @@ const char* fault_names[FAULT_QTY] = {
     "Nivel Agua Bajo",
     "Sens. Nivel Agua",
     "Sens. Nivel Luz",
-    "Sens.HumedadTierr"
+    "Sens.HumedadTierr",
+	"Driver Bomba",
+	"Driver Tira LED"
 };
 
 void task_system_failure_init(void *parameters){
@@ -79,6 +82,18 @@ bool task_system_failure_can_restore(void) {
 
             switch(i) {
                 // Verificamos si el sensor ya volvió a valores seguros
+            	case FAULT_PUMP_OVERCURRENT:
+					if (shared_data.pump_current_percent >= MAX_CURRENT) return false;
+					break;
+
+            	case FAULT_PUMP_OPEN: break;
+
+            	case FAULT_LED_STRIP_OVERCURRENT:
+					if (shared_data.led_current_percent >= MAX_CURRENT) return false;
+					break;
+
+				case FAULT_LED_STRIP_OPEN: break;
+
                 case FAULT_HIGH_TEMPERATURE:
                     if (shared_data.dht22_temperature >= MAX_TEMP) return false;
                     break;
@@ -107,19 +122,15 @@ bool task_system_failure_can_restore(void) {
                     if (shared_data.humidity_percent == 0) return false;
                     break;
 
-                case FAULT_PUMP_OVERCURRENT:
-                	if (shared_data.pump_current_percent >= MAX_CURRENT) return false;
-                    break;
+                case FAULT_PUMP_DRIVER:
+					if (shared_data.pump_current_percent >=  MIN_CURRENT) return false;
+					break;
 
-                case FAULT_PUMP_OPEN:
-                case FAULT_LED_STRIP_OVERCURRENT:
-                	if (shared_data.led_current_percent >= MAX_CURRENT) return false;
-                	break;
-                case FAULT_LED_STRIP_OPEN:
-                    break;
+				case FAULT_LED_STRIP_DRIVER:
+					if (shared_data.led_current_percent >=  MIN_CURRENT) return false;
+					break;
 
-                default:
-                    break;
+                default: break;
             }
         }
     }

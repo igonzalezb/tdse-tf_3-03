@@ -6,7 +6,12 @@
 extern "C" {
 #endif
 
-
+/*
+ * Para añadir nuevas fallas:
+ * 1) Incorporarlas en el enum system_failure_type en task_system_failure.h
+ * 2) Agregar una etiqueta en fault_names[FAULT_QTY] EN ORDEN en task_system_failure.c
+ * 3) Agregar una forma de verificar si se solucionó en task_system_failure_can_restore en task_system_failure.c
+ */
 
 typedef enum {
     FAULT_PUMP_OVERCURRENT,			// Exceso de corriente en bomba
@@ -20,8 +25,12 @@ typedef enum {
     FAULT_WATER_LEVEL_ERROR,		// Error en la lectura del sensor de nivel de agua (por ejemplo, mide 0 constantemente)
     FAULT_LIGHT_LEVEL_ERROR,		// Error en la lectura del sensor de nivel de luz (por ejemplo, mide 0 constantemente)
     FAULT_HUMIDITY_LEVEL_ERROR,		// Error en la lectura del sensor de nivel de humedad de suelo (por ejemplo, mide 0 constantemente)
-// Fin de fallas conocidas, el resto son variables auxiliares
-// Agregar fallas por encima de este comentario
+/**** Espacio para añadir nuevas fallas:****/
+	FAULT_PUMP_DRIVER,				// Driver de bomba en corto (MOSFET)
+	FAULT_LED_STRIP_DRIVER,			// Driver de tira LED en corto (MOSFET)
+
+/**** Fin Espacio para añadir nuevas fallas****/
+// Variables auxiliares
     FAULT_QTY,						// Cantidad de fallas conocidas
 	FAULT_RESTORE,					// Variable auxiliar para restaurar el sistema
 	FAULT_NONE
