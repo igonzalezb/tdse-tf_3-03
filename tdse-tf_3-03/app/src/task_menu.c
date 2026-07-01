@@ -490,6 +490,8 @@ void task_menu_statechart_failure(void){
 			pump_on = false;
 			led_strip_on = false;
 
+			if (is_locked) put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_LOCKED);
+
 			current_display_fault = task_system_failure_get_valid_fault(FAULT_NONE);
 			last_scroll_tick = HAL_GetTick();
 			update_display = true;
