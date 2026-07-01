@@ -8,6 +8,8 @@
 #include "task_actuator_interface.h"
 #include "display.h"
 #include "task_system_failure.h"
+#include "task_display.h"
+
 #include "stm32f1xx_hal.h"
 
 //TODO: ver que pasa cuando voy pasando de sistema con el parametro activo.
@@ -63,25 +65,10 @@ char* get_sensor_value(task_menu_parameters_t parameter);
 void config_load_from_flash(void);
 void config_save_element_to_flash(uint16_t param_index, uint16_t value);
 void test_function(task_menu_test_t current_test);
-void LCD_show(const char *first_row, const char *second_row);
 
 uint32_t g_task_menu_cnt;
 
 volatile uint32_t g_task_menu_tick_cnt;
-
-void LCD_show(const char *first_row, const char *second_row) {
-	displayCharPositionWrite(0, 0);
-	displayStringWrite("                    ");
-	displayCharPositionWrite(0, 1);
-	displayStringWrite("                    ");
-
-	displayCharPositionWrite(0, 0);
-	displayStringWrite(first_row);
-	displayCharPositionWrite(0, 1);
-	displayStringWrite(second_row);
-}
-
-
 
 void task_menu_init(void *parameters) {
 	//uint32_t index;
@@ -90,9 +77,6 @@ void task_menu_init(void *parameters) {
 	last_scroll_tick = HAL_GetTick();
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
-
-	displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
-	LCD_show("    SMARTCETA   ", "   Iniciando...  ");
 	init_queue_event_task_menu();
 	init_queue_event_task_actuator(); // Va acá esto?
 	config_load_from_flash();
@@ -237,13 +221,16 @@ void task_menu_statechart_normal(void) {
 		last_scroll_tick = HAL_GetTick();
 
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
-	} else if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
+	}
+	/*=============== AUTOSCROLL =======================================*/
+	else if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
 		p_task_menu_dta->current_parameter =
 				(p_task_menu_dta->current_parameter == (PARAM_QTY-1)) ?
 						0 : p_task_menu_dta->current_parameter + 1;
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
 		last_scroll_tick = HAL_GetTick();
 	}
+	/*=============== LED STRIP =======================================*/
 	else if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
 				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				if (shared_data.light_percent <= config_values[CONFIG_LIGHT])
@@ -255,7 +242,7 @@ void task_menu_statechart_normal(void) {
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				}
 				last_light_tick = HAL_GetTick();
-		}
+	}
 	//	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
 //			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 //			if ((shared_data.light_percent - p_task_menu_dta->current_value) <= config_values[CONFIG_LIGHT])
@@ -271,6 +258,7 @@ void task_menu_statechart_normal(void) {
 //			}
 //			last_light_tick = HAL_GetTick();
 //		}
+	/*=============== PUMP =======================================*/
 	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || pump_on) {
 		if (pump_on && shared_data.humidity_percent < (config_values[CONFIG_HUMIDITY]+10)){
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
@@ -289,7 +277,7 @@ void task_menu_statechart_normal(void) {
 		}
 
 		last_pump_tick = HAL_GetTick();
-		}
+	}
 }
 
 void task_menu_statechart_setup(void) {
@@ -324,8 +312,15 @@ void task_menu_statechart_setup(void) {
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 				p_task_menu_dta->state = ST_SYS_01;
-				snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
-				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
+				{
+					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
+				}
+				else
+				{
+					snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+				}
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				shared_data.active_system = SYS_NORMAL;
@@ -342,24 +337,36 @@ void task_menu_statechart_setup(void) {
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
 
-			//config_values[p_task_menu_dta->current_config];
-
 			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
-				if (config_values[p_task_menu_dta->current_config]
-						< MAX_VAL[p_task_menu_dta->current_config]) {
+
+				(config_values[p_task_menu_dta->current_config]
+						== MAX_VAL[p_task_menu_dta->current_config]) ? config_values[p_task_menu_dta->current_config] = 0:
 					config_values[p_task_menu_dta->current_config]++;
+				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
+				{
+					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
 				}
-				snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
-				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+				else
+				{
+					snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+				}
+
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 				LOGGER_INFO("BTN_LEFT PRESSED");
-				if (config_values[p_task_menu_dta->current_config]
-						> MIN_VAL[p_task_menu_dta->current_config]) {
-					config_values[p_task_menu_dta->current_config]--;
+				(config_values[p_task_menu_dta->current_config] == MIN_VAL[p_task_menu_dta->current_config]) ?
+						config_values[p_task_menu_dta->current_config] = MAX_VAL[p_task_menu_dta->current_config]:
+									config_values[p_task_menu_dta->current_config]--;
+				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
+				{
+					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
 				}
-				snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
-				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+				else
+				{
+					snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+				}
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 
@@ -693,7 +700,7 @@ void config_save_element_to_flash(uint16_t param_index, uint16_t value) {
         }
 
         HAL_FLASH_Lock();
-        return; // Ya guardamos todo, podemos salir
+        return;
     }
 
     // 3. Caso normal: Hay espacio libre. Escribimos solo el par [Index, Value]
