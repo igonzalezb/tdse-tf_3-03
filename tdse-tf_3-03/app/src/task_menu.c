@@ -35,7 +35,7 @@ static uint32_t last_pump_tick = AUTO_SCROLL_DELAY;
 static uint32_t last_light_tick = AUTO_SCROLL_DELAY;
 
 // para el modo falla
-static system_failure_type current_display_fault = FAULT_QTY;
+static system_failure_type current_display_fault = FAULT_NONE;
 
 /* Nombres para mostrar en el LCD */
 const char *param_names[PARAM_QTY];
@@ -490,7 +490,7 @@ void task_menu_statechart_failure(void){
 			pump_on = false;
 			led_strip_on = false;
 
-			current_display_fault = task_system_failure_get_valid_fault(FAULT_QTY);
+			current_display_fault = task_system_failure_get_valid_fault(FAULT_NONE);
 			last_scroll_tick = HAL_GetTick();
 			update_display = true;
 
@@ -519,11 +519,11 @@ void task_menu_statechart_failure(void){
 				if (ready_to_restore && p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 					task_system_failure_clear_all();
 					shared_data.active_system = SYS_NORMAL;
-					//init_queue_event_task_menu();
 					config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
 					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
 					put_event_task_menu(EV_SYS_BTN_ESC);
-					p_task_menu_dta->state = ST_SYS_00; // Dejar limpio para la próxima falla
+					p_task_menu_dta->state = ST_SYS_00;
+					current_display_fault = FAULT_NONE;
 					return;
 				}
 
@@ -561,8 +561,8 @@ void task_menu_statechart_failure(void){
 		if (is_locked) {
 			LCD_show("SistemaBloqueado", task_system_failure_get_name(current_display_fault));
 		}
-		else if (current_display_fault == FAULT_QTY) {
-			LCD_show("Para restaurar", "mantenga ESC.");
+		else if (current_display_fault == FAULT_RESTORE) {
+			LCD_show("Para restaurar", "mantenga ESCAPE");
 		}
 		else {
 			char row1[21];

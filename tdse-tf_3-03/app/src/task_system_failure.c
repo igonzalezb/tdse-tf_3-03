@@ -11,7 +11,7 @@
 #define MIN_WATER_LEVEL 10
 
 /** Variables estáticas **/
-static bool active_faults[FAULT_QTY];				// Arreglo estático de las fallas activas
+static volatile bool active_faults[FAULT_QTY];		// Arreglo estático de las fallas activas
 static bool lock_system = false;      				// Flag: se debe bloquear el sistema por repetidos excesos de corriente?
 static uint8_t pump_overcurrent_failures = 0; 		// Contador de fallas de sobre corriente de bomba
 static uint8_t led_strip_overcurrent_failures = 0; 	// Contador de fallas de sobre corriente de tira led
@@ -74,8 +74,7 @@ bool task_system_failure_can_restore(void) {
     if (lock_system) return false;	// El sistema está bloqueado (por límite de sobrecorrientes).
 
     for (int i = 0; i < FAULT_QTY; i++) {
-
-        // Solo evaluamos si esa falla está registrada como activa
+    	// Solo se evalúan las activas
         if (active_faults[i] == true) {
 
             switch(i) {
@@ -134,21 +133,19 @@ const char* task_system_failure_get_name(system_failure_type failure) {
     return fault_names[failure];
 }
 
-// Evalúa si el índice actual es válido. Si no lo es, te devuelve el correcto.
+// Evalúa si el índice actual es válido. Si no lo es, devuelve el correcto.
 system_failure_type task_system_failure_get_valid_fault(system_failure_type failure) {
     bool ready_to_restore = task_system_failure_can_restore();
-    // FAULT_QTY se usa para mostrar la pantalla de restauracion por simplicidad de código
-    if (failure == FAULT_QTY && ready_to_restore) return failure;
-
-    // La falla sigue activa
+    // failure pide restaurar y se puede restaurar:
+    if (failure == FAULT_RESTORE && ready_to_restore) return failure;
+    // failure pertenece a la lista y es una falla activa:
     if (failure < FAULT_QTY && active_faults[failure]) return failure;
-
-    // Se busca la primera falla activa
+    // Si no es ninguno: se busca la primera falla activa
     for(int i = 0; i < FAULT_QTY; i++) {
         if (active_faults[i]) return i;
     }
     // No hay fallas activas -> Restaurar
-    return FAULT_QTY;
+    return FAULT_RESTORE;
 }
 
 void task_system_failure_clear_all(void) {
@@ -157,29 +154,41 @@ void task_system_failure_clear_all(void) {
     }
 }
 
-system_failure_type task_system_failure_get_next(system_failure_type current){
+system_failure_type task_system_failure_get_next(system_failure_type failure){
     bool can_restore = task_system_failure_can_restore();
-    system_failure_type limit = can_restore ? (FAULT_QTY + 1) : FAULT_QTY;
+    system_failure_type next = failure;
 
-    for(int i = 1; i <= limit; i++) {
-        uint8_t next = (current + i) % limit;
-        if (next == FAULT_QTY || active_faults[next]) {
-            return next;
-        }
+    for(int i = 0; i <= FAULT_QTY + 1; i++) {
+    	if (next == FAULT_RESTORE) {
+			next = 0; // Si se llega al ultimo item, vuelve a empezar
+		} else {
+			next++;
+			if (next == FAULT_QTY) {
+				next = can_restore ? FAULT_RESTORE : 0;
+			}
+		}
+		if (next == FAULT_RESTORE && can_restore) return FAULT_RESTORE;
+		if (next < FAULT_QTY && active_faults[next]) return next;
     }
-    return current; // Si no encuentra nada, se queda donde está
+
+    return failure;
 }
 
-system_failure_type task_system_failure_get_prev(system_failure_type current){
-    bool can_restore = task_system_failure_can_restore();
-    system_failure_type limit = can_restore ? (FAULT_QTY + 1) : FAULT_QTY;
+system_failure_type task_system_failure_get_prev(system_failure_type failure){
+	bool can_restore = task_system_failure_can_restore();
+	system_failure_type prev = failure;
 
-    for(int i = 1; i <= limit; i++) {
-        int8_t prev = (int8_t)current - i;
-        if (prev < 0) prev += limit;
-        if (prev == FAULT_QTY || active_faults[prev]) {
-            return prev;
-        }
-    }
-    return current; // Si no encuentra nada, se queda donde está
+	for(int i = 0; i <= FAULT_QTY + 1; i++) {
+		if (prev == 0) {
+			prev = can_restore ? FAULT_RESTORE : (FAULT_QTY - 1);
+		} else if (prev == FAULT_RESTORE) {
+			// Desde RESTORE, salta a la última falla válida
+			prev = FAULT_QTY - 1;
+		} else {
+			prev--;
+		}
+		if (prev == FAULT_RESTORE && can_restore) return FAULT_RESTORE;
+		if (prev < FAULT_QTY && active_faults[prev]) return prev;
+	}
+	return failure;
 }
