@@ -1,8 +1,6 @@
 <div align="center">
 
-# UNIVERSIDAD DE BUENOS AIRES
-
-## Facultad de Ingeniería
+<img src="Imagenes/Logo FIUBA.png" alt="Universidad de Buenos Aires - Facultad de Ingeniería" width="600">
 
 ### Sistemas Embebidos
 
