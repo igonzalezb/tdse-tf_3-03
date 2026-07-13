@@ -1,6 +1,7 @@
 #include "main.h"
 #include "task_actuator_interface.h"
 #include "task_pump.h"
+#include "app.h"
 
 #define CHANNEL_PUMP   TIM_CHANNEL_4
 #define TIMER_PUMP     htim1
@@ -21,7 +22,7 @@ extern TIM_HandleTypeDef TIMER_PUMP;
 static task_actuator_dta_t pump_dta;
 static uint16_t current_duty = 0; // Memoria del nivel actual de la rampa
 
-
+// prototipos de funciones privadas
 static void task_pump_statechart(void);
 static void apply_pump_pwm(uint16_t);
 
@@ -36,6 +37,9 @@ void task_pump_init(void *parameters) {
     pump_dta.state = ST_PUMP_IDLE;
     pump_dta.event_pending = false;
     pump_dta.event = EV_PUMP_OFF;
+    shared_data.pump_on = false;
+
+    init_queue_event_task_actuator(ID_ACT_PUMP);
 }
 
 void task_pump_update(void *parameters) {
@@ -95,6 +99,7 @@ static void task_pump_statechart(void) {
                 } else {
                     // Llegamos al máximo
                     pump_dta.state = ST_PUMP_ON;
+                    shared_data.pump_on = true;
                 }
             }
             break;
@@ -114,6 +119,7 @@ static void task_pump_statechart(void) {
                     apply_pump_pwm(current_duty);
                 } else {
                     pump_dta.state = ST_PUMP_IDLE;
+                    shared_data.pump_on = false;
                 }
             }
             break;

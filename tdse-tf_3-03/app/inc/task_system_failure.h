@@ -13,6 +13,14 @@ extern "C" {
  * 3) Agregar una forma de verificar si se solucionó en task_system_failure_can_restore en task_system_failure.c
  */
 
+/*** Valores maximos ***/
+#define MAX_TEMPERATURE 35
+#define MIN_TEMPERATURE 5
+#define MAX_PUMP_CURRENT 90
+#define MIN_PUMP_CURRENT 1
+#define MAX_LED_STRIP_CURRENT 90
+#define MIN_LED_STRIP_CURRENT 1
+
 typedef enum {
     FAULT_PUMP_OVERCURRENT,			// Exceso de corriente en bomba
     FAULT_PUMP_OPEN,				// Falta de corriente en bomba

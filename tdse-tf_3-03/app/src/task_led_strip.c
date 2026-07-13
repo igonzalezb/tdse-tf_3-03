@@ -1,6 +1,7 @@
 #include "main.h"
 #include "task_actuator_interface.h"
 #include "task_led_strip.h"
+#include "app.h"
 
 // prototipos de funciones privadas
 static void led_strip_off(void);
@@ -14,6 +15,8 @@ void task_led_strip_init(void *parameters){
 	led_strip_dta.event = EV_LED_STRIP_OFF;
 	led_strip_dta.state = ST_LED_STRIP_OFF;
 	led_strip_dta.event_pending = false;
+	shared_data.led_strip_on = false;
+	init_queue_event_task_actuator(ID_ACT_LED_STRIP);
 }
 
 void task_led_strip_update(void *parameters) {
@@ -47,8 +50,10 @@ static void task_led_strip_statechart(void){
 
 static void led_strip_off(void){
 	HAL_GPIO_WritePin(Tira_LED_GPIO_Port, Tira_LED_Pin, GPIO_PIN_RESET);
+	shared_data.led_strip_on = false;
 }
 
 static void led_strip_on(void){
 	HAL_GPIO_WritePin(Tira_LED_GPIO_Port, Tira_LED_Pin, GPIO_PIN_SET);
+	shared_data.led_strip_on = true;
 }

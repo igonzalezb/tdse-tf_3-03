@@ -71,7 +71,6 @@ void task_menu_init(void *parameters) {
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
 	init_queue_event_task_menu();
-	init_queue_event_task_actuator(); //TODO: Va acá esto?
 	config_load_from_flash();
 
 //	for (index = 0; MENU_DTA_QTY > index; index++) {

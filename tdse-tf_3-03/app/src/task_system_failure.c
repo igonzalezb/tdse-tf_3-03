@@ -2,20 +2,19 @@
 /********************** inclusions *******************************************/
 #include "app.h"
 #include "task_system_failure.h"
+#include "task_menu_interface.h"
 
 /********************** defines *******************************************/
 #define MAX_OVERCURRENT_FAILURES 2
-#define MAX_TEMP 35
-#define MIN_TEMP 5
-#define MAX_CURRENT 90
-#define MIN_CURRENT 1
-#define MIN_WATER_LEVEL 10
+
 
 /** Variables estáticas **/
 static volatile bool active_faults[FAULT_QTY];		// Arreglo estático de las fallas activas
 static bool lock_system = false;      				// Flag: se debe bloquear el sistema por repetidos excesos de corriente?
 static uint8_t pump_overcurrent_failures = 0; 		// Contador de fallas de sobre corriente de bomba
 static uint8_t led_strip_overcurrent_failures = 0; 	// Contador de fallas de sobre corriente de tira led
+
+
 
 // Nombres que se mostrarán en la 2da línea de la pantalla (Máximo 16 caracteres)
 const char* fault_names[FAULT_QTY] = {
@@ -44,7 +43,63 @@ void task_system_failure_init(void *parameters){
 }
 
 void task_system_failure_update(void *parameters) {
-	return;
+	if(shared_data.pump_current_percent > MAX_PUMP_CURRENT && shared_data.pump_on){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_PUMP_OVERCURRENT);
+	}
+	else if(shared_data.pump_current_percent > MIN_PUMP_CURRENT && !shared_data.pump_on){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_PUMP_DRIVER);
+	}
+	else if(shared_data.pump_current_percent < MIN_PUMP_CURRENT && shared_data.pump_on){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_PUMP_OPEN);
+	}
+
+	if(shared_data.led_current_percent > MAX_LED_STRIP_CURRENT && shared_data.led_strip_on){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_LED_STRIP_OVERCURRENT);
+	}
+	else if(shared_data.led_current_percent > MIN_LED_STRIP_CURRENT && !shared_data.led_strip_on){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_LED_STRIP_DRIVER);
+	}
+	else if(shared_data.led_current_percent < MIN_LED_STRIP_CURRENT && shared_data.led_strip_on){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_LED_STRIP_OPEN);
+	}
+
+	if(shared_data.dht22_temperature > MAX_TEMPERATURE){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_HIGH_TEMPERATURE);
+	}
+	else if(shared_data.dht22_temperature < MIN_TEMPERATURE){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_LOW_TEMPERATURE);
+	}
+
+	if(shared_data.dht22_error){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
+	}
+
+	if(shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_WATER_LEVEL_LOW);
+	}
+
+	if(shared_data.water_level_percent <= 0){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_WATER_LEVEL_ERROR);
+	}
+	if(shared_data.light_percent <= 0){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_LIGHT_LEVEL_ERROR);
+	}
+	if(shared_data.humidity_percent <= 0){
+		put_event_task_menu(EV_SYS_FAILURE);
+		task_system_failure_report(FAULT_HUMIDITY_LEVEL_ERROR);
+	}
 }
 
 bool task_system_failure_is_locked(void){
@@ -83,23 +138,23 @@ bool task_system_failure_can_restore(void) {
             switch(i) {
                 // Verificamos si el sensor ya volvió a valores seguros
             	case FAULT_PUMP_OVERCURRENT:
-					if (shared_data.pump_current_percent >= MAX_CURRENT) return false;
+					if (shared_data.pump_current_percent >= MAX_PUMP_CURRENT) return false;
 					break;
 
             	case FAULT_PUMP_OPEN: break;
 
             	case FAULT_LED_STRIP_OVERCURRENT:
-					if (shared_data.led_current_percent >= MAX_CURRENT) return false;
+					if (shared_data.led_current_percent >= MAX_LED_STRIP_CURRENT) return false;
 					break;
 
 				case FAULT_LED_STRIP_OPEN: break;
 
                 case FAULT_HIGH_TEMPERATURE:
-                    if (shared_data.dht22_temperature >= MAX_TEMP) return false;
+                    if (shared_data.dht22_temperature >= MAX_TEMPERATURE) return false;
                     break;
 
                 case FAULT_LOW_TEMPERATURE:
-                    if (shared_data.dht22_temperature <= MIN_TEMP) return false;
+                    if (shared_data.dht22_temperature <= MIN_TEMPERATURE) return false;
                     break;
 
                 case FAULT_DHT22_NO_RESPONSE:
@@ -107,7 +162,7 @@ bool task_system_failure_can_restore(void) {
                     break;
 
                 case FAULT_WATER_LEVEL_LOW:
-                    if (shared_data.water_level_percent <= MIN_WATER_LEVEL) return false;
+                    if (shared_data.water_level_percent <= shared_data.config_values[CONFIG_WATER_LEVEL]) return false;
                     break;
 
                 case FAULT_WATER_LEVEL_ERROR:
@@ -123,11 +178,11 @@ bool task_system_failure_can_restore(void) {
                     break;
 
                 case FAULT_PUMP_DRIVER:
-					if (shared_data.pump_current_percent >=  MIN_CURRENT) return false;
+					if (shared_data.pump_current_percent >=  MIN_PUMP_CURRENT) return false;
 					break;
 
 				case FAULT_LED_STRIP_DRIVER:
-					if (shared_data.led_current_percent >=  MIN_CURRENT) return false;
+					if (shared_data.led_current_percent >=  MIN_LED_STRIP_CURRENT) return false;
 					break;
 
                 default: break;

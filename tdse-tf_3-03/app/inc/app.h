@@ -40,6 +40,11 @@ typedef struct {
     bool adc_busy;  // Esta el adc usandose?
     adc_owner_t adc_owner; //Quien lo esta usando
 
+    bool pump_on;
+    bool led_strip_on;
+
+    uint16_t config_values[CONFIG_WATER_LEVEL];
+
 	// Menu: variables
 	task_menu_sys_t active_system;
 
