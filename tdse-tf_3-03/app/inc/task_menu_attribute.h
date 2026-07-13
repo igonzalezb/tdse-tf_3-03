@@ -28,7 +28,7 @@ typedef enum task_menu_sys {
 	SYS_NORMAL, SYS_SETUP, SYS_FAILURE, SYS_TEST,
 } task_menu_sys_t;
 
-/* Parámetros configurables de la Smartceta */
+/* Parámetros medibles de la Smartceta */
 typedef enum task_menu_parameters {
 	PARAM_HUM_SUELO = 0,
 	PARAM_HUM_AMB,
@@ -38,18 +38,20 @@ typedef enum task_menu_parameters {
 	PARAM_QTY //Para saber la cantidad de parámetros
 } task_menu_parameters_t;
 
+/* Parámetros configurables de la Smartceta */
 typedef enum task_menu_config {
 	CONFIG_SOUNDS,
 	CONFIG_LIGHT,
 	CONFIG_WATER_LEVEL,
 	CONFIG_HUMIDITY,
+	CONFIG_LED_STATE,
 	CONFIG_QTY //Para saber la cantidad de parámetros configurables
 } task_menu_config_t;
 
 /* Componentes para el Modo Test */
 typedef enum task_menu_test {
 	TEST_WATER_LEVEL = 0,	// sensor de nivel de agua
-	TEST_LIGHT,				// sensor de luz
+	TEST_LIGHT_SENSOR,		// sensor de luz
 	TEST_HUMIDITY,			// sensor de humedad de suelo
 	TEST_DHT22,				// sensor de humedad y temperatura ambiente (PUEDE NO ESTAR)
 	TEST_STATE_LED,			// led de estado

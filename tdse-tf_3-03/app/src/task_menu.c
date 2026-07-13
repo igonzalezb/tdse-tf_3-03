@@ -12,10 +12,6 @@
 
 #include "stm32f1xx_hal.h"
 
-//TODO: ver que pasa cuando voy pasando de sistema con el parametro activo.
-// muestra siempre el 0 o muestra el ultimo en el que estaba. como cada sistema tiene el current
-
-
 #define FLASH_CONFIG_ADDRESS 0x0801FC00 // Página 127 (1KB)
 #define PAGE_SIZE_BYTES      1024
 
@@ -44,13 +40,10 @@ const char *param_names[PARAM_QTY];
 const char *test_names[TEST_QTY];
 const char *config_names[TEST_QTY];
 
-/* Valores de configuracion*/
-uint16_t config_values[CONFIG_QTY];
 /* Límites de configuración (Ej: 0% a 100%) */
 uint32_t MAX_VAL[CONFIG_QTY];
 uint32_t MIN_VAL[CONFIG_QTY];
-bool pump_on = false;
-bool led_strip_on = false;
+
 bool testing = false;
 
 
@@ -89,8 +82,8 @@ void task_menu_init(void *parameters) {
 //		p_task_menu_dta->current_value = 0;
 //		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 //	}
-	pump_on = false;
-	led_strip_on = false;
+	shared_data.pump_on = false;
+	shared_data.led_strip_on = false;
 	testing = false;
 	shared_data.active_system = SYS_NORMAL;
 
@@ -101,7 +94,7 @@ void task_menu_init(void *parameters) {
 	param_names[PARAM_AGUA] = "Nivel Agua";
 
 	test_names[TEST_WATER_LEVEL] = "Test Agua";
-	test_names[TEST_LIGHT] = "Test Luz";
+	test_names[TEST_LIGHT_SENSOR] = "Test Luz";
 	test_names[TEST_HUMIDITY] = "Test H.Suelo";
 	test_names[TEST_DHT22] = "Test DHT22";
 	test_names[TEST_STATE_LED] = "Test LED";
@@ -113,6 +106,7 @@ void task_menu_init(void *parameters) {
 	config_names[CONFIG_LIGHT] = "Luz";
 	config_names[CONFIG_WATER_LEVEL] = "Nivel Agua";
 	config_names[CONFIG_HUMIDITY] = "Humedad Suelo";
+	config_names[CONFIG_LED_STATE] = "Led Estados";
 
 	//TODO: cambiar algunos parametros para que sea poco-medio-mucho
 
@@ -120,14 +114,16 @@ void task_menu_init(void *parameters) {
 	MAX_VAL[CONFIG_SOUNDS] = 1;
 	MAX_VAL[CONFIG_WATER_LEVEL] = 100;
 	MAX_VAL[CONFIG_HUMIDITY] = 100;
+	MAX_VAL[CONFIG_LED_STATE] = 1;
 	MIN_VAL[CONFIG_LIGHT] = 0;
 	MIN_VAL[CONFIG_SOUNDS] = 0;
 	MIN_VAL[CONFIG_WATER_LEVEL] = 15;
 	MIN_VAL[CONFIG_HUMIDITY] = 0;
+	MIN_VAL[CONFIG_LED_STATE] = 0;
 
 	// Inicializo el buzzer y el Led de estados en modo normal.
-	config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-	put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+	shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+	shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
 
 }
 
@@ -185,8 +181,16 @@ void task_menu_statechart_normal(void) {
 	if (p_task_menu_dta->flag) {
 		p_task_menu_dta->flag = false;
 
+		if (p_task_menu_dta->event == EV_SYS_FAILURE){
+			LOGGER_INFO("SYS FAILURE");
+			shared_data.active_system = SYS_FAILURE;
+			p_task_menu_dta->state = ST_SYS_00;
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
+
+		}
 		// Navegación entre botones (derecha/izquierda)
-		if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+		else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			LOGGER_INFO("BTN_RIGHT PRESSED");
 			p_task_menu_dta->current_parameter =
 					(p_task_menu_dta->current_parameter == (PARAM_QTY-1)) ?
@@ -201,8 +205,8 @@ void task_menu_statechart_normal(void) {
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LOGGER_INFO("BTN_ENTER PRESSED");
 			shared_data.active_system = SYS_SETUP;
-			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_SETUP);
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_SETUP) : 0;
 			p_task_menu_dta->current_parameter = 0;
 			LCD_show("Configurar:",	config_names[0]);
 			return;
@@ -211,8 +215,8 @@ void task_menu_statechart_normal(void) {
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
-			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_TEST);
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_TEST) : 0;
 			p_task_menu_dta->current_parameter = 0;
 			LCD_show("Modo Test:", test_names[0]);
 			return;
@@ -232,11 +236,11 @@ void task_menu_statechart_normal(void) {
 	/*=============== LED STRIP =======================================*/
 	else if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
 				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-				if (shared_data.light_percent <= config_values[CONFIG_LIGHT])
+				if (shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT])
 				{
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
 				}
-				else if ((shared_data.light_percent) >= (config_values[CONFIG_LIGHT] + 10))
+				else if ((shared_data.light_percent) >= (shared_data.config_values[CONFIG_LIGHT] + 10))
 				{
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				}
@@ -258,21 +262,18 @@ void task_menu_statechart_normal(void) {
 //			last_light_tick = HAL_GetTick();
 //		}
 	/*=============== PUMP =======================================*/
-	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || pump_on) {
-		if (pump_on && shared_data.humidity_percent < (config_values[CONFIG_HUMIDITY]+10)){
+	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
+		if (shared_data.pump_on && shared_data.humidity_percent < (shared_data.config_values[CONFIG_HUMIDITY]+10)){
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
-			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
-			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
-			pump_on = false;
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
 		}
-		else if (shared_data.water_level_percent >= config_values[CONFIG_WATER_LEVEL]
-				&& shared_data.humidity_percent < config_values[CONFIG_HUMIDITY])
+		else if (shared_data.water_level_percent >= shared_data.config_values[CONFIG_WATER_LEVEL]
+				&& shared_data.humidity_percent < shared_data.config_values[CONFIG_HUMIDITY])
 		{
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
-			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
-			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_WATER);
-			pump_on = true;
-
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_WATER) : 0;
 		}
 
 		last_pump_tick = HAL_GetTick();
@@ -292,8 +293,16 @@ void task_menu_statechart_setup(void) {
 	case ST_SYS_00: // Selección de parámetro a configurar
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
+			if (p_task_menu_dta->event == EV_SYS_FAILURE){
+				LOGGER_INFO("SYS FAILURE");
+				shared_data.active_system = SYS_FAILURE;
+				p_task_menu_dta->state = ST_SYS_00;
+				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT) : 0;
+				shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
 
-			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+			}
+
+			else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
 				p_task_menu_dta->current_config =
 						(p_task_menu_dta->current_config == (CONFIG_QTY - 1)) ?
@@ -311,13 +320,13 @@ void task_menu_statechart_setup(void) {
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 				p_task_menu_dta->state = ST_SYS_01;
-				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
+				if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE)
 				{
-					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
+					LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
 				}
 				else
 				{
-					snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+					snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
 					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 				}
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
@@ -325,8 +334,8 @@ void task_menu_statechart_setup(void) {
 				shared_data.active_system = SYS_NORMAL;
 				p_task_menu_dta->state = ST_SYS_00;
 				p_task_menu_dta->current_config = 0;
-				config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-				put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+				shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
 				LCD_show("Saliendo...", "");
 			}
 		}
@@ -335,46 +344,53 @@ void task_menu_statechart_setup(void) {
 	case ST_SYS_01: // Modificación del valor del parámetro
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
+			if (p_task_menu_dta->event == EV_SYS_FAILURE){
+				LOGGER_INFO("SYS FAILURE");
+				shared_data.active_system = SYS_FAILURE;
+				p_task_menu_dta->state = ST_SYS_00;
+				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT) : 0;
+				shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
 
-			if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+			}
+			else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
 
-				(config_values[p_task_menu_dta->current_config]
-						== MAX_VAL[p_task_menu_dta->current_config]) ? config_values[p_task_menu_dta->current_config] = 0:
-					config_values[p_task_menu_dta->current_config]++;
-				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
+				(shared_data.config_values[p_task_menu_dta->current_config]
+						== MAX_VAL[p_task_menu_dta->current_config]) ? shared_data.config_values[p_task_menu_dta->current_config] = 0:
+								shared_data.config_values[p_task_menu_dta->current_config]++;
+				if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE)
 				{
-					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
+					LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
 				}
 				else
 				{
-					snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+					snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
 					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 				}
 
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
 				LOGGER_INFO("BTN_LEFT PRESSED");
-				(config_values[p_task_menu_dta->current_config] == MIN_VAL[p_task_menu_dta->current_config]) ?
-						config_values[p_task_menu_dta->current_config] = MAX_VAL[p_task_menu_dta->current_config]:
-									config_values[p_task_menu_dta->current_config]--;
-				if (p_task_menu_dta->current_config == CONFIG_SOUNDS)
+				(shared_data.config_values[p_task_menu_dta->current_config] == MIN_VAL[p_task_menu_dta->current_config]) ?
+						shared_data.config_values[p_task_menu_dta->current_config] = MAX_VAL[p_task_menu_dta->current_config]:
+						shared_data.config_values[p_task_menu_dta->current_config]--;
+				if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE)
 				{
-					LCD_show(config_names[p_task_menu_dta->current_config], config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
+					LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
 				}
 				else
 				{
-					snprintf(second_row, sizeof(second_row), "> %u", config_values[p_task_menu_dta->current_config]);
+					snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
 					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 				}
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 				LOGGER_INFO("BTN_ENTER PRESSED");
 
 				config_save_element_to_flash(p_task_menu_dta->current_config,
-						config_values[p_task_menu_dta->current_config]);
+						shared_data.config_values[p_task_menu_dta->current_config]);
 				p_task_menu_dta->state = ST_SYS_00;
 				LCD_show("Guardado!",
 						config_names[p_task_menu_dta->current_config]);
-				config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				p_task_menu_dta->state = ST_SYS_00;
@@ -388,19 +404,27 @@ void task_menu_statechart_setup(void) {
 	}
 }
 
-//TODO: TERMINAR DE HACER TESTS.
 void task_menu_statechart_test(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
+	char segunda_linea[17];
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
 		p_task_menu_dta->event = get_event_task_menu();
 	}
 
-	if (p_task_menu_dta->flag) {
+	if (p_task_menu_dta->flag)
+	{
 		p_task_menu_dta->flag = false;
+		if (p_task_menu_dta->event == EV_SYS_FAILURE){
+			LOGGER_INFO("SYS FAILURE");
+			p_task_menu_dta->state = ST_SYS_00;
+			shared_data.active_system = SYS_FAILURE;
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
 
-		if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+		}
+		else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			p_task_menu_dta->current_test = (p_task_menu_dta->current_test + 1)
 					% TEST_QTY;
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
@@ -411,45 +435,48 @@ void task_menu_statechart_test(void) {
 							(p_task_menu_dta->current_test - 1);
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
-			LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
+			testing = true;
 			switch (p_task_menu_dta->current_test) {
 				case TEST_WATER_LEVEL:
+					snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
+					LCD_show("Testeando...", segunda_linea);
 					break;
-				case TEST_LIGHT:
+				case TEST_LIGHT_SENSOR:
+					snprintf(segunda_linea, sizeof(segunda_linea), "Sens. Luz: %s", get_sensor_value(PARAM_LUZ));
+					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_HUMIDITY:
+					snprintf(segunda_linea, sizeof(segunda_linea), "Hum. S: %s", get_sensor_value(PARAM_HUM_SUELO));
+					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_DHT22:
+					snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
+					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_STATE_LED:
 					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 				case TEST_BUZZER:
 					put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 				case TEST_PUMP:
 					put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 				case TEST_LED_STRIP:
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 
 					break;
 				default:
 					break;
 			}
-			testing = true;
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && testing) {
 
 			switch (p_task_menu_dta->current_test) {
-				case TEST_WATER_LEVEL:
-					break;
-				case TEST_LIGHT:
-					break;
-				case TEST_HUMIDITY:
-					break;
-				case TEST_DHT22:
-					break;
 				case TEST_STATE_LED:
 					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_OFF);
 					break;
@@ -472,8 +499,8 @@ void task_menu_statechart_test(void) {
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 			shared_data.active_system = SYS_NORMAL;
 			p_task_menu_dta->state = ST_SYS_00; // Forzar refresco
-			config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-			put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
 			LCD_show("Saliendo...", "");
 		}
 	}
@@ -493,10 +520,10 @@ void task_menu_statechart_failure(void){
 		case ST_SYS_00:
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-			pump_on = false;
-			led_strip_on = false;
+			shared_data.pump_on = false;
+			shared_data.led_strip_on = false;
 
-			if (is_locked) put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_LOCKED);
+			if (is_locked) {shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_LOCKED) : 0;}
 
 			current_display_fault = task_system_failure_get_valid_fault(FAULT_NONE);
 			last_scroll_tick = HAL_GetTick();
@@ -527,8 +554,8 @@ void task_menu_statechart_failure(void){
 				if (ready_to_restore && p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 					task_system_failure_clear_all();
 					shared_data.active_system = SYS_NORMAL;
-					config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL);
+					shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+					shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
 					put_event_task_menu(EV_SYS_BTN_ESC);
 					p_task_menu_dta->state = ST_SYS_00;
 					current_display_fault = FAULT_NONE;
@@ -614,6 +641,7 @@ void config_load_from_flash(void) {
     defaults[CONFIG_LIGHT] = 50;
     defaults[CONFIG_WATER_LEVEL] = 40;
     defaults[CONFIG_HUMIDITY] = 70;
+    defaults[CONFIG_LED_STATE] = 1;
 
     uint16_t *flash_ptr = (uint16_t *)FLASH_CONFIG_ADDRESS;
 
@@ -632,7 +660,7 @@ void config_load_from_flash(void) {
             HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr + 2, defaults[j]);
 
             // También los cargamos en el arreglo activo de la RAM que usa tu menú
-            config_values[j] = defaults[j];
+            shared_data.config_values[j] = defaults[j];
         }
 
         HAL_FLASH_Lock();
@@ -642,7 +670,7 @@ void config_load_from_flash(void) {
     // 3. CASO NORMAL: Si la Flash NO estaba vacía, procesamos el historial como antes
     // (Cargamos los defaults en RAM primero por seguridad si algún índice falta)
     for (int j = 0; j < CONFIG_QTY; j++) {
-        config_values[j] = defaults[j];
+    	shared_data.config_values[j] = defaults[j];
     }
 
     // Recorremos los slots aplicando los cambios cronológicamente
@@ -656,7 +684,7 @@ void config_load_from_flash(void) {
         }
 
         if (param_idx < CONFIG_QTY) {
-            config_values[param_idx] = param_val;
+        	shared_data.config_values[param_idx] = param_val;
         }
     }
 }
@@ -678,7 +706,7 @@ void config_save_element_to_flash(uint16_t param_index, uint16_t value) {
     // 2. Si la página se llenó (256 cambios acumulados), hay que consolidar y borrar
     if (target_slot_index == -1) {
         // Guardamos el cambio actual en el arreglo antes de consolidar
-        config_values[param_index] = value;
+    	shared_data.config_values[param_index] = value;
 
         FLASH_EraseInitTypeDef EraseInitStruct;
         uint32_t PageError = 0;
@@ -695,7 +723,7 @@ void config_save_element_to_flash(uint16_t param_index, uint16_t value) {
         for (uint16_t j = 0; j < CONFIG_QTY; j++) {
             uint32_t addr = FLASH_CONFIG_ADDRESS + (j * SLOT_SIZE_BYTES);
             HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr, j);
-            HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr + 2, config_values[j]);
+            HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr + 2, shared_data.config_values[j]);
         }
 
         HAL_FLASH_Lock();
