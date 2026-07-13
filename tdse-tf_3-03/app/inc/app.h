@@ -43,6 +43,12 @@ typedef struct {
 	// Menu: variables
 	task_menu_sys_t active_system;
 
+	/* Valores de configuracion*/
+	uint16_t config_values[CONFIG_QTY];
+
+	bool pump_on;
+	bool led_strip_on;
+
 } shared_data_type;
 
 extern shared_data_type shared_data;
