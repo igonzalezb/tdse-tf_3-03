@@ -12,7 +12,7 @@
 
 #include "stm32f1xx_hal.h"
 
-//TODO: ver que pasa cuando voy pasando de sistema con el parametro activo.
+//TODO: chequear que pasa cuando voy pasando de sistema con el parametro activo.
 // muestra siempre el 0 o muestra el ultimo en el que estaba. como cada sistema tiene el current
 
 
@@ -99,7 +99,7 @@ void task_menu_init(void *parameters) {
 	param_names[PARAM_AGUA] = "Nivel Agua";
 
 	test_names[TEST_WATER_LEVEL] = "Test Agua";
-	test_names[TEST_LIGHT] = "Test Luz";
+	test_names[TEST_LIGHT_SENSOR] = "Test Luz";
 	test_names[TEST_HUMIDITY] = "Test H.Suelo";
 	test_names[TEST_DHT22] = "Test DHT22";
 	test_names[TEST_STATE_LED] = "Test LED";
@@ -243,12 +243,12 @@ void task_menu_statechart_normal(void) {
 				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				if (shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT])
 				{
-					shared_data.led_strip_on = true;
+					//shared_data.led_strip_on = true;
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
 				}
 				else if ((shared_data.light_percent) >= (shared_data.config_values[CONFIG_LIGHT] + 10))
 				{
-					shared_data.led_strip_on = false;
+					//shared_data.led_strip_on = false;
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
 				}
 				last_light_tick = HAL_GetTick();
@@ -274,7 +274,7 @@ void task_menu_statechart_normal(void) {
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
 			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
-			shared_data.pump_on = false;
+			//shared_data.pump_on = false;
 		}
 		else if (shared_data.water_level_percent >= shared_data.config_values[CONFIG_WATER_LEVEL]
 				&& shared_data.humidity_percent < shared_data.config_values[CONFIG_HUMIDITY])
@@ -282,14 +282,13 @@ void task_menu_statechart_normal(void) {
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
 			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
 			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_WATER) : 0;
-			shared_data.pump_on = true;
+			//shared_data.pump_on = true;
 		}
 
 		last_pump_tick = HAL_GetTick();
 	}
 }
 
-//TODO: desactivar/activar led de estados.
 void task_menu_statechart_setup(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
 	char second_row[20];
@@ -414,9 +413,9 @@ void task_menu_statechart_setup(void) {
 	}
 }
 
-//TODO: TERMINAR DE HACER TESTS.
 void task_menu_statechart_test(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
+	char segunda_linea[17];
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
@@ -445,45 +444,48 @@ void task_menu_statechart_test(void) {
 							(p_task_menu_dta->current_test - 1);
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
-			LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
+			testing = true;
 			switch (p_task_menu_dta->current_test) {
 				case TEST_WATER_LEVEL:
+					snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
+					LCD_show("Testeando...", segunda_linea);
 					break;
-				case TEST_LIGHT:
+				case TEST_LIGHT_SENSOR:
+					snprintf(segunda_linea, sizeof(segunda_linea), "Sens. Luz: %s", get_sensor_value(PARAM_LUZ));
+					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_HUMIDITY:
+					snprintf(segunda_linea, sizeof(segunda_linea), "Hum. S: %s", get_sensor_value(PARAM_HUM_SUELO));
+					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_DHT22:
+					snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
+					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_STATE_LED:
 					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 				case TEST_BUZZER:
 					put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 				case TEST_PUMP:
 					put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 				case TEST_LED_STRIP:
 					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
+					LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
 					break;
 
 					break;
 				default:
 					break;
 			}
-			testing = true;
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC && testing) {
 
 			switch (p_task_menu_dta->current_test) {
-				case TEST_WATER_LEVEL:
-					break;
-				case TEST_LIGHT:
-					break;
-				case TEST_HUMIDITY:
-					break;
-				case TEST_DHT22:
-					break;
 				case TEST_STATE_LED:
 					put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_OFF);
 					break;

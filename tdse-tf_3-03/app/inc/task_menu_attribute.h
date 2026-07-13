@@ -51,7 +51,7 @@ typedef enum task_menu_config {
 /* Componentes para el Modo Test */
 typedef enum task_menu_test {
 	TEST_WATER_LEVEL = 0,	// sensor de nivel de agua
-	TEST_LIGHT,				// sensor de luz
+	TEST_LIGHT_SENSOR,		// sensor de luz
 	TEST_HUMIDITY,			// sensor de humedad de suelo
 	TEST_DHT22,				// sensor de humedad y temperatura ambiente (PUEDE NO ESTAR)
 	TEST_STATE_LED,			// led de estado
