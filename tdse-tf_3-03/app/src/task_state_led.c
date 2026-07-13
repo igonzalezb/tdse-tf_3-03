@@ -55,6 +55,7 @@ uint16_t const LED_PATTERNS_QTY = (sizeof(led_patterns) / sizeof(led_patterns[0]
 
 
 void task_state_led_init(void *parameters) {
+	init_queue_event_task_actuator(ID_ACT_STATE_LED);
     HAL_TIM_PWM_Start(&TIMER_STATE_LED, CHANNEL_LED_RED);
     HAL_TIM_PWM_Start(&TIMER_STATE_LED, CHANNEL_LED_GREEN);
     HAL_TIM_PWM_Start(&TIMER_STATE_LED, CHANNEL_LED_BLUE);

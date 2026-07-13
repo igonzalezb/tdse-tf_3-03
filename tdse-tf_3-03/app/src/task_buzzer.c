@@ -58,6 +58,7 @@ void task_buzzer_init(void *parameters) {
     buzzer_dta.tick = 0;
     current_pattern = NULL;
     remaining_pulses = 0;
+    init_queue_event_task_actuator(ID_ACT_BUZZER);
 }
 
 void task_buzzer_update(void *parameters) {

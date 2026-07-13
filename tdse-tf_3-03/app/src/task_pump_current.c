@@ -21,6 +21,7 @@
 #include "task_pump_current.h"
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
+#include "task_system_failure.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern shared_data_type shared_data;
@@ -203,7 +204,7 @@ void task_pump_current_update(void *parameters)
              * Generacion de falla generica para el menu.
              * El evento es generico: EV_SYS_FAILURE.
              * El origen especifico queda indicado por shared_data_ptr->pump_current_failure.
-             */
+
             if ((task_pump_current_overcurrent_active == false) &&
                 (shared_data_ptr->pump_current_percent >= PUMP_CURRENT_OVERCURRENT_LIMIT_PERCENT)) {
 
@@ -212,6 +213,7 @@ void task_pump_current_update(void *parameters)
 
                 put_event_task_menu(EV_SYS_FAILURE);
             }
+			 */
 
             /* Con esto comentado, el sensor no baja el flag de falla. Se lo deja al modo falla
              *
