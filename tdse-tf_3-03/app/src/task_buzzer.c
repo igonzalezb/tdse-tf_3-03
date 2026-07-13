@@ -2,6 +2,8 @@
 #include "app.h"
 #include "task_buzzer.h"
 #include "task_actuator_interface.h"
+#include "task_actuator_attribute.h"
+
 
 /**********************************************************************************************/
 

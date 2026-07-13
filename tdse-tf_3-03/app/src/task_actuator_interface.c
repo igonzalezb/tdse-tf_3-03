@@ -24,7 +24,7 @@ void init_queue_event_task_actuator(void) {
     }
 }
 */
-void init_queue_event_task_actuator(task_actuator_id_t id) {
+void init_queue_event_task_actuator(task_actuator_id_t id){
 	actuator_queues[id].head = 0;
 	actuator_queues[id].tail = 0;
 	actuator_queues[id].count = 0;

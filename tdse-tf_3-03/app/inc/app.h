@@ -43,16 +43,11 @@ typedef struct {
     bool pump_on;
     bool led_strip_on;
 
-    uint16_t config_values[CONFIG_WATER_LEVEL];
-
-	// Menu: variables
+ 	// Menu: variables
 	task_menu_sys_t active_system;
 
 	/* Valores de configuracion*/
 	uint16_t config_values[CONFIG_QTY];
-
-	bool pump_on;
-	bool led_strip_on;
 
 } shared_data_type;
 
