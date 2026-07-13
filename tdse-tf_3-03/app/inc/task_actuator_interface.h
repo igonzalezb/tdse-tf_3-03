@@ -11,7 +11,7 @@ extern "C" {
 #include "task_actuator_attribute.h"
 
 /********************** external functions declaration ***********************/
-extern void init_queue_event_task_actuator(void);
+extern void init_queue_event_task_actuator(task_actuator_id_t id);
 extern void put_event_task_actuator(task_actuator_id_t id, uint32_t event);
 extern uint32_t get_event_task_actuator(task_actuator_id_t id);
 extern bool any_event_task_actuator(task_actuator_id_t id);
