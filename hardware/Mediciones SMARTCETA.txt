@@ -1,0 +1,36 @@
+Mediciones SMARTCETA
+
+limite superior de consumo=500mA
+
+LED AZUL ALTO BRILLO (Peor caso)
+asumo que el RGB es como este x3
+
+vi = 5V, R=330.
+VLED=2,757V. ILED=6.7mA
+
+vi = 3,7V R=330
+VLED=2,689V ILED=1,8mA
+
+
+
+
+BUZZER
+
+vi=5,098V IBuzzer=5mA
+IBUZZERpico=10,960mA
+
+I(base tbj) = 2,859mA (pico máximo al excitar tbj)
+con R=1k
+
+con R=3k3 IBASEpico=1,046mA
+
+
+Resistencias:
+R1 = 10R14
+R2 = 
+R3 = 0K3317
+R4 = 4K645
+R5 = 0K3269
+R6 = 0K3297
+R7 = 0K3287
+R8 = 3K261
