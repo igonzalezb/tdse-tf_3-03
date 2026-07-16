@@ -391,6 +391,8 @@ void task_menu_statechart_setup(void) {
 				LCD_show("Guardado!",
 						config_names[p_task_menu_dta->current_config]);
 				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+				shared_data.config_values[CONFIG_LED_STATE] ? 0 : put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_OFF);
+
 			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
 				LOGGER_INFO("BTN_ESC PRESSED");
 				p_task_menu_dta->state = ST_SYS_00;
