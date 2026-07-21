@@ -95,7 +95,6 @@ typedef struct {
 const task_cfg_t task_cfg_list[] =
 {
 		{task_button_init, task_button_update, NULL },
-		{task_menu_init, task_menu_update, &shared_data },
 		{task_display_init, task_display_update, &shared_data },
 		{task_humidity_init, task_humidity_update, &shared_data },
 		{task_light_init, task_light_update, &shared_data },
@@ -108,6 +107,7 @@ const task_cfg_t task_cfg_list[] =
 		{task_pump_init, task_pump_update, NULL },
 		{task_led_strip_init, task_led_strip_update, NULL },
 		{task_system_failure_init, task_system_failure_update, &shared_data },
+		{task_menu_init, task_menu_update, &shared_data },
 };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
