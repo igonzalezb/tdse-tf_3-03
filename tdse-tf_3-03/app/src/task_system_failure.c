@@ -43,7 +43,7 @@ void task_system_failure_init(void *parameters){
 }
 
 void task_system_failure_update(void *parameters) {
-	if(shared_data.pump_current_percent > MAX_PUMP_CURRENT && shared_data.pump_on){
+	/*if(shared_data.pump_current_percent > MAX_PUMP_CURRENT && shared_data.pump_on){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_PUMP_OVERCURRENT);
 	}
@@ -99,7 +99,7 @@ void task_system_failure_update(void *parameters) {
 	if(shared_data.humidity_percent <= 0){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_HUMIDITY_LEVEL_ERROR);
-	}
+	}*/
 }
 
 bool task_system_failure_is_locked(void){
