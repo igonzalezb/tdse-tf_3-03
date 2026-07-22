@@ -10,6 +10,7 @@
 #include "task_system_failure.h"
 #include "task_display.h"
 #include "task_pump.h"
+#include "task_led_strip.h"
 
 #include "stm32f1xx_hal.h"
 
@@ -251,12 +252,12 @@ void task_menu_statechart_normal(void) {
 	/*=============== LED STRIP =======================================*/
 	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
 		// todo si está prendido que no vuelva a mandar el evento de prender
-		if (shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT])
+		if ((shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT]) && (get_led_strip_state() == ST_LED_STRIP_OFF))
 		{
 			LOGGER_INFO("ACTIVO LED STRIP");
 			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
 		}
-		else if ((shared_data.light_percent) >= (shared_data.config_values[CONFIG_LIGHT] + 10))
+		else if (((shared_data.light_percent) >= (shared_data.config_values[CONFIG_LIGHT] + 10)) && (get_led_strip_state()== ST_LED_STRIP_ON))
 		{
 			LOGGER_INFO("DESACTIVO LED STRIP");
 			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
@@ -265,22 +266,6 @@ void task_menu_statechart_normal(void) {
 	}
 
 	/*=============== PUMP =======================================*/
-/*	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
-		if (shared_data.pump_on && shared_data.humidity_percent < (shared_data.config_values[CONFIG_HUMIDITY]+10)){
-			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
-			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
-			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
-		}
-		else if (shared_data.water_level_percent >= shared_data.config_values[CONFIG_WATER_LEVEL]
-				&& shared_data.humidity_percent < shared_data.config_values[CONFIG_HUMIDITY])
-		{
-			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
-			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
-			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_WATER) : 0;
-		}
-
-		last_pump_tick = HAL_GetTick();
-	}*/
 	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || (get_pump_state() != ST_PUMP_IDLE)) {
 
 	    // 1. Calcular objetivo con techo de seguridad al 100%
