@@ -243,8 +243,8 @@ void task_menu_statechart_normal(void) {
 		last_scroll_tick = HAL_GetTick();
 	}
 	/*=============== LED STRIP =======================================*/
-	else if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
-		put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
+		// todo si está prendido que no vuelva a mandar el evento de prender
 		if (shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT])
 		{
 			LOGGER_INFO("ACTIVO LED STRIP");
@@ -275,7 +275,7 @@ void task_menu_statechart_normal(void) {
 
 		last_pump_tick = HAL_GetTick();
 	}*/
-	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
+	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
 
 	    // 1. Calcular objetivo con techo de seguridad al 100%
 	    uint16_t target_humidity = shared_data.config_values[CONFIG_HUMIDITY] + HUMIDITY_HYSTERESIS;
@@ -293,7 +293,8 @@ void task_menu_statechart_normal(void) {
 	        put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 	        shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
 	        shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
-
+	        // todo fix
+	        shared_data.pump_on = false;
 	        last_pump_tick = HAL_GetTick();
 	    }
 	    // 3. PRENDER BOMBA:
