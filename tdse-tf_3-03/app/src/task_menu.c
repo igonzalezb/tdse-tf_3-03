@@ -25,12 +25,15 @@
 #define AUTO_SCROLL_DELAY 			5000
 #define PUMP_CHECK_DELAY 			40000
 #define LIGHT_CHECK_DELAY 			20000
+#define DISPLAY_REFRESH_DELAY  		1000 // Refresca los valores en pantalla cada 1s
 
 #define HUMIDITY_HYSTERESIS  10
 
 static uint32_t last_scroll_tick;
 static uint32_t last_pump_tick;
 static uint32_t last_light_tick;
+static uint32_t last_refresh_tick = 0;
+static uint32_t last_test_tick = 0;
 
 // para el modo falla
 static system_failure_type current_display_fault = FAULT_NONE;
@@ -182,10 +185,6 @@ void task_menu_statechart_normal(void) {
 		p_task_menu_dta->flag = true;
 		p_task_menu_dta->event = get_event_task_menu();
 	}
-	else //TODO: comprobar esto. Que no enletice mucho.
-	{
-		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter), CENTER);
-	}
 
 	if (p_task_menu_dta->flag) {
 		p_task_menu_dta->flag = false;
@@ -241,6 +240,12 @@ void task_menu_statechart_normal(void) {
 						0 : p_task_menu_dta->current_parameter + 1;
 		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter), CENTER);
 		last_scroll_tick = HAL_GetTick();
+	}
+	/*=============== REFRESCO PERIÓDICO DEL SENSOR =====================*/
+	else if ((HAL_GetTick() - last_refresh_tick) >= DISPLAY_REFRESH_DELAY) {
+			// Actualiza únicamente el número/valor del sensor actual sin cambiar de pantalla
+			LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter), CENTER);
+			last_refresh_tick = HAL_GetTick();
 	}
 	/*=============== LED STRIP =======================================*/
 	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
@@ -447,46 +452,36 @@ void task_menu_statechart_test(void) {
 		p_task_menu_dta->flag = true;
 		p_task_menu_dta->event = get_event_task_menu();
 	}
-	else if (testing)//TODO: comprobar esto. Que no enletice mucho.
-		{
-		switch (p_task_menu_dta->current_test) {
-			case TEST_WATER_LEVEL:
-				snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
-				LCD_show("Testeando...", segunda_linea);
-				break;
-			case TEST_LIGHT_SENSOR:
-				snprintf(segunda_linea, sizeof(segunda_linea), "Sens. Luz: %s", get_sensor_value(PARAM_LUZ));
-				LCD_show("Testeando...", segunda_linea);
-				break;
-			case TEST_HUMIDITY:
-				snprintf(segunda_linea, sizeof(segunda_linea), "Hum. S: %s", get_sensor_value(PARAM_HUM_SUELO));
-				LCD_show("Testeando...", segunda_linea);
-				break;
-			case TEST_DHT22:
-				snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
-				LCD_show("Testeando...", segunda_linea);
-				break;
-			case TEST_STATE_LED:
-				put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_ON);
-				LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
-				break;
-			case TEST_BUZZER:
-				put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_ON);
-				LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
-				break;
-			case TEST_PUMP:
-				put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
-				LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
-				break;
-			case TEST_LED_STRIP:
-				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
-				LCD_show("Testeando...", test_names[p_task_menu_dta->current_test]);
-				break;
+	else if (testing) {
+			if ((HAL_GetTick() - last_test_tick) >= DISPLAY_REFRESH_DELAY) {
 
-				break;
-			default:
-				break;
-		}
+				switch (p_task_menu_dta->current_test) {
+					case TEST_WATER_LEVEL:
+						snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_LIGHT_SENSOR:
+						snprintf(segunda_linea, sizeof(segunda_linea), "Sens. Luz: %s", get_sensor_value(PARAM_LUZ));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_HUMIDITY:
+						snprintf(segunda_linea, sizeof(segunda_linea), "Hum. S: %s", get_sensor_value(PARAM_HUM_SUELO));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_DHT22:
+						snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_STATE_LED:
+					case TEST_BUZZER:
+					case TEST_PUMP:
+					case TEST_LED_STRIP:
+						break;
+					default:
+						break;
+				}
+				last_test_tick = HAL_GetTick(); // Reiniciamos el temporizador
+			}
 		}
 
 	if (p_task_menu_dta->flag)
@@ -512,6 +507,7 @@ void task_menu_statechart_test(void) {
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			testing = true;
+			last_test_tick = HAL_GetTick();
 			switch (p_task_menu_dta->current_test) {
 				case TEST_WATER_LEVEL:
 					snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
