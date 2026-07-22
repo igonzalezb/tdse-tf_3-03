@@ -5,9 +5,11 @@
 extern "C" {
 #endif
 
+#include "task_actuator_attribute.h"
 /********************** external functions declaration ***********************/
 extern void task_led_strip_init(void *parameters);
 extern void task_led_strip_update(void *parameters);
+extern task_led_strip_st_t get_led_strip_state(void);
 
 #ifdef __cplusplus
 }

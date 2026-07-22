@@ -57,3 +57,7 @@ static void led_strip_on(void){
 	HAL_GPIO_WritePin(Tira_LED_GPIO_Port, Tira_LED_Pin, GPIO_PIN_SET);
 	shared_data.led_strip_on = true;
 }
+
+task_led_strip_st_t get_led_strip_state(void) {
+    return (task_led_strip_st_t)led_strip_dta.state;
+}

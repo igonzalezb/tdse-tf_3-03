@@ -129,3 +129,7 @@ static void task_pump_statechart(void) {
 static void apply_pump_pwm(uint16_t pump_pwm_duty) {
     __HAL_TIM_SET_COMPARE(&TIMER_PUMP, CHANNEL_PUMP, pump_pwm_duty);
 }
+
+task_pump_st_t get_pump_state(void) {
+    return (task_pump_st_t)pump_dta.state;
+}

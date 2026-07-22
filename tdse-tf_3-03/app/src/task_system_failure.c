@@ -3,6 +3,7 @@
 #include "app.h"
 #include "task_system_failure.h"
 #include "task_menu_interface.h"
+#include "task_actuator_attribute.h"
 
 /********************** defines *******************************************/
 #define MAX_OVERCURRENT_FAILURES 2
@@ -42,29 +43,29 @@ void task_system_failure_init(void *parameters){
 	led_strip_overcurrent_failures = 0;
 }
 
-void task_system_failure_update(void *parameters) {
-	/*if(shared_data.pump_current_percent > MAX_PUMP_CURRENT && shared_data.pump_on){
+void task_system_failure_update(void *parameters) {/*
+	if(shared_data.pump_current_percent > MAX_PUMP_CURRENT && (get_pump_state() == ST_PUMP_ON)){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_PUMP_OVERCURRENT);
 	}
-	else if(shared_data.pump_current_percent > MIN_PUMP_CURRENT && !shared_data.pump_on){
+	else if(shared_data.pump_current_percent > MIN_PUMP_CURRENT && (get_pump_state() == ST_PUMP_IDLE)){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_PUMP_DRIVER);
 	}
-	else if(shared_data.pump_current_percent < MIN_PUMP_CURRENT && shared_data.pump_on){
+	else if(shared_data.pump_current_percent < MIN_PUMP_CURRENT && (get_pump_state() == ST_PUMP_ON)){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_PUMP_OPEN);
 	}
 
-	if(shared_data.led_current_percent > MAX_LED_STRIP_CURRENT && shared_data.led_strip_on){
+	if(shared_data.led_current_percent > MAX_LED_STRIP_CURRENT && (get_led_strip_state() == ST_LED_STRIP_ON)){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_LED_STRIP_OVERCURRENT);
 	}
-	else if(shared_data.led_current_percent > MIN_LED_STRIP_CURRENT && !shared_data.led_strip_on){
+	else if(shared_data.led_current_percent > MIN_LED_STRIP_CURRENT && (get_led_strip_state() == ST_LED_STRIP_OFF)){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_LED_STRIP_DRIVER);
 	}
-	else if(shared_data.led_current_percent < MIN_LED_STRIP_CURRENT && shared_data.led_strip_on){
+	else if(shared_data.led_current_percent < MIN_LED_STRIP_CURRENT && (get_led_strip_state() == ST_LED_STRIP_ON)){
 		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_LED_STRIP_OPEN);
 	}

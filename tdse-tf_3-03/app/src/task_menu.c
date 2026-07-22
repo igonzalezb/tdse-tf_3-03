@@ -9,6 +9,7 @@
 #include "display.h"
 #include "task_system_failure.h"
 #include "task_display.h"
+#include "task_pump.h"
 
 #include "stm32f1xx_hal.h"
 
@@ -280,7 +281,7 @@ void task_menu_statechart_normal(void) {
 
 		last_pump_tick = HAL_GetTick();
 	}*/
-	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
+	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || (get_pump_state() != ST_PUMP_IDLE)) {
 
 	    // 1. Calcular objetivo con techo de seguridad al 100%
 	    uint16_t target_humidity = shared_data.config_values[CONFIG_HUMIDITY] + HUMIDITY_HYSTERESIS;
@@ -290,23 +291,22 @@ void task_menu_statechart_normal(void) {
 
 	    // 2. APAGAR BOMBA:
 	    // Si la bomba está encendida Y (alcanzó la humedad deseada O se quedó sin agua)
-	    if (shared_data.pump_on &&
-	       (shared_data.humidity_percent >= target_humidity ||
-	        shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]))
-	    {
+	   if ((get_pump_state() == ST_PUMP_ON) &&
+		   (shared_data.humidity_percent >= target_humidity ||
+			shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]))
+		{
 	    	LOGGER_INFO("DESACTIVO BOMBA");
 	        put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 	        shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
 	        shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
-	        // todo fix
-	        shared_data.pump_on = false;
+
 	        last_pump_tick = HAL_GetTick();
 	    }
 	    // 3. PRENDER BOMBA:
 	    // Si la bomba está apagada Y hay agua suficiente Y la humedad cayó por debajo del mínimo
-	    else if (!shared_data.pump_on &&
-	             shared_data.water_level_percent >= shared_data.config_values[CONFIG_WATER_LEVEL] &&
-	             shared_data.humidity_percent < shared_data.config_values[CONFIG_HUMIDITY])
+	   else if ((get_pump_state() == ST_PUMP_IDLE) &&
+			shared_data.water_level_percent >= shared_data.config_values[CONFIG_WATER_LEVEL] &&
+			shared_data.humidity_percent < shared_data.config_values[CONFIG_HUMIDITY])
 	    {
 	    	LOGGER_INFO("ACTIVO BOMBA");
 	        put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);

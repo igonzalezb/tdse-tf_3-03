@@ -39,8 +39,11 @@ void put_event_task_actuator(task_actuator_id_t id, uint32_t event) {
 
     queue_t *queues = &actuator_queues[id];
 
+    if (queues->count < MAX_EVENTS) {
+            queues->count++;
+        }
+
     // Si la cola está llena, sobreescribe.
-    queues->count++;
     queues->queue[queues->head++] = event;
 
     if (MAX_EVENTS == queues->head) {
