@@ -15,7 +15,7 @@ extern "C" {
 
 /*** Valores maximos ***/
 #define MAX_TEMPERATURE 35
-#define MIN_TEMPERATURE 5
+#define MIN_TEMPERATURE -1
 #define MAX_PUMP_CURRENT 90
 #define MIN_PUMP_CURRENT 1
 #define MAX_LED_STRIP_CURRENT 90

@@ -189,7 +189,7 @@ void task_water_level_update(void *parameters)
                 task_water_level_failure_active = true;
                 shared_data->water_level_failure = true;
 
-                put_event_task_menu(EV_SYS_FAILURE);
+                //put_event_task_menu(EV_SYS_FAILURE);
             }
 
             /* Comentado para que no baje la flag de falla

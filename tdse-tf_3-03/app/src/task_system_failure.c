@@ -1,13 +1,20 @@
 
 /********************** inclusions *******************************************/
 #include "app.h"
+#include "main.h"
 #include "task_system_failure.h"
 #include "task_menu_interface.h"
 #include "task_actuator_attribute.h"
+#include "task_pump.h"
+#include "task_led_strip.h"
+#include "logger.h"
 
 /********************** defines *******************************************/
 #define MAX_OVERCURRENT_FAILURES 2
-
+// periodos en los que se anula el sensado de fallas para evitar falsos positivos
+#define STARTUP_PERIOD_MS 350
+#define ACTUATOR_PERIOD_MS 200
+#define DHT22_PERIOD_MS 600
 
 /** Variables estáticas **/
 static volatile bool active_faults[FAULT_QTY];		// Arreglo estático de las fallas activas
@@ -43,64 +50,119 @@ void task_system_failure_init(void *parameters){
 	led_strip_overcurrent_failures = 0;
 }
 
-void task_system_failure_update(void *parameters) {/*
-	if(shared_data.pump_current_percent > MAX_PUMP_CURRENT && (get_pump_state() == ST_PUMP_ON)){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_PUMP_OVERCURRENT);
-	}
-	else if(shared_data.pump_current_percent > MIN_PUMP_CURRENT && (get_pump_state() == ST_PUMP_IDLE)){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_PUMP_DRIVER);
-	}
-	else if(shared_data.pump_current_percent < MIN_PUMP_CURRENT && (get_pump_state() == ST_PUMP_ON)){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_PUMP_OPEN);
+void task_system_failure_update(void *parameters) {
+	static uint32_t init_tick = 0;
+	static bool system_ready = false;
+
+	// === Temporizadores de estado para actuadores ===
+	static uint32_t pump_on_tick = 0;
+	static uint32_t pump_off_tick = 0;
+	static uint32_t led_strip_on_tick = 0;
+	static uint32_t led_strip_off_tick = 0;
+
+	if (!system_ready) {
+			if (init_tick == 0) {
+			init_tick = HAL_GetTick();
+		}
+
+		// Si aún no pasó el tiempo de gracia, salimos de la función inmediatamente
+		if ((HAL_GetTick() - init_tick) < STARTUP_PERIOD_MS) {
+			return;
+		}
+
+		// El tiempo de gracia finalizó, marcamos el sistema como listo
+		system_ready = true;
+		LOGGER_INFO("Iniciando monitoreo de fallas.");
 	}
 
-	if(shared_data.led_current_percent > MAX_LED_STRIP_CURRENT && (get_led_strip_state() == ST_LED_STRIP_ON)){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_LED_STRIP_OVERCURRENT);
-	}
-	else if(shared_data.led_current_percent > MIN_LED_STRIP_CURRENT && (get_led_strip_state() == ST_LED_STRIP_OFF)){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_LED_STRIP_DRIVER);
-	}
-	else if(shared_data.led_current_percent < MIN_LED_STRIP_CURRENT && (get_led_strip_state() == ST_LED_STRIP_ON)){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_LED_STRIP_OPEN);
-	}
+
+	// ================= BOMBA =================
+	if (get_pump_state() == ST_PUMP_ON) {
+			pump_off_tick = 0; // Se encendió, cancelamos el timer de apagado
+
+			if (pump_on_tick == 0) pump_on_tick = HAL_GetTick(); // Registramos cuándo arrancó
+
+			if ((HAL_GetTick() - pump_on_tick) > ACTUATOR_PERIOD_MS) {
+				if(shared_data.pump_current_percent > MAX_PUMP_CURRENT){
+					task_system_failure_report(FAULT_PUMP_OVERCURRENT);
+				}
+				else if(shared_data.pump_current_percent < MIN_PUMP_CURRENT){
+					task_system_failure_report(FAULT_PUMP_OPEN);
+				}
+			}
+		}
+		else if (get_pump_state() == ST_PUMP_IDLE) {
+			pump_on_tick = 0; // Se apagó, cancelamos el timer de encendido
+
+			if (pump_off_tick == 0) pump_off_tick = HAL_GetTick(); // Registramos cuándo se apagó
+
+			if ((HAL_GetTick() - pump_off_tick) > ACTUATOR_PERIOD_MS) {
+				// Si pasó el tiempo de gracia y sigue habiendo corriente, el driver falló
+				if(shared_data.pump_current_percent > MIN_PUMP_CURRENT){
+					task_system_failure_report(FAULT_PUMP_DRIVER);
+				}
+			}
+		} else {
+			// Para estados intermedios (ej. ST_PUMP_RAMP_UP / RAMP_DOWN) no evaluamos fallas
+			pump_on_tick = 0;
+			pump_off_tick = 0;
+		}
+
+	// === 3. EVALUACIÓN DE LA TIRA LED ===
+		if (get_led_strip_state() == ST_LED_STRIP_ON) {
+			led_strip_off_tick = 0;
+
+			if (led_strip_on_tick == 0) led_strip_on_tick = HAL_GetTick();
+
+			if ((HAL_GetTick() - led_strip_on_tick) > ACTUATOR_PERIOD_MS) {
+				if(shared_data.led_current_percent > MAX_LED_STRIP_CURRENT){
+					task_system_failure_report(FAULT_LED_STRIP_OVERCURRENT);
+				}
+				else if(shared_data.led_current_percent < MIN_LED_STRIP_CURRENT){
+					task_system_failure_report(FAULT_LED_STRIP_OPEN);
+				}
+			}
+		}
+		else if (get_led_strip_state() == ST_LED_STRIP_OFF) {
+			led_strip_on_tick = 0;
+
+			if (led_strip_off_tick == 0) led_strip_off_tick = HAL_GetTick();
+
+			if ((HAL_GetTick() - led_strip_off_tick) > ACTUATOR_PERIOD_MS) {
+				if(shared_data.led_current_percent > MIN_LED_STRIP_CURRENT){
+					task_system_failure_report(FAULT_LED_STRIP_DRIVER);
+				}
+			}
+		}
 
 	if(shared_data.dht22_temperature > MAX_TEMPERATURE){
-		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_HIGH_TEMPERATURE);
 	}
-	else if(shared_data.dht22_temperature < MIN_TEMPERATURE){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_LOW_TEMPERATURE);
-	}
 
-	if(shared_data.dht22_error){
-		put_event_task_menu(EV_SYS_FAILURE);
-		task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
+	// Recién evaluamos el DHT22 cuando haya pasado su largo tiempo de gracia inicial
+	if ((HAL_GetTick() - init_tick) > DHT22_PERIOD_MS) {
+		if(shared_data.dht22_temperature < MIN_TEMPERATURE){
+			task_system_failure_report(FAULT_LOW_TEMPERATURE);
+		}
+
+		if(shared_data.dht22_error){
+			task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
+		}
 	}
 
 	if(shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]){
-		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_WATER_LEVEL_LOW);
 	}
 
 	if(shared_data.water_level_percent <= 0){
-		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_WATER_LEVEL_ERROR);
 	}
 	if(shared_data.light_percent <= 0){
-		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_LIGHT_LEVEL_ERROR);
 	}
 	if(shared_data.humidity_percent <= 0){
-		put_event_task_menu(EV_SYS_FAILURE);
 		task_system_failure_report(FAULT_HUMIDITY_LEVEL_ERROR);
-	}*/
+	}
 }
 
 bool task_system_failure_is_locked(void){
@@ -112,6 +174,8 @@ void task_system_failure_report(system_failure_type failure) {
 
 	if (active_faults[failure] == false) {
 		active_faults[failure] = true;
+
+		put_event_task_menu(EV_SYS_FAILURE);
 
 		// Contadores de sobrecorriente. Si llega a 2, bloquea el sistema.
 		if (failure == FAULT_PUMP_OVERCURRENT) {

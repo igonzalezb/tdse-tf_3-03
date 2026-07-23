@@ -190,7 +190,7 @@ void task_menu_statechart_normal(void) {
 	if (p_task_menu_dta->flag) {
 		p_task_menu_dta->flag = false;
 
-		/*if (p_task_menu_dta->event == EV_SYS_FAILURE){
+		if (p_task_menu_dta->event == EV_SYS_FAILURE){
 			LOGGER_INFO("SYS FAILURE");
 			shared_data.active_system = SYS_FAILURE;
 			p_task_menu_dta->state = ST_SYS_00;
@@ -199,7 +199,7 @@ void task_menu_statechart_normal(void) {
 
 		}
 		// Navegación entre botones (derecha/izquierda)
-		else */if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+		else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			LOGGER_INFO("BTN_RIGHT PRESSED");
 			p_task_menu_dta->current_parameter =
 					(p_task_menu_dta->current_parameter == (PARAM_QTY-1)) ?
@@ -331,7 +331,7 @@ void task_menu_statechart_setup(void) {
 	case ST_SYS_00: // Selección de parámetro a configurar
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
-			/*if (p_task_menu_dta->event == EV_SYS_FAILURE){
+			if (p_task_menu_dta->event == EV_SYS_FAILURE){
 				LOGGER_INFO("SYS FAILURE");
 				shared_data.active_system = SYS_FAILURE;
 				p_task_menu_dta->state = ST_SYS_00;
@@ -340,7 +340,7 @@ void task_menu_statechart_setup(void) {
 
 			}
 
-			else */if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+			else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
 				p_task_menu_dta->current_config =
 						(p_task_menu_dta->current_config == (CONFIG_QTY - 1)) ?
@@ -382,7 +382,7 @@ void task_menu_statechart_setup(void) {
 	case ST_SYS_01: // Modificación del valor del parámetro
 		if (p_task_menu_dta->flag) {
 			p_task_menu_dta->flag = false;
-			/*if (p_task_menu_dta->event == EV_SYS_FAILURE){
+			if (p_task_menu_dta->event == EV_SYS_FAILURE){
 				LOGGER_INFO("SYS FAILURE");
 				shared_data.active_system = SYS_FAILURE;
 				p_task_menu_dta->state = ST_SYS_00;
@@ -390,7 +390,7 @@ void task_menu_statechart_setup(void) {
 				shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
 
 			}
-			else*/ if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+			else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 				LOGGER_INFO("BTN_RIGHT PRESSED");
 
 				(shared_data.config_values[p_task_menu_dta->current_config]
@@ -487,7 +487,7 @@ void task_menu_statechart_test(void) {
 	if (p_task_menu_dta->flag)
 	{
 		p_task_menu_dta->flag = false;
-		/*if (p_task_menu_dta->event == EV_SYS_FAILURE){
+		if (p_task_menu_dta->event == EV_SYS_FAILURE){
 			LOGGER_INFO("SYS FAILURE");
 			p_task_menu_dta->state = ST_SYS_00;
 			shared_data.active_system = SYS_FAILURE;
@@ -495,7 +495,7 @@ void task_menu_statechart_test(void) {
 			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
 
 		}
-		else*/ if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+		else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
 			p_task_menu_dta->current_test = (p_task_menu_dta->current_test + 1)
 					% TEST_QTY;
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
@@ -636,11 +636,13 @@ void task_menu_statechart_failure(void){
 
 				if (!is_locked) {
 					if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+						LOGGER_INFO("BTN_RIGHT PRESSED");
 						current_display_fault = task_system_failure_get_next(current_display_fault);
 						last_scroll_tick = HAL_GetTick();
 						update_display = true;
 					}
 					else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
+						LOGGER_INFO("BTN_LEFT PRESSED");
 						current_display_fault = task_system_failure_get_prev(current_display_fault);
 						last_scroll_tick = HAL_GetTick();
 						update_display = true;

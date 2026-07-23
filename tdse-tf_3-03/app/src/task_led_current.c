@@ -11,6 +11,9 @@
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
 
+// TODO Establecer maximos y minimos con task_sys_failure
+// TODO Gestionar bien el llamado a modo falla
+
 extern ADC_HandleTypeDef hadc1;
 
 /*
@@ -195,7 +198,7 @@ void task_led_current_update(void *parameters)
                 task_led_current_failure_active = true;
                 shared_data->led_current_failure = true;
 
-                put_event_task_menu(EV_SYS_FAILURE);
+                //put_event_task_menu(EV_SYS_FAILURE);
             }
 
             /* Con esto comentado, el task no levanta la flag de falla. Se encarga el modo falla.

@@ -26,6 +26,9 @@
 extern ADC_HandleTypeDef hadc1;
 extern shared_data_type shared_data;
 
+// TODO Establecer maximos y minimos con task_sys_failure
+// TODO Gestionar bien el llamado a modo falla
+
 /*
  * Constantes de calibracion para convertir la lectura ADC a porcentaje.
  * Ajustar estos valores midiendo en Live Expressions:

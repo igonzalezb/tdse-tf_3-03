@@ -3,6 +3,9 @@
 #include "board.h"
 #include "task_dht22.h"
 
+#define MAX_DHT22_FAILURES 3
+// TODO Mejorar este codigo para eliminar los falsos positivos de DHT22 error
+
 extern TIM_HandleTypeDef htim2;
 
 typedef enum {
