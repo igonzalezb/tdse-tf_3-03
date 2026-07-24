@@ -85,8 +85,8 @@ void task_menu_init(void *parameters) {
 //		p_task_menu_dta->current_value = 0;
 //		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 //	}
-	shared_data.pump_on = false;
-	shared_data.led_strip_on = false;
+	 // shared_data.pump_on = false;
+	 // shared_data.led_strip_on = false;
 	testing = false;
 	shared_data.active_system = SYS_NORMAL;
 
@@ -592,8 +592,8 @@ void task_menu_statechart_failure(void){
 		case ST_SYS_00:
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-			shared_data.pump_on = false;
-			shared_data.led_strip_on = false;
+			 // shared_data.pump_on = false;
+			 // shared_data.led_strip_on = false;
 
 			if (is_locked) {shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_LOCKED) : 0;}
 

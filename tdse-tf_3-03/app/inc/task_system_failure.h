@@ -15,11 +15,11 @@ extern "C" {
 
 /*** Valores maximos ***/
 #define MAX_TEMPERATURE 35
-#define MIN_TEMPERATURE -1
-#define MAX_PUMP_CURRENT 90
-#define MIN_PUMP_CURRENT 1
-#define MAX_LED_STRIP_CURRENT 90
-#define MIN_LED_STRIP_CURRENT 1
+#define MIN_TEMPERATURE 0
+#define MAX_PUMP_CURRENT 300
+#define MIN_PUMP_CURRENT 10
+#define MAX_LED_STRIP_CURRENT 200
+#define MIN_LED_STRIP_CURRENT 10
 
 typedef enum {
     FAULT_PUMP_OVERCURRENT,			// Exceso de corriente en bomba

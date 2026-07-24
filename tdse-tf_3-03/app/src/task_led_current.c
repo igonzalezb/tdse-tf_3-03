@@ -21,8 +21,9 @@ extern ADC_HandleTypeDef hadc1;
  * - LED_CURRENT_ADC_NO_CURRENT: valor ADC sin corriente.
  * - LED_CURRENT_ADC_MAX_CURRENT: valor ADC con corriente maxima tomada como 100%.
  */
-#define LED_CURRENT_ADC_NO_CURRENT     0u
-#define LED_CURRENT_ADC_MAX_CURRENT    4095u
+#define LED_CURRENT_ADC_NO_CURRENT       0u
+#define LED_CURRENT_ADC_REF_VALUE        573u
+#define LED_CURRENT_MA_REF_VALUE_X10     1636u
 
 /* Si el scheduler corre cada 1 ms, 10 ticks ~= 10 ms. */
 #define LED_CURRENT_ADC_TIMEOUT_TICKS    10u
@@ -31,7 +32,7 @@ extern ADC_HandleTypeDef hadc1;
  * Cuando supera LIMIT se genera EV_SYS_FAILURE.
  * Cuando baja de CLEAR se limpia el flag de falla.
  */
-#define LED_CURRENT_OVERCURRENT_LIMIT_PERCENT    80u
+//#define LED_CURRENT_OVERCURRENT_LIMIT_PERCENT    80u
 //#define LED_CURRENT_OVERCURRENT_CLEAR_PERCENT    70u  Si se usa histeresis
 
 typedef enum {
@@ -51,7 +52,7 @@ static task_led_current_data_t task_led_current_data;
 static volatile bool task_led_current_adc_ready = false;
 static volatile bool task_led_current_adc_error_flag = false;
 static volatile uint16_t task_led_current_adc_value = 0u;
-
+/*
 static bool task_led_current_failure_active = false;
 
 static uint16_t task_led_current_adc_to_percent(uint16_t adc_value)
@@ -64,9 +65,9 @@ static uint16_t task_led_current_adc_to_percent(uint16_t adc_value)
     if (adc_no_current == adc_max_current) {
         return 0u;
     }
-
+*/
     /* Sin corriente -> ADC bajo, mas corriente -> ADC alto. */
-    if (adc_max_current > adc_no_current) {
+/*if (adc_max_current > adc_no_current) {
 
         if (adc <= adc_no_current) {
             return 0u;
@@ -78,9 +79,9 @@ static uint16_t task_led_current_adc_to_percent(uint16_t adc_value)
 
         percent = ((adc - adc_no_current) * 100) /
                   (adc_max_current - adc_no_current);
-    }
+    }*/
     /* Sin corriente -> ADC alto, mas corriente -> ADC bajo. */
-    else {
+/*else {
 
         if (adc >= adc_no_current) {
             return 0u;
@@ -102,6 +103,23 @@ static uint16_t task_led_current_adc_to_percent(uint16_t adc_value)
     }
 
     return (uint16_t) percent;
+}*/
+
+static uint16_t task_led_current_adc_to_ma(uint16_t adc_value)
+{
+    uint32_t adc = (uint32_t)adc_value;
+    uint32_t adc_no_current = (uint32_t)LED_CURRENT_ADC_NO_CURRENT;
+    uint32_t current_ma_x10;
+
+    if (adc <= adc_no_current) {
+        return 0u;
+    }
+
+    /* Regla de 3 simple: (ADC_Leido * 163.6) / 573 */
+    current_ma_x10 = ((adc - adc_no_current) * LED_CURRENT_MA_REF_VALUE_X10) / LED_CURRENT_ADC_REF_VALUE;
+
+    /* Dividimos por 10 para devolver los mA exactos en formato entero */
+    return (uint16_t)(current_ma_x10 / 10u);
 }
 
 void task_led_current_init(void *parameters)
@@ -115,10 +133,11 @@ void task_led_current_init(void *parameters)
     task_led_current_adc_ready = false;
     task_led_current_adc_error_flag = false;
     task_led_current_adc_value = 0u;
-    task_led_current_failure_active = false;
+    //task_led_current_failure_active = false;
 
-    shared_data->led_current_percent = 0u;
-    shared_data->led_current_failure = false;
+    shared_data->led_current_ma = 0u;
+    //shared_data->led_current_percent = 0u;
+    //shared_data->led_current_failure = false;
 }
 
 void task_led_current_update(void *parameters)
@@ -190,16 +209,17 @@ void task_led_current_update(void *parameters)
             shared_data->adc_busy = false;
             shared_data->adc_owner = ADC_OWNER_NONE;
 
-            shared_data->led_current_percent = task_led_current_adc_to_percent(adc_value);
+           // shared_data->led_current_percent = task_led_current_adc_to_percent(adc_value);
+            shared_data->led_current_ma = task_led_current_adc_to_ma(adc_value);
 
-            if ((task_led_current_failure_active == false) &&
+            /*if ((task_led_current_failure_active == false) &&
                 (shared_data->led_current_percent >= LED_CURRENT_OVERCURRENT_LIMIT_PERCENT)) {
 
                 task_led_current_failure_active = true;
                 shared_data->led_current_failure = true;
 
                 //put_event_task_menu(EV_SYS_FAILURE);
-            }
+            }*/
 
             /* Con esto comentado, el task no levanta la flag de falla. Se encarga el modo falla.
             if ((task_led_current_failure_active == true) &&

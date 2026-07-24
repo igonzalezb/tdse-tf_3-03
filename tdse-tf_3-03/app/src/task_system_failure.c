@@ -12,9 +12,9 @@
 /********************** defines *******************************************/
 #define MAX_OVERCURRENT_FAILURES 2
 // periodos en los que se anula el sensado de fallas para evitar falsos positivos
-#define STARTUP_PERIOD_MS 350
-#define ACTUATOR_PERIOD_MS 200
-#define DHT22_PERIOD_MS 600
+#define STARTUP_PERIOD_MS 150
+#define ACTUATOR_PERIOD_MS 300
+#define DHT22_PERIOD_MS 0
 
 /** Variables estáticas **/
 static volatile bool active_faults[FAULT_QTY];		// Arreglo estático de las fallas activas
@@ -76,17 +76,17 @@ void task_system_failure_update(void *parameters) {
 	}
 
 
-	// ================= BOMBA =================
+	// ======================     BOMBA     ==========================
 	if (get_pump_state() == ST_PUMP_ON) {
 			pump_off_tick = 0; // Se encendió, cancelamos el timer de apagado
 
 			if (pump_on_tick == 0) pump_on_tick = HAL_GetTick(); // Registramos cuándo arrancó
 
 			if ((HAL_GetTick() - pump_on_tick) > ACTUATOR_PERIOD_MS) {
-				if(shared_data.pump_current_percent > MAX_PUMP_CURRENT){
+				if(shared_data.pump_current_ma > MAX_PUMP_CURRENT){
 					task_system_failure_report(FAULT_PUMP_OVERCURRENT);
 				}
-				else if(shared_data.pump_current_percent < MIN_PUMP_CURRENT){
+				else if(shared_data.pump_current_ma < MIN_PUMP_CURRENT){
 					task_system_failure_report(FAULT_PUMP_OPEN);
 				}
 			}
@@ -98,27 +98,27 @@ void task_system_failure_update(void *parameters) {
 
 			if ((HAL_GetTick() - pump_off_tick) > ACTUATOR_PERIOD_MS) {
 				// Si pasó el tiempo de gracia y sigue habiendo corriente, el driver falló
-				if(shared_data.pump_current_percent > MIN_PUMP_CURRENT){
+				if(shared_data.pump_current_ma > MIN_PUMP_CURRENT){
 					task_system_failure_report(FAULT_PUMP_DRIVER);
 				}
 			}
 		} else {
-			// Para estados intermedios (ej. ST_PUMP_RAMP_UP / RAMP_DOWN) no evaluamos fallas
+			// Para estados intermedios (ej. ST_PUMP_RAMP_UP / RAMP_DOWN) no se evaluan fallos
 			pump_on_tick = 0;
 			pump_off_tick = 0;
 		}
 
-	// === 3. EVALUACIÓN DE LA TIRA LED ===
+	// ======================     Tira LED     ==========================
 		if (get_led_strip_state() == ST_LED_STRIP_ON) {
 			led_strip_off_tick = 0;
 
 			if (led_strip_on_tick == 0) led_strip_on_tick = HAL_GetTick();
 
 			if ((HAL_GetTick() - led_strip_on_tick) > ACTUATOR_PERIOD_MS) {
-				if(shared_data.led_current_percent > MAX_LED_STRIP_CURRENT){
+				if(shared_data.led_current_ma > MAX_LED_STRIP_CURRENT){
 					task_system_failure_report(FAULT_LED_STRIP_OVERCURRENT);
 				}
-				else if(shared_data.led_current_percent < MIN_LED_STRIP_CURRENT){
+				else if(shared_data.led_current_ma < MIN_LED_STRIP_CURRENT){
 					task_system_failure_report(FAULT_LED_STRIP_OPEN);
 				}
 			}
@@ -129,27 +129,37 @@ void task_system_failure_update(void *parameters) {
 			if (led_strip_off_tick == 0) led_strip_off_tick = HAL_GetTick();
 
 			if ((HAL_GetTick() - led_strip_off_tick) > ACTUATOR_PERIOD_MS) {
-				if(shared_data.led_current_percent > MIN_LED_STRIP_CURRENT){
+				if(shared_data.led_current_ma > MIN_LED_STRIP_CURRENT){
 					task_system_failure_report(FAULT_LED_STRIP_DRIVER);
 				}
 			}
 		}
 
+
+
+	// ======================     DHT 22     ==========================
+	// pruebo directamente sin pausa
 	if(shared_data.dht22_temperature > MAX_TEMPERATURE){
 		task_system_failure_report(FAULT_HIGH_TEMPERATURE);
 	}
-
-	// Recién evaluamos el DHT22 cuando haya pasado su largo tiempo de gracia inicial
-	if ((HAL_GetTick() - init_tick) > DHT22_PERIOD_MS) {
+	/*if ((HAL_GetTick() - init_tick) > DHT22_PERIOD_MS) {
 		if(shared_data.dht22_temperature < MIN_TEMPERATURE){
 			task_system_failure_report(FAULT_LOW_TEMPERATURE);
 		}
 
 		if(shared_data.dht22_error){
 			task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
-		}
+		}*/
+
+
+	if(shared_data.dht22_temperature < MIN_TEMPERATURE){
+		task_system_failure_report(FAULT_LOW_TEMPERATURE);
 	}
 
+	if(shared_data.dht22_error){
+		task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
+	}
+//}
 	if(shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]){
 		task_system_failure_report(FAULT_WATER_LEVEL_LOW);
 	}
@@ -203,13 +213,13 @@ bool task_system_failure_can_restore(void) {
             switch(i) {
                 // Verificamos si el sensor ya volvió a valores seguros
             	case FAULT_PUMP_OVERCURRENT:
-					if (shared_data.pump_current_percent >= MAX_PUMP_CURRENT) return false;
+					if (shared_data.pump_current_ma >= MAX_PUMP_CURRENT) return false;
 					break;
 
             	case FAULT_PUMP_OPEN: break;
 
             	case FAULT_LED_STRIP_OVERCURRENT:
-					if (shared_data.led_current_percent >= MAX_LED_STRIP_CURRENT) return false;
+					if (shared_data.led_current_ma >= MAX_LED_STRIP_CURRENT) return false;
 					break;
 
 				case FAULT_LED_STRIP_OPEN: break;
@@ -243,11 +253,11 @@ bool task_system_failure_can_restore(void) {
                     break;
 
                 case FAULT_PUMP_DRIVER:
-					if (shared_data.pump_current_percent >=  MIN_PUMP_CURRENT) return false;
+					if (shared_data.pump_current_ma >=  MIN_PUMP_CURRENT) return false;
 					break;
 
 				case FAULT_LED_STRIP_DRIVER:
-					if (shared_data.led_current_percent >=  MIN_LED_STRIP_CURRENT) return false;
+					if (shared_data.led_current_ma >=  MIN_LED_STRIP_CURRENT) return false;
 					break;
 
                 default: break;
