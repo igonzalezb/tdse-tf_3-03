@@ -58,7 +58,7 @@ void task_display_init(void *parameters) {
     // Mensaje inicial centrado de prueba
     LCD_show("SMARTCETA", "Iniciando...", CENTER);
 }
-
+/*
 void LCD_show_ext(const char *line1, const char *line2, bool center) {
     __asm("CPSID i"); // Protección de Sección Crítica (Deshabilita interrupciones)
 
@@ -71,7 +71,27 @@ void LCD_show_ext(const char *line1, const char *line2, bool center) {
 
     __asm("CPSIE i"); // Reestablece interrupciones
 }
+*/
+void LCD_show_ext(const char *line1, const char *line2, bool center) {
+    // 1. Creamos un "shadow buffer" temporal local
+    // (Asumiendo 16 caracteres de ancho + el terminador nulo '\0')
+    char temp_buffer[2][17];
 
+    // 2. Procesamos todo el texto FUERA de la sección crítica.
+    // Durante este tiempo, las interrupciones siguen encendidas y el DHT22 funciona perfecto.
+    write_line_to_buffer(temp_buffer[0], line1, center);
+    write_line_to_buffer(temp_buffer[1], line2, center);
+
+    // 3. SECCIÓN CRÍTICA MINIMIZADA
+    // Solo apagamos las interrupciones el tiempo necesario para copiar la memoria ya procesada.
+    __asm("CPSID i");
+
+    memcpy(display_task_dta.vram_waiting[0], temp_buffer[0], 16);
+    memcpy(display_task_dta.vram_waiting[1], temp_buffer[1], 16);
+    display_task_dta.dirty = true;
+
+    __asm("CPSIE i");
+}
 /* Máquina de estados: se ejecuta dentro del ciclo del planificador cooperativo */
 void task_display_update(void *parameters) {
     switch (display_task_dta.state) {

@@ -9,6 +9,7 @@
 #include "display.h"
 #include "task_system_failure.h"
 #include "task_display.h"
+#include "task_pump.h"
 
 #include "stm32f1xx_hal.h"
 
@@ -23,14 +24,17 @@
 #define G_TASK_MEN_TICK_CNT_INI     0ul
 #define DEL_MEN_XX_MIN              0ul
 #define AUTO_SCROLL_DELAY 			5000
-#define PUMP_CHECK_DELAY 			20000
-#define LIGHT_CHECK_DELAY 			10000
+#define PUMP_CHECK_DELAY 			40000
+#define LIGHT_CHECK_DELAY 			20000
+#define DISPLAY_REFRESH_DELAY  		1000 // Refresca los valores en pantalla cada 1s
 
+#define HUMIDITY_HYSTERESIS  10
 
-
-static uint32_t last_scroll_tick = AUTO_SCROLL_DELAY;
-static uint32_t last_pump_tick = AUTO_SCROLL_DELAY;
-static uint32_t last_light_tick = AUTO_SCROLL_DELAY;
+static uint32_t last_scroll_tick;
+static uint32_t last_pump_tick;
+static uint32_t last_light_tick;
+static uint32_t last_refresh_tick = 0;
+static uint32_t last_test_tick = 0;
 
 // para el modo falla
 static system_failure_type current_display_fault = FAULT_NONE;
@@ -67,7 +71,6 @@ void task_menu_init(void *parameters) {
 	//uint32_t index;
 	//task_menu_dta_t *p_task_menu_dta;
 	//shared_data_type *shared_data = (shared_data_type *) parameters;
-	last_scroll_tick = HAL_GetTick();
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
 	init_queue_event_task_menu();
@@ -82,31 +85,34 @@ void task_menu_init(void *parameters) {
 //		p_task_menu_dta->current_value = 0;
 //		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
 //	}
-	shared_data.pump_on = false;
-	shared_data.led_strip_on = false;
+	 // shared_data.pump_on = false;
+	 // shared_data.led_strip_on = false;
 	testing = false;
 	shared_data.active_system = SYS_NORMAL;
 
-	param_names[PARAM_HUM_SUELO] = "Hum. Suelo";
-	param_names[PARAM_HUM_AMB] = "Hum. Amb.";
-	param_names[PARAM_TEMP_AMB] = "Temp. Amb.";
-	param_names[PARAM_LUZ] = "Luz";
-	param_names[PARAM_AGUA] = "Nivel Agua";
+	/* Parámetros principales (Línea 1 del LCD - Máx 16 chars) */
+	param_names[PARAM_HUM_SUELO] = "Humedad Suelo";   // 13 chars
+	param_names[PARAM_HUM_AMB]   = "Humedad Amb.";    // 12 chars
+	param_names[PARAM_TEMP_AMB]  = "Temp. Ambiente";  // 14 chars
+	param_names[PARAM_LUZ]       = "Nivel de Luz";    // 12 chars
+	param_names[PARAM_AGUA]      = "Nivel de Agua";   // 13 chars
 
-	test_names[TEST_WATER_LEVEL] = "Test Agua";
-	test_names[TEST_LIGHT_SENSOR] = "Test Luz";
-	test_names[TEST_HUMIDITY] = "Test H.Suelo";
-	test_names[TEST_DHT22] = "Test DHT22";
-	test_names[TEST_STATE_LED] = "Test LED";
-	test_names[TEST_BUZZER] = "Test Buzzer";
-	test_names[TEST_PUMP] = "Test Bomba";
-	test_names[TEST_LED_STRIP] = "Test T. LED";
+	/* Menú de Pruebas (Línea 2 en Modo Test - Máx 16 chars) */
+	test_names[TEST_WATER_LEVEL] = "Test Nivel Agua"; // 15 chars
+	test_names[TEST_LIGHT_SENSOR]= "Test Sensor Luz"; // 15 chars
+	test_names[TEST_HUMIDITY]    = "Test Hum. Suelo"; // 15 chars
+	test_names[TEST_DHT22]       = "Test Temp/Hum";   // 13 chars
+	test_names[TEST_STATE_LED]   = "Test LED Estado"; // 15 chars
+	test_names[TEST_BUZZER]      = "Test Buzzer";     // 11 chars
+	test_names[TEST_PUMP]        = "Test Bomba Agua"; // 15 chars
+	test_names[TEST_LED_STRIP]   = "Test Tira LED";   // 13 chars
 
-	config_names[CONFIG_SOUNDS] = "Sonidos";
-	config_names[CONFIG_LIGHT] = "Luz";
-	config_names[CONFIG_WATER_LEVEL] = "Nivel Agua";
-	config_names[CONFIG_HUMIDITY] = "Humedad Suelo";
-	config_names[CONFIG_LED_STATE] = "Led Estados";
+	/* Menú de Configuración (Línea 2 en Configurar - Máx 16 chars) */
+	config_names[CONFIG_SOUNDS]     = "Sonido / Alerta"; // 15 chars
+	config_names[CONFIG_LIGHT]      = "Umbral de Luz";   // 13 chars
+	config_names[CONFIG_WATER_LEVEL]= "Min. Nivel Agua"; // 15 chars
+	config_names[CONFIG_HUMIDITY]   = "Min. Hum. Suelo"; // 15 chars
+	config_names[CONFIG_LED_STATE]  = "LED de Estado";   // 13 chars
 
 	//TODO: cambiar algunos parametros para que sea poco-medio-mucho
 
@@ -120,6 +126,10 @@ void task_menu_init(void *parameters) {
 	MIN_VAL[CONFIG_WATER_LEVEL] = 15;
 	MIN_VAL[CONFIG_HUMIDITY] = 0;
 	MIN_VAL[CONFIG_LED_STATE] = 0;
+
+	last_scroll_tick = HAL_GetTick();
+	last_pump_tick = last_scroll_tick;
+	last_light_tick = last_pump_tick;
 
 	// Inicializo el buzzer y el Led de estados en modo normal.
 	shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
@@ -157,7 +167,6 @@ void task_menu_update(void *parameters) {
 		default:
 			break;
 		}
-
 
 		__asm("CPSID i");
 		if (G_TASK_MEN_TICK_CNT_INI < g_task_menu_tick_cnt) {
@@ -223,46 +232,40 @@ void task_menu_statechart_normal(void) {
 		}
 		last_scroll_tick = HAL_GetTick();
 
-		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
+		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter), CENTER);
 	}
 	/*=============== AUTOSCROLL =======================================*/
 	else if ((HAL_GetTick() - last_scroll_tick) >= AUTO_SCROLL_DELAY) {
 		p_task_menu_dta->current_parameter =
 				(p_task_menu_dta->current_parameter == (PARAM_QTY-1)) ?
 						0 : p_task_menu_dta->current_parameter + 1;
-		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter));
+		LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter), CENTER);
 		last_scroll_tick = HAL_GetTick();
 	}
-	/*=============== LED STRIP =======================================*/
-	else if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
-				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-				if (shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT])
-				{
-					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
-				}
-				else if ((shared_data.light_percent) >= (shared_data.config_values[CONFIG_LIGHT] + 10))
-				{
-					put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-				}
-				last_light_tick = HAL_GetTick();
+	/*=============== REFRESCO PERIÓDICO DEL SENSOR =====================*/
+	else if ((HAL_GetTick() - last_refresh_tick) >= DISPLAY_REFRESH_DELAY) {
+			// Actualiza únicamente el número/valor del sensor actual sin cambiar de pantalla
+			LCD_show(param_names[p_task_menu_dta->current_parameter], get_sensor_value(p_task_menu_dta->current_parameter), CENTER);
+			last_refresh_tick = HAL_GetTick();
 	}
-	//	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
-//			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-//			if ((shared_data.light_percent - p_task_menu_dta->current_value) <= config_values[CONFIG_LIGHT])
-//			{
-//				p_task_menu_dta->current_value = shared_data.light_percent;
-//				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
-//				p_task_menu_dta->current_value = shared_data.light_percent - p_task_menu_dta->current_value;
-//			}
-//			else if ((shared_data.light_percent - last_value) >= (config_values[CONFIG_LIGHT] + 10))
-//			{
-//				put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-//				p_task_menu_dta->current_value = 0;
-//			}
-//			last_light_tick = HAL_GetTick();
-//		}
+	/*=============== LED STRIP =======================================*/
+	if ((HAL_GetTick() - last_light_tick) >= LIGHT_CHECK_DELAY) {
+		// todo si está prendido que no vuelva a mandar el evento de prender
+		if (shared_data.light_percent <= shared_data.config_values[CONFIG_LIGHT])
+		{
+			LOGGER_INFO("ACTIVO LED STRIP");
+			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_ON);
+		}
+		else if ((shared_data.light_percent) >= (shared_data.config_values[CONFIG_LIGHT] + 10))
+		{
+			LOGGER_INFO("DESACTIVO LED STRIP");
+			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
+		}
+		last_light_tick = HAL_GetTick();
+	}
+
 	/*=============== PUMP =======================================*/
-	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
+/*	else if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || shared_data.pump_on) {
 		if (shared_data.pump_on && shared_data.humidity_percent < (shared_data.config_values[CONFIG_HUMIDITY]+10)){
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
@@ -277,6 +280,41 @@ void task_menu_statechart_normal(void) {
 		}
 
 		last_pump_tick = HAL_GetTick();
+	}*/
+	if (((HAL_GetTick() - last_pump_tick) >= PUMP_CHECK_DELAY) || (get_pump_state() != ST_PUMP_IDLE)) {
+
+	    // 1. Calcular objetivo con techo de seguridad al 100%
+	    uint16_t target_humidity = shared_data.config_values[CONFIG_HUMIDITY] + HUMIDITY_HYSTERESIS;
+	    if (target_humidity > 100) {
+	        target_humidity = 100;
+	    }
+
+	    // 2. APAGAR BOMBA:
+	    // Si la bomba está encendida Y (alcanzó la humedad deseada O se quedó sin agua)
+	   if ((get_pump_state() == ST_PUMP_ON) &&
+		   (shared_data.humidity_percent >= target_humidity ||
+			shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]))
+		{
+	    	LOGGER_INFO("DESACTIVO BOMBA");
+	        put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
+	        shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
+	        shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_NORMAL) : 0;
+
+	        last_pump_tick = HAL_GetTick();
+	    }
+	    // 3. PRENDER BOMBA:
+	    // Si la bomba está apagada Y hay agua suficiente Y la humedad cayó por debajo del mínimo
+	   else if ((get_pump_state() == ST_PUMP_IDLE) &&
+			shared_data.water_level_percent >= shared_data.config_values[CONFIG_WATER_LEVEL] &&
+			shared_data.humidity_percent < shared_data.config_values[CONFIG_HUMIDITY])
+	    {
+	    	LOGGER_INFO("ACTIVO BOMBA");
+	        put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_ON);
+	        shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_2PULSE) : 0;
+	        shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_WATER) : 0;
+
+	        last_pump_tick = HAL_GetTick();
+	    }
 	}
 }
 
@@ -414,6 +452,37 @@ void task_menu_statechart_test(void) {
 		p_task_menu_dta->flag = true;
 		p_task_menu_dta->event = get_event_task_menu();
 	}
+	else if (testing) {
+			if ((HAL_GetTick() - last_test_tick) >= DISPLAY_REFRESH_DELAY) {
+
+				switch (p_task_menu_dta->current_test) {
+					case TEST_WATER_LEVEL:
+						snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_LIGHT_SENSOR:
+						snprintf(segunda_linea, sizeof(segunda_linea), "Sens. Luz: %s", get_sensor_value(PARAM_LUZ));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_HUMIDITY:
+						snprintf(segunda_linea, sizeof(segunda_linea), "Hum. S: %s", get_sensor_value(PARAM_HUM_SUELO));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_DHT22:
+						snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
+						LCD_show("Testeando...", segunda_linea);
+						break;
+					case TEST_STATE_LED:
+					case TEST_BUZZER:
+					case TEST_PUMP:
+					case TEST_LED_STRIP:
+						break;
+					default:
+						break;
+				}
+				last_test_tick = HAL_GetTick(); // Reiniciamos el temporizador
+			}
+		}
 
 	if (p_task_menu_dta->flag)
 	{
@@ -438,6 +507,7 @@ void task_menu_statechart_test(void) {
 			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 		} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			testing = true;
+			last_test_tick = HAL_GetTick();
 			switch (p_task_menu_dta->current_test) {
 				case TEST_WATER_LEVEL:
 					snprintf(segunda_linea, sizeof(segunda_linea), "Niv. Agua: %s", get_sensor_value(PARAM_AGUA));
@@ -522,8 +592,8 @@ void task_menu_statechart_failure(void){
 		case ST_SYS_00:
 			put_event_task_actuator(ID_ACT_PUMP, EV_PUMP_OFF);
 			put_event_task_actuator(ID_ACT_LED_STRIP, EV_LED_STRIP_OFF);
-			shared_data.pump_on = false;
-			shared_data.led_strip_on = false;
+			 // shared_data.pump_on = false;
+			 // shared_data.led_strip_on = false;
 
 			if (is_locked) {shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_LOCKED) : 0;}
 
@@ -566,11 +636,13 @@ void task_menu_statechart_failure(void){
 
 				if (!is_locked) {
 					if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+						LOGGER_INFO("BTN_RIGHT PRESSED");
 						current_display_fault = task_system_failure_get_next(current_display_fault);
 						last_scroll_tick = HAL_GetTick();
 						update_display = true;
 					}
 					else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
+						LOGGER_INFO("BTN_LEFT PRESSED");
 						current_display_fault = task_system_failure_get_prev(current_display_fault);
 						last_scroll_tick = HAL_GetTick();
 						update_display = true;

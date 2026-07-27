@@ -26,12 +26,10 @@ typedef struct {
     bool led_current_failure;
 
     uint16_t water_level_percent;
-    bool water_level_failure;
 
-    uint16_t pump_current_percent;
-    bool pump_current_failure;
+    uint16_t pump_current_ma;
 
-    uint16_t led_current_percent;
+    uint16_t led_current_ma;
 
     uint16_t dht22_humidity;
     int16_t dht22_temperature;
@@ -39,9 +37,6 @@ typedef struct {
 
     bool adc_busy;  // Esta el adc usandose?
     adc_owner_t adc_owner; //Quien lo esta usando
-
-    bool pump_on;
-    bool led_strip_on;
 
  	// Menu: variables
 	task_menu_sys_t active_system;

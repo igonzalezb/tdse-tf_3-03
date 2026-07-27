@@ -3,6 +3,9 @@
 #include "board.h"
 #include "task_dht22.h"
 
+#define MAX_DHT22_FAILURES 3
+// TODO Mejorar este codigo para eliminar los falsos positivos de DHT22 error
+
 extern TIM_HandleTypeDef htim2;
 
 typedef enum {
@@ -15,6 +18,7 @@ typedef struct {
     task_dht22_state_t state;
     uint32_t state_timestamp_ms;
     uint32_t last_sample_ms;
+    uint8_t consecutive_failures; 	// Contador de fallos
 } task_dht22_data_t;
 
 typedef struct {
@@ -153,6 +157,7 @@ void task_dht22_init(void *parameters)
     task_dht22_data.state = TASK_DHT22_ST_IDLE;
     task_dht22_data.state_timestamp_ms = HAL_GetTick();
     task_dht22_data.last_sample_ms = HAL_GetTick();
+    task_dht22_data.consecutive_failures = 0; 	// reinicio del contador
 
     dht22_capture.active = false;
     dht22_capture.edge_count = 0u;
@@ -216,10 +221,21 @@ void task_dht22_update(void *parameters)
             shared_data->dht22_humidity = humidity;
             shared_data->dht22_temperature = temperature;
             shared_data->dht22_error = DHT22_ERROR_NONE;
+
+            // reinicio de contador luego de lectura exitosa
+            task_dht22_data.consecutive_failures = 0;
         }
         else {
-            shared_data->dht22_error = error_code;
-        }
+        	task_dht22_data.consecutive_failures++;
+
+			// Permitimos 3 fallos consecutivos antes de registrar el error real
+			if (task_dht22_data.consecutive_failures >= 3) {
+				shared_data->dht22_error = error_code;
+
+				// Prevenir overflow del contador si sigue fallando
+				task_dht22_data.consecutive_failures = 3;
+			}
+		}
 
         task_dht22_data.last_sample_ms = now_ms;
         task_dht22_data.state = TASK_DHT22_ST_IDLE;
@@ -248,7 +264,8 @@ void task_dht22_exti_callback(uint16_t GPIO_Pin)
     }
 
     now_us = __HAL_TIM_GET_COUNTER(&htim2);
-    dt_us = now_us - dht22_capture.last_edge_us;
+    //dt_us = now_us - dht22_capture.last_edge_us;
+    dt_us = (uint32_t)((uint16_t)now_us - (uint16_t)dht22_capture.last_edge_us);
     dht22_capture.last_edge_us = now_us;
 
     level = HAL_GPIO_ReadPin(DHT22_GPIO_PORT, DHT22_GPIO_PIN);

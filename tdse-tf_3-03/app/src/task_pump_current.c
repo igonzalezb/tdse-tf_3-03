@@ -21,10 +21,13 @@
 #include "task_pump_current.h"
 #include "task_menu_attribute.h"
 #include "task_menu_interface.h"
-#include "task_system_failure.h"
+//#include "task_system_failure.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern shared_data_type shared_data;
+
+// TODO Establecer maximos y minimos con task_sys_failure
+// TODO Gestionar bien el llamado a modo falla
 
 /*
  * Constantes de calibracion para convertir la lectura ADC a porcentaje.
@@ -33,7 +36,8 @@ extern shared_data_type shared_data;
  * - PUMP_CURRENT_ADC_MAX_CURRENT: bomba encendida en condicion normal/maxima
  */
 #define PUMP_CURRENT_ADC_NO_CURRENT       0u
-#define PUMP_CURRENT_ADC_MAX_CURRENT      4095u
+#define PUMP_CURRENT_ADC_REF_VALUE        1556u
+#define PUMP_CURRENT_MA_REF_VALUE_X10     1285u
 
 /*
  * Timeout de seguridad para no quedar esperando eternamente una interrupcion.
@@ -46,7 +50,7 @@ extern shared_data_type shared_data;
  * Ajustar segun calibracion real del sensor de corriente.
  * Se usa histeresis para no generar eventos repetidos cerca del limite.
  */
-#define PUMP_CURRENT_OVERCURRENT_LIMIT_PERCENT    90u
+//#define PUMP_CURRENT_OVERCURRENT_LIMIT_PERCENT    90u
 //#define PUMP_CURRENT_OVERCURRENT_CLEAR_PERCENT    80u  Si se usa histeresis
 
 typedef enum {
@@ -70,6 +74,7 @@ static volatile bool task_pump_current_adc_ready = false;
 static volatile bool task_pump_current_adc_error_flag = false;
 static volatile uint16_t task_pump_current_adc_value = 0u;
 
+/*
 static bool task_pump_current_overcurrent_active = false;
 
 static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
@@ -82,8 +87,8 @@ static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
     if (adc_no_current == adc_max_current) {
         return 0u;
     }
-
-    /* Caso normal: el ADC aumenta cuando aumenta la corriente */
+*/
+    /* Caso normal: el ADC aumenta cuando aumenta la corriente *//*
     if (adc_max_current > adc_no_current) {
         if (adc <= adc_no_current) {
             return 0u;
@@ -95,8 +100,8 @@ static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
 
         percent = (adc - adc_no_current) * 100;
         percent = percent / (adc_max_current - adc_no_current);
-    }
-    /* Caso invertido: el ADC disminuye cuando aumenta la corriente */
+    }*/
+    /* Caso invertido: el ADC disminuye cuando aumenta la corriente *//*
     else {
         if (adc >= adc_no_current) {
             return 0u;
@@ -112,7 +117,23 @@ static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
 
     return (uint8_t)percent;
 }
+*/
+static uint16_t task_pump_current_adc_to_ma(uint16_t adc_value)
+{
+    uint32_t adc = (uint32_t)adc_value;
+    uint32_t adc_no_current = (uint32_t)PUMP_CURRENT_ADC_NO_CURRENT;
+    uint32_t current_ma_x10;
 
+    if (adc <= adc_no_current) {
+        return 0u;
+    }
+
+    /* Regla de 3 simple: (ADC_Leido * 128.5) / 1556 */
+    current_ma_x10 = ((adc - adc_no_current) * PUMP_CURRENT_MA_REF_VALUE_X10) / PUMP_CURRENT_ADC_REF_VALUE;
+
+    /* Dividimos por 10 para devolver los mA exactos en formato entero */
+    return (uint16_t)(current_ma_x10 / 10u);
+}
 void task_pump_current_init(void *parameters)
 {
     shared_data_type *shared_data_ptr = (shared_data_type *) parameters;
@@ -124,10 +145,8 @@ void task_pump_current_init(void *parameters)
     task_pump_current_adc_ready = false;
     task_pump_current_adc_error_flag = false;
     task_pump_current_adc_value = 0u;
-    task_pump_current_overcurrent_active = false;
 
-    shared_data_ptr->pump_current_percent = 0u;
-    shared_data_ptr->pump_current_failure = false;
+    shared_data_ptr->pump_current_ma = 0u;
 }
 
 void task_pump_current_update(void *parameters)
@@ -198,8 +217,7 @@ void task_pump_current_update(void *parameters)
             shared_data_ptr->adc_busy = false;
             shared_data_ptr->adc_owner = ADC_OWNER_NONE;
 
-            shared_data_ptr->pump_current_percent = task_pump_current_adc_to_percent(adc_value);
-
+            shared_data_ptr->pump_current_ma = task_pump_current_adc_to_ma(adc_value);
             /*
              * Generacion de falla generica para el menu.
              * El evento es generico: EV_SYS_FAILURE.
