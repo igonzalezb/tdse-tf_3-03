@@ -9,12 +9,15 @@
 #include "task_led_strip.h"
 #include "logger.h"
 
+
+#define ENABLE_FAILURE 1
+
+
 /********************** defines *******************************************/
 #define MAX_OVERCURRENT_FAILURES 2
 // periodos en los que se anula el sensado de fallas para evitar falsos positivos
 #define STARTUP_PERIOD_MS 150
 #define ACTUATOR_PERIOD_MS 300
-#define DHT22_PERIOD_MS 0
 
 /** Variables estáticas **/
 static volatile bool active_faults[FAULT_QTY];		// Arreglo estático de las fallas activas
@@ -51,6 +54,7 @@ void task_system_failure_init(void *parameters){
 }
 
 void task_system_failure_update(void *parameters) {
+	#ifdef ENABLE_FAILURE
 	static uint32_t init_tick = 0;
 	static bool system_ready = false;
 
@@ -201,6 +205,8 @@ void task_system_failure_report(system_failure_type failure) {
 			}
 		}
 	}
+
+	#endif
 }
 
 bool task_system_failure_can_restore(void) {
