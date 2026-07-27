@@ -139,22 +139,11 @@ void task_system_failure_update(void *parameters) {
 			}
 		}
 
-
-
 	// ======================     DHT 22     ==========================
 	// pruebo directamente sin pausa
 	if(shared_data.dht22_temperature > MAX_TEMPERATURE){
 		task_system_failure_report(FAULT_HIGH_TEMPERATURE);
 	}
-	/*if ((HAL_GetTick() - init_tick) > DHT22_PERIOD_MS) {
-		if(shared_data.dht22_temperature < MIN_TEMPERATURE){
-			task_system_failure_report(FAULT_LOW_TEMPERATURE);
-		}
-
-		if(shared_data.dht22_error){
-			task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
-		}*/
-
 
 	if(shared_data.dht22_temperature < MIN_TEMPERATURE){
 		task_system_failure_report(FAULT_LOW_TEMPERATURE);

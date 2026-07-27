@@ -13,7 +13,7 @@ typedef enum task_actuator_id{
 	ID_ACT_STATE_LED,
 	ID_ACT_PUMP,
 	ID_ACT_LED_STRIP,
-	ID_ACT_QTY // Cantidad total de actuadores
+	ID_ACT_QTY 				// Cantidad total de actuadores
 } task_actuator_id_t;
 
 typedef struct {

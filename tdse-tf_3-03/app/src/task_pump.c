@@ -25,8 +25,6 @@ static uint16_t current_duty = 0; // Memoria del nivel actual de la rampa
 static void task_pump_statechart(void);
 static void apply_pump_pwm(uint16_t);
 
-
-
 void task_pump_init(void *parameters) {
     HAL_TIM_PWM_Start(&TIMER_PUMP, CHANNEL_PUMP);
 

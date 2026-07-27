@@ -27,7 +27,7 @@
 #define AUTO_SCROLL_DELAY 			5000
 #define PUMP_CHECK_DELAY 			40000
 #define LIGHT_CHECK_DELAY 			20000
-#define DISPLAY_REFRESH_DELAY  		1000 // Refresca los valores en pantalla cada 1s
+#define DISPLAY_REFRESH_DELAY  		1000
 
 #define HUMIDITY_HYSTERESIS  10
 
@@ -37,7 +37,7 @@ static uint32_t last_light_tick;
 static uint32_t last_refresh_tick = 0;
 static uint32_t last_test_tick = 0;
 
-// para el modo falla
+// Para el modo falla
 static system_failure_type current_display_fault = FAULT_NONE;
 
 /* Nombres para mostrar en el LCD */
@@ -50,7 +50,6 @@ uint16_t MAX_VAL[CONFIG_QTY];
 uint16_t MIN_VAL[CONFIG_QTY];
 
 bool testing = false;
-
 
 task_menu_dta_t task_menu_dta =
 		{ DEL_MEN_XX_MIN, ST_SYS_00, EV_SYS_BTN_ESC, false, PARAM_HUM_SUELO, 0, TEST_WATER_LEVEL, CONFIG_SOUNDS};
@@ -69,25 +68,11 @@ uint32_t g_task_menu_cnt;
 volatile uint32_t g_task_menu_tick_cnt;
 
 void task_menu_init(void *parameters) {
-	//uint32_t index;
-	//task_menu_dta_t *p_task_menu_dta;
-	//shared_data_type *shared_data = (shared_data_type *) parameters;
 	g_task_menu_cnt = G_TASK_MEN_CNT_INI;
 
 	init_queue_event_task_menu();
 	config_load_from_flash();
 
-//	for (index = 0; MENU_DTA_QTY > index; index++) {
-//		p_task_menu_dta = &task_menu_dta_list[index];
-//		p_task_menu_dta->state = ST_SYS_00;
-//		p_task_menu_dta->event = EV_SYS_BTN_ESC;
-//		p_task_menu_dta->flag = false;
-//		p_task_menu_dta->current_parameter = PARAM_HUM_SUELO;
-//		p_task_menu_dta->current_value = 0;
-//		p_task_menu_dta->current_test = TEST_WATER_LEVEL;
-//	}
-	 // shared_data.pump_on = false;
-	 // shared_data.led_strip_on = false;
 	testing = false;
 	shared_data.active_system = SYS_NORMAL;
 
@@ -139,7 +124,6 @@ void task_menu_init(void *parameters) {
 }
 
 void task_menu_update(void *parameters) {
-	//shared_data_type *shared_data = (shared_data_type *) parameters;
 	bool b_time_update_required = false;
 
 	__asm("CPSID i");
@@ -464,14 +448,10 @@ void task_menu_statechart_test(void) {
 						LCD_show("Testeando...", segunda_linea);
 						break;
 					case TEST_DHT22:
-						// 1. Guardamos una copia real del texto de la humedad
 						char hum_str[10];
 						strncpy(hum_str, get_sensor_value(PARAM_HUM_AMB), sizeof(hum_str) - 1);
-						hum_str[sizeof(hum_str) - 1] = '\0'; // Aseguramos el terminador nulo
-
-						// 2. Ahora sí hacemos el snprintf mezclando la copia con la nueva llamada
+						hum_str[sizeof(hum_str) - 1] = '\0';
 						snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", hum_str, get_sensor_value(PARAM_TEMP_AMB));
-
 						LCD_show("Testeando...", segunda_linea);
 						break;
 					case TEST_STATE_LED:
@@ -524,14 +504,10 @@ void task_menu_statechart_test(void) {
 					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_DHT22:
-					// 1. Guardamos una copia real del texto de la humedad
 					char hum_str[10];
 					strncpy(hum_str, get_sensor_value(PARAM_HUM_AMB), sizeof(hum_str) - 1);
-					hum_str[sizeof(hum_str) - 1] = '\0'; // Aseguramos el terminador nulo
-
-					// 2. Ahora sí hacemos el snprintf mezclando la copia con la nueva llamada
+					hum_str[sizeof(hum_str) - 1] = '\0';
 					snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", hum_str, get_sensor_value(PARAM_TEMP_AMB));
-
 					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_STATE_LED:

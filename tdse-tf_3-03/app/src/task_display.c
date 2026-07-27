@@ -13,16 +13,16 @@ typedef struct {
     task_display_state_t state;
     uint8_t row;
     uint8_t col;
-    char vram_waiting[2][16]; // Buffer donde escribe la app (LCD_show)
-    char vram_active[2][16];  // Buffer que se está imprimiendo actualmente
-    bool dirty;               // Flag de sincronización
+    char vram_waiting[2][16]; // Waiting buffer (written by the application via LCD_show)
+    char vram_active[2][16];  // Active buffer (currently being rendered to the LCD)
+    bool dirty;               // Synchronization flag (true when new data is available)
 } task_display_dta_t;
 
 static task_display_dta_t display_task_dta;
 
-// Función auxiliar privada para formatear y centrar una fila
+// Private helper function to format and optionally center a single row
 static void write_line_to_buffer(char *buffer_row, const char *line, bool center) {
-    // 1. Limpiamos la fila completa con espacios
+    // 1. Clear the entire row with blank spaces
     memset(buffer_row, ' ', 16);
 
     if (line == NULL) {
@@ -31,16 +31,16 @@ static void write_line_to_buffer(char *buffer_row, const char *line, bool center
 
     size_t len = strlen(line);
     if (len > 16) {
-        len = 16; // Recorte de seguridad si excede los 16 caracteres
+        len = 16; // Safety truncation to prevent buffer overflow
     }
 
     uint8_t offset = 0;
     if (center && len < 16) {
-        // Cálculo matemático del margen para centrar el texto
+        // Calculate the left margin needed to center the text
         offset = (uint8_t)((16 - len) / 2);
     }
 
-    // Copiamos la cadena en la posición desplazada correspondiente
+    // Copy the string into the buffer at the calculated offset position
     memcpy(buffer_row + offset, line, len);
 }
 
@@ -51,39 +51,27 @@ void task_display_init(void *parameters) {
     display_task_dta.col = 0;
     display_task_dta.dirty = false;
 
-    // Inicializar buffers con espacios vacíos
+    // Initialize both display buffers with empty spaces
     memset(display_task_dta.vram_waiting, ' ', sizeof(display_task_dta.vram_waiting));
     memset(display_task_dta.vram_active, ' ', sizeof(display_task_dta.vram_active));
 
-    // Mensaje inicial centrado de prueba
+    // Display an initial centered test message
     LCD_show("SMARTCETA", "Iniciando...", CENTER);
 }
-/*
+
 void LCD_show_ext(const char *line1, const char *line2, bool center) {
-    __asm("CPSID i"); // Protección de Sección Crítica (Deshabilita interrupciones)
-
-    // Formateamos ambas líneas en el buffer de espera
-    write_line_to_buffer(display_task_dta.vram_waiting[0], line1, center);
-    write_line_to_buffer(display_task_dta.vram_waiting[1], line2, center);
-
-    // Avisamos a la máquina de estados que hay contenido nuevo listo
-    display_task_dta.dirty = true;
-
-    __asm("CPSIE i"); // Reestablece interrupciones
-}
-*/
-void LCD_show_ext(const char *line1, const char *line2, bool center) {
-    // 1. Creamos un "shadow buffer" temporal local
-    // (Asumiendo 16 caracteres de ancho + el terminador nulo '\0')
+    // 1. Create a local temporary "shadow buffer"
+    // (Assuming 16 characters wide + null terminator '\0')
     char temp_buffer[2][17];
 
-    // 2. Procesamos todo el texto FUERA de la sección crítica.
-    // Durante este tiempo, las interrupciones siguen encendidas y el DHT22 funciona perfecto.
+    // 2. Process all text OUTSIDE the critical section.
+    // During this string formatting, interrupts remain enabled
+    // (ensuring time-sensitive tasks like the DHT22 are unaffected).
     write_line_to_buffer(temp_buffer[0], line1, center);
     write_line_to_buffer(temp_buffer[1], line2, center);
 
-    // 3. SECCIÓN CRÍTICA MINIMIZADA
-    // Solo apagamos las interrupciones el tiempo necesario para copiar la memoria ya procesada.
+    // 3. MINIMIZED CRITICAL SECTION
+    // Disable interrupts only for the exact duration needed to copy the already-processed memory.
     __asm("CPSID i");
 
     memcpy(display_task_dta.vram_waiting[0], temp_buffer[0], 16);
@@ -92,17 +80,20 @@ void LCD_show_ext(const char *line1, const char *line2, bool center) {
 
     __asm("CPSIE i");
 }
-/* Máquina de estados: se ejecuta dentro del ciclo del planificador cooperativo */
+
+/* State machine: Executed periodically within the cooperative scheduler's cycle */
 void task_display_update(void *parameters) {
     switch (display_task_dta.state) {
 
         case ST_DISPLAY_IDLE:
+            // Check if the application has provided new display data
             if (display_task_dta.dirty) {
-                __asm("CPSID i");
+                __asm("CPSID i"); // Enter critical section
                 memcpy(display_task_dta.vram_active, display_task_dta.vram_waiting, sizeof(display_task_dta.vram_active));
                 display_task_dta.dirty = false;
-                __asm("CPSIE i");
+                __asm("CPSIE i"); // Exit critical section
 
+                // Reset cursor position tracking and trigger the rendering process
                 display_task_dta.row = 0;
                 display_task_dta.col = 0;
                 display_task_dta.state = ST_DISPLAY_SET_ROW;
@@ -110,11 +101,13 @@ void task_display_update(void *parameters) {
             break;
 
         case ST_DISPLAY_SET_ROW:
+            // Position the physical cursor at the beginning of the current row (column 0)
             displayCharPositionWrite(0, display_task_dta.row);
             display_task_dta.state = ST_DISPLAY_WRITE_CHAR;
             break;
 
         case ST_DISPLAY_WRITE_CHAR: {
+            // Send a SINGLE character per tick to avoid blocking the scheduler
             char temp_str[2];
             temp_str[0] = display_task_dta.vram_active[display_task_dta.row][display_task_dta.col];
             temp_str[1] = '\0';
@@ -123,15 +116,20 @@ void task_display_update(void *parameters) {
 
             display_task_dta.col++;
             if (display_task_dta.col >= 16) {
+                // End of row reached, move to the next one
                 display_task_dta.col = 0;
                 display_task_dta.row++;
 
                 if (display_task_dta.row >= 2) {
+                    // Entire screen updated, return to idle state
                     display_task_dta.state = ST_DISPLAY_IDLE;
                 } else {
+                    // Move to the next row (requires physical cursor repositioning)
                     display_task_dta.state = ST_DISPLAY_SET_ROW;
                 }
             }
+            // NOTE: If col < 16, the LCD hardware auto-increments the cursor internally,
+            // so the next scheduler tick will seamlessly send the following character.
             break;
         }
 

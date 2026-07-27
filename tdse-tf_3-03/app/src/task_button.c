@@ -174,25 +174,6 @@ static void task_button_statechart(void) {
 					p_task_button_dta->tick_hold = p_task_button_cfg->tick_hold_max; // Acá se resetea para el próximo HOLD
 				}
 				break;
-/*
- * case original
-		case ST_BTN_XX_DOWN:
-			if (EV_BTN_XX_DOWN == p_task_button_dta->event) {
-				if (DEL_BTN_XX_MIN == p_task_button_dta->tick_hold) {
-					p_task_button_dta->tick_hold = p_task_button_cfg->tick_max;
-					task_button_put_menu_event_if_valid(p_task_button_cfg->signal_hold);
-				} else {
-					p_task_button_dta->tick_hold--;
-				}
-			}
-
-			if (EV_BTN_XX_UP == p_task_button_dta->event) {
-				p_task_button_dta->state = ST_BTN_XX_RISING;
-				p_task_button_dta->tick = p_task_button_cfg->tick_max;
-				p_task_button_dta->tick_hold = p_task_button_cfg->tick_hold_max;
-			}
-			break;
-*/
 
 		case ST_BTN_XX_RISING:
 			if (EV_BTN_XX_UP == p_task_button_dta->event) {

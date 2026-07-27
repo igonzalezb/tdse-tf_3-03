@@ -74,50 +74,6 @@ static volatile bool task_pump_current_adc_ready = false;
 static volatile bool task_pump_current_adc_error_flag = false;
 static volatile uint16_t task_pump_current_adc_value = 0u;
 
-/*
-static bool task_pump_current_overcurrent_active = false;
-
-static uint8_t task_pump_current_adc_to_percent(uint16_t adc_value)
-{
-    int32_t percent;
-    int32_t adc_no_current = (int32_t)PUMP_CURRENT_ADC_NO_CURRENT;
-    int32_t adc_max_current = (int32_t)PUMP_CURRENT_ADC_MAX_CURRENT;
-    int32_t adc = (int32_t)adc_value;
-
-    if (adc_no_current == adc_max_current) {
-        return 0u;
-    }
-*/
-    /* Caso normal: el ADC aumenta cuando aumenta la corriente *//*
-    if (adc_max_current > adc_no_current) {
-        if (adc <= adc_no_current) {
-            return 0u;
-        }
-
-        if (adc >= adc_max_current) {
-            return 100u;
-        }
-
-        percent = (adc - adc_no_current) * 100;
-        percent = percent / (adc_max_current - adc_no_current);
-    }*/
-    /* Caso invertido: el ADC disminuye cuando aumenta la corriente *//*
-    else {
-        if (adc >= adc_no_current) {
-            return 0u;
-        }
-
-        if (adc <= adc_max_current) {
-            return 100u;
-        }
-
-        percent = (adc_no_current - adc) * 100;
-        percent = percent / (adc_no_current - adc_max_current);
-    }
-
-    return (uint8_t)percent;
-}
-*/
 static uint16_t task_pump_current_adc_to_ma(uint16_t adc_value)
 {
     uint32_t adc = (uint32_t)adc_value;
@@ -218,30 +174,6 @@ void task_pump_current_update(void *parameters)
             shared_data_ptr->adc_owner = ADC_OWNER_NONE;
 
             shared_data_ptr->pump_current_ma = task_pump_current_adc_to_ma(adc_value);
-            /*
-             * Generacion de falla generica para el menu.
-             * El evento es generico: EV_SYS_FAILURE.
-             * El origen especifico queda indicado por shared_data_ptr->pump_current_failure.
-
-            if ((task_pump_current_overcurrent_active == false) &&
-                (shared_data_ptr->pump_current_percent >= PUMP_CURRENT_OVERCURRENT_LIMIT_PERCENT)) {
-
-                task_pump_current_overcurrent_active = true;
-                shared_data_ptr->pump_current_failure = true;
-
-                put_event_task_menu(EV_SYS_FAILURE);
-            }
-			 */
-
-            /* Con esto comentado, el sensor no baja el flag de falla. Se lo deja al modo falla
-             *
-            if ((task_pump_current_overcurrent_active == true) &&
-                (shared_data_ptr->pump_current_percent <= PUMP_CURRENT_OVERCURRENT_CLEAR_PERCENT)) {
-
-                task_pump_current_overcurrent_active = false;
-                shared_data_ptr->pump_current_failure = false;
-            }
-			*/
 
             task_pump_current_data.state = TASK_PUMP_CURRENT_ST_WAIT_NEXT_SAMPLE;
             break;

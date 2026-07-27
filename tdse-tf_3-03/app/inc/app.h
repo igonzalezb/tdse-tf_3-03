@@ -35,10 +35,11 @@ typedef struct {
     int16_t dht22_temperature;
     uint8_t dht22_error;
 
+    /* ADC */
     bool adc_busy;  // Esta el adc usandose?
-    adc_owner_t adc_owner; //Quien lo esta usando
+    adc_owner_t adc_owner; // Quien lo esta usando
 
- 	// Menu: variables
+ 	/* Sistema Activo: normal, setup, test o failure */
 	task_menu_sys_t active_system;
 
 	/* Valores de configuracion*/
@@ -48,8 +49,8 @@ typedef struct {
 
 extern shared_data_type shared_data;
 
-extern uint32_t g_app_cnt; //
-extern uint32_t g_app_time_us; //Estos 2 son para medir tiempod e ejecucion en dwt.h
+extern uint32_t g_app_cnt;
+extern uint32_t g_app_time_us; // Estos 2 son para medir tiempod e ejecucion en dwt.h
 extern uint32_t g_app_wcet_us; // Peor tiempo de ejecucion
 
 void app_init(void);

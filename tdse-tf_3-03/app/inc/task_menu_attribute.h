@@ -35,7 +35,7 @@ typedef enum task_menu_parameters {
 	PARAM_TEMP_AMB,
 	PARAM_LUZ,
 	PARAM_AGUA,
-	PARAM_QTY //Para saber la cantidad de parámetros
+	PARAM_QTY 			//Para saber la cantidad de parámetros
 } task_menu_parameters_t;
 
 /* Parámetros configurables de la Smartceta */

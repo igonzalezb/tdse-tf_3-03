@@ -12,18 +12,7 @@ typedef struct {
 
 // Una cola para cada actuador
 static queue_t actuator_queues[ID_ACT_QTY];
-/*
-void init_queue_event_task_actuator(void) {
-    for (int id = 0; id < ID_ACT_QTY; id++) {
-        actuator_queues[id].head = 0;
-        actuator_queues[id].tail = 0;
-        actuator_queues[id].count = 0;
-        for (int i = 0; i < MAX_EVENTS; i++) {
-            actuator_queues[id].queue[i] = EVENT_UNDEFINED;
-        }
-    }
-}
-*/
+
 void init_queue_event_task_actuator(task_actuator_id_t id){
 	actuator_queues[id].head = 0;
 	actuator_queues[id].tail = 0;

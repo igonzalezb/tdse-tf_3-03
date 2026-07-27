@@ -183,24 +183,6 @@ void task_water_level_update(void *parameters)
 
             shared_data->water_level_percent = task_water_level_adc_to_percent(adc_value);
 
-            // if ((task_water_level_failure_active == false) &&
-            //    (shared_data->water_level_percent <= WATER_LEVEL_LOW_LIMIT_PERCENT)) {
-
-            //    task_water_level_failure_active = true;
-                // shared_data->water_level_failure = true;
-
-                //put_event_task_menu(EV_SYS_FAILURE);
-            //  }
-
-            /* Comentado para que no baje la flag de falla
-            if ((task_water_level_failure_active == true) &&
-                (shared_data->water_level_percent >= WATER_LEVEL_LOW_CLEAR_PERCENT)) {
-
-                task_water_level_failure_active = false;
-                shared_data->water_level_failure = false;
-            }
-			*/
-
             task_water_level_data.state = TASK_WATER_LEVEL_ST_WAIT_NEXT_SAMPLE;
             break;
         }
