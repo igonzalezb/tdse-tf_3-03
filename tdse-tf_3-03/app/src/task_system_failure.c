@@ -9,8 +9,8 @@
 #include "task_led_strip.h"
 #include "logger.h"
 
-
-#define ENABLE_FAILURE 1
+// Comentar la linea de abajo para desactivar modo falla
+#define ENABLE_FAILURE
 
 
 /********************** defines *******************************************/
@@ -177,6 +177,7 @@ void task_system_failure_update(void *parameters) {
 	if(shared_data.humidity_percent <= 0){
 		task_system_failure_report(FAULT_HUMIDITY_LEVEL_ERROR);
 	}
+	#endif
 }
 
 bool task_system_failure_is_locked(void){
@@ -206,7 +207,7 @@ void task_system_failure_report(system_failure_type failure) {
 		}
 	}
 
-	#endif
+
 }
 
 bool task_system_failure_can_restore(void) {

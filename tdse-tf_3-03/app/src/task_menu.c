@@ -46,8 +46,8 @@ const char *test_names[TEST_QTY];
 const char *config_names[TEST_QTY];
 
 /* Límites de configuración (Ej: 0% a 100%) */
-uint32_t MAX_VAL[CONFIG_QTY];
-uint32_t MIN_VAL[CONFIG_QTY];
+uint16_t MAX_VAL[CONFIG_QTY];
+uint16_t MIN_VAL[CONFIG_QTY];
 
 bool testing = false;
 
@@ -367,65 +367,73 @@ void task_menu_statechart_setup(void) {
 		break;
 
 	case ST_SYS_01: // Modificación del valor del parámetro
-		if (p_task_menu_dta->flag) {
-			p_task_menu_dta->flag = false;
-			if (p_task_menu_dta->event == EV_SYS_FAILURE){
-				LOGGER_INFO("SYS FAILURE");
-				shared_data.active_system = SYS_FAILURE;
-				p_task_menu_dta->state = ST_SYS_00;
-				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT) : 0;
-				shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
+	if (p_task_menu_dta->flag) {
+		p_task_menu_dta->flag = false;
 
+		if (p_task_menu_dta->event == EV_SYS_FAILURE){
+			LOGGER_INFO("SYS FAILURE");
+			shared_data.active_system = SYS_FAILURE;
+			p_task_menu_dta->state = ST_SYS_00;
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_INTERMITTENT) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_FAILURE) : 0;
+		}
+
+		// FLECHA DERECHA (Incrementar)
+		else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
+			LOGGER_INFO("BTN_RIGHT PRESSED");
+
+			// Si es mayor o igual al máximo, pega la vuelta al MIN_VAL correspondiente
+			if (shared_data.config_values[p_task_menu_dta->current_config] >= MAX_VAL[p_task_menu_dta->current_config]) {
+				shared_data.config_values[p_task_menu_dta->current_config] = MIN_VAL[p_task_menu_dta->current_config];
+			} else {
+				shared_data.config_values[p_task_menu_dta->current_config]++;
 			}
-			else if (p_task_menu_dta->event == EV_SYS_BTN_RIGHT) {
-				LOGGER_INFO("BTN_RIGHT PRESSED");
 
-				(shared_data.config_values[p_task_menu_dta->current_config]
-						== MAX_VAL[p_task_menu_dta->current_config]) ? shared_data.config_values[p_task_menu_dta->current_config] = 0:
-								shared_data.config_values[p_task_menu_dta->current_config]++;
-				if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE)
-				{
-					LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
-				}
-				else
-				{
-					snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
-					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
-				}
-
-			} else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
-				LOGGER_INFO("BTN_LEFT PRESSED");
-				(shared_data.config_values[p_task_menu_dta->current_config] == MIN_VAL[p_task_menu_dta->current_config]) ?
-						shared_data.config_values[p_task_menu_dta->current_config] = MAX_VAL[p_task_menu_dta->current_config]:
-						shared_data.config_values[p_task_menu_dta->current_config]--;
-				if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE)
-				{
-					LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
-				}
-				else
-				{
-					snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
-					LCD_show(config_names[p_task_menu_dta->current_config], second_row);
-				}
-			} else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
-				LOGGER_INFO("BTN_ENTER PRESSED");
-
-				config_save_element_to_flash(p_task_menu_dta->current_config,
-						shared_data.config_values[p_task_menu_dta->current_config]);
-				p_task_menu_dta->state = ST_SYS_00;
-				LCD_show("Guardado!",
-						config_names[p_task_menu_dta->current_config]);
-				shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
-				shared_data.config_values[CONFIG_LED_STATE] ? 0 : put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_OFF);
-
-			} else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
-				LOGGER_INFO("BTN_ESC PRESSED");
-				p_task_menu_dta->state = ST_SYS_00;
-				LCD_show("Configurar:",
-						config_names[p_task_menu_dta->current_config]);
+			if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE) {
+				LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
+			} else {
+				snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
+				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
 			}
 		}
-		break;
+
+		// FLECHA IZQUIERDA (Decrementar)
+		else if (p_task_menu_dta->event == EV_SYS_BTN_LEFT) {
+			LOGGER_INFO("BTN_LEFT PRESSED");
+
+			// Si es menor o igual al mínimo, pega la vuelta al MAX_VAL correspondiente
+			if (shared_data.config_values[p_task_menu_dta->current_config] <= MIN_VAL[p_task_menu_dta->current_config]) {
+				shared_data.config_values[p_task_menu_dta->current_config] = MAX_VAL[p_task_menu_dta->current_config];
+			} else {
+				shared_data.config_values[p_task_menu_dta->current_config]--;
+			}
+
+			if (p_task_menu_dta->current_config == CONFIG_SOUNDS || p_task_menu_dta->current_config == CONFIG_LED_STATE) {
+				LCD_show(config_names[p_task_menu_dta->current_config], shared_data.config_values[p_task_menu_dta->current_config] ? "> ON" : "> OFF");
+			} else {
+				snprintf(second_row, sizeof(second_row), "> %u", shared_data.config_values[p_task_menu_dta->current_config]);
+				LCD_show(config_names[p_task_menu_dta->current_config], second_row);
+			}
+		}
+
+		// ENTER (Guardar)
+		else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
+			LOGGER_INFO("BTN_ENTER PRESSED");
+			config_save_element_to_flash(p_task_menu_dta->current_config, shared_data.config_values[p_task_menu_dta->current_config]);
+			p_task_menu_dta->state = ST_SYS_00;
+			LCD_show("Guardado!", config_names[p_task_menu_dta->current_config]);
+			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
+			shared_data.config_values[CONFIG_LED_STATE] ? 0 : put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_OFF);
+		}
+
+		// ESC (Salir sin guardar)
+		else if (p_task_menu_dta->event == EV_SYS_BTN_ESC) {
+			LOGGER_INFO("BTN_ESC PRESSED");
+			p_task_menu_dta->state = ST_SYS_00;
+			LCD_show("Configurar:", config_names[p_task_menu_dta->current_config]);
+		}
+	}
+	break;
 	default:
 		break;
 	}
@@ -433,7 +441,7 @@ void task_menu_statechart_setup(void) {
 
 void task_menu_statechart_test(void) {
 	task_menu_dta_t *p_task_menu_dta = &task_menu_dta;
-	char segunda_linea[17];
+	char segunda_linea[24];
 
 	if (true == any_event_task_menu()) {
 		p_task_menu_dta->flag = true;
@@ -456,7 +464,14 @@ void task_menu_statechart_test(void) {
 						LCD_show("Testeando...", segunda_linea);
 						break;
 					case TEST_DHT22:
-						snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
+						// 1. Guardamos una copia real del texto de la humedad
+						char hum_str[10];
+						strncpy(hum_str, get_sensor_value(PARAM_HUM_AMB), sizeof(hum_str) - 1);
+						hum_str[sizeof(hum_str) - 1] = '\0'; // Aseguramos el terminador nulo
+
+						// 2. Ahora sí hacemos el snprintf mezclando la copia con la nueva llamada
+						snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", hum_str, get_sensor_value(PARAM_TEMP_AMB));
+
 						LCD_show("Testeando...", segunda_linea);
 						break;
 					case TEST_STATE_LED:
@@ -509,7 +524,14 @@ void task_menu_statechart_test(void) {
 					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_DHT22:
-					snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", get_sensor_value(PARAM_HUM_AMB), get_sensor_value(PARAM_TEMP_AMB));
+					// 1. Guardamos una copia real del texto de la humedad
+					char hum_str[10];
+					strncpy(hum_str, get_sensor_value(PARAM_HUM_AMB), sizeof(hum_str) - 1);
+					hum_str[sizeof(hum_str) - 1] = '\0'; // Aseguramos el terminador nulo
+
+					// 2. Ahora sí hacemos el snprintf mezclando la copia con la nueva llamada
+					snprintf(segunda_linea, sizeof(segunda_linea), "DHT22: %s %s", hum_str, get_sensor_value(PARAM_TEMP_AMB));
+
 					LCD_show("Testeando...", segunda_linea);
 					break;
 				case TEST_STATE_LED:
@@ -686,7 +708,7 @@ char* get_sensor_value(task_menu_parameters_t parameter) {
             snprintf(value, sizeof(value), "%u%%", shared_data.water_level_percent);
             break;
         case PARAM_TEMP_AMB:
-            snprintf(value, sizeof(value), "%u C", shared_data.dht22_temperature);
+        	snprintf(value, sizeof(value), "%u%cC", shared_data.dht22_temperature, 0xDF);
             break;
         default:
             snprintf(value, sizeof(value), "---");
