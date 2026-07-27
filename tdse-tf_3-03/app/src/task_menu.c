@@ -215,20 +215,22 @@ void task_menu_statechart_normal(void) {
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ENTER) {
 			LOGGER_INFO("BTN_ENTER PRESSED");
 			shared_data.active_system = SYS_SETUP;
+			p_task_menu_dta->state = ST_SYS_00;
 			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
 			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_SETUP) : 0;
-			p_task_menu_dta->current_parameter = 0;
-			LCD_show("Configurar:",	config_names[0]);
+			p_task_menu_dta->current_config = CONFIG_WATER_LEVEL;
+			LCD_show("Configurar:",	config_names[p_task_menu_dta->current_config]);
 			return;
 		}
 		// Ingreso a Test
 		else if (p_task_menu_dta->event == EV_SYS_BTN_ESC_HOLD) {
 			LOGGER_INFO("BTN_ESC HOLD");
 			shared_data.active_system = SYS_TEST;
+			p_task_menu_dta->state = ST_SYS_00;
 			shared_data.config_values[CONFIG_SOUNDS] ? put_event_task_actuator(ID_ACT_BUZZER, EV_BUZZER_1PULSE) : 0;
 			shared_data.config_values[CONFIG_LED_STATE] ? put_event_task_actuator(ID_ACT_STATE_LED, EV_STATE_LED_SYS_TEST) : 0;
-			p_task_menu_dta->current_parameter = 0;
-			LCD_show("Modo Test:", test_names[0]);
+			p_task_menu_dta->current_test = TEST_WATER_LEVEL;
+			LCD_show("Modo Test:", test_names[p_task_menu_dta->current_test]);
 			return;
 		}
 		last_scroll_tick = HAL_GetTick();
