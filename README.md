@@ -1,7 +1,1 @@
-# tdse-tf_3-03
-FIUBA - Electrónica - Taller de Sistemas Embebidos - Trabajo Final
-
-## Integrantes
-- Carrizo, Ezequiel 
-- Gonzalez Bigliardi, Iñaki
-- Juncal, Franco.
+<img width="960" height="540" alt="portada_video" src="https://github.com/user-attachments/assets/f05ca7a4-d7f5-4fe0-9684-eda9523f740a" />

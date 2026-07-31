@@ -68,6 +68,13 @@ The prototype integrates sensing, automatic actuation, local interaction, and pa
 
 # Índice general
 
+- [Smartceta](#smartceta)
+    - [Sistema embebido para el cuidado automatizado de plantas](#sistema-embebido-para-el-cuidado-automatizado-de-plantas)
+  - [Convención para completar esta versión](#convención-para-completar-esta-versión)
+  - [Resumen](#resumen)
+  - [Abstract](#abstract)
+  - [Registro de versiones](#registro-de-versiones)
+- [Índice general](#índice-general)
 - [Capítulo 1: Introducción general](#capítulo-1-introducción-general)
   - [1.1 Necesidad, motivación y objetivo](#11-necesidad-motivación-y-objetivo)
   - [1.2 Alcance y limitaciones](#12-alcance-y-limitaciones)
@@ -77,11 +84,39 @@ The prototype integrates sensing, automatic actuation, local interaction, and pa
 - [Capítulo 2: Introducción específica](#capítulo-2-introducción-específica)
   - [2.1 Requisitos](#21-requisitos)
   - [2.2 Casos de uso](#22-casos-de-uso)
+    - [2.2.1 Operación normal](#221-operación-normal)
+    - [2.2.2 Configuración de parámetros](#222-configuración-de-parámetros)
+    - [2.2.3 Gestión de fallas](#223-gestión-de-fallas)
+    - [2.2.4 Prueba de componentes](#224-prueba-de-componentes)
   - [2.3 Descripción de los módulos principales](#23-descripción-de-los-módulos-principales)
+    - [2.3.1 Unidad de control](#231-unidad-de-control)
+    - [2.3.2 Sensores](#232-sensores)
+    - [2.3.3 Actuadores y etapas de potencia](#233-actuadores-y-etapas-de-potencia)
+    - [2.3.4 Interfaz local](#234-interfaz-local)
+    - [2.3.5 Alimentación](#235-alimentación)
 - [Capítulo 3: Diseño e implementación](#capítulo-3-diseño-e-implementación)
   - [3.1 Arquitectura general](#31-arquitectura-general)
   - [3.2 Diseño de hardware](#32-diseño-de-hardware)
+    - [3.2.1 Unidad de control y periféricos](#321-unidad-de-control-y-periféricos)
+    - [3.2.2 Entradas analógicas y calibración](#322-entradas-analógicas-y-calibración)
+    - [3.2.3 Sensor DHT22](#323-sensor-dht22)
+    - [3.2.4 Control de la bomba](#324-control-de-la-bomba)
+    - [3.2.5 Control de iluminación e indicadores](#325-control-de-iluminación-e-indicadores)
+    - [3.2.6 Interfaz de usuario](#326-interfaz-de-usuario)
+    - [3.2.7 Alimentación y protecciones](#327-alimentación-y-protecciones)
+    - [3.2.8 Esquemático, PCB y montaje](#328-esquemático-pcb-y-montaje)
+    - [3.2.9 Pinout del sistema](#329-pinout-del-sistema)
+    - [3.2.10 Lista de materiales](#3210-lista-de-materiales)
   - [3.3 Diseño de firmware](#33-diseño-de-firmware)
+    - [3.3.1 Arquitectura de ejecución](#331-arquitectura-de-ejecución)
+    - [3.3.2 Tareas y periodicidades](#332-tareas-y-periodicidades)
+    - [3.3.3 Adquisición y datos compartidos](#333-adquisición-y-datos-compartidos)
+    - [3.3.4 Control de riego](#334-control-de-riego)
+    - [3.3.5 Control de iluminación](#335-control-de-iluminación)
+    - [3.3.6 Modos de operación](#336-modos-de-operación)
+    - [3.3.7 Interfaz de usuario](#337-interfaz-de-usuario)
+    - [3.3.8 Alarmas y recuperación](#338-alarmas-y-recuperación)
+    - [3.3.9 Persistencia de configuraciones](#339-persistencia-de-configuraciones)
 - [Capítulo 4: Ensayos y resultados](#capítulo-4-ensayos-y-resultados)
   - [4.1 Metodología general](#41-metodología-general)
   - [4.2 Pruebas funcionales del hardware](#42-pruebas-funcionales-del-hardware)
@@ -90,6 +125,8 @@ The prototype integrates sensing, automatic actuation, local interaction, and pa
   - [4.5 Consumo eléctrico](#45-consumo-eléctrico)
   - [4.6 Uso de memoria](#46-uso-de-memoria)
   - [4.7 Análisis temporal](#47-análisis-temporal)
+    - [4.7.1 Metodología](#471-metodología)
+    - [4.7.2 WCET experimental](#472-wcet-experimental)
   - [4.8 Gestión de bajo consumo](#48-gestión-de-bajo-consumo)
   - [4.9 Cumplimiento de requisitos](#49-cumplimiento-de-requisitos)
   - [4.10 Comparación final](#410-comparación-final)
@@ -986,6 +1023,7 @@ La herramienta no realizó ensayos físicos ni tuvo acceso a observaciones que n
 | Participante | Herramienta | Uso | Verificación humana requerida |
 | --- | --- | --- | --- |
 | Juncal, Franco Mariano | ChatGPT/Codex  | Análisis, generación y diagnóstico de código; generación de documentos | Revisión de la lógica del código, ensayo de implementaciones y corrección humana de las redacciones |
+| Gonzalez Bigliardi, Iñaki | Gemini | Generación de texto de commits, ayuda y diagnóstico de código | Revisión y correcion del texto, y verificacion del codigo. |
 | <span style="color:#0057b8">🔵 Integrante responsable</span> | <span style="color:#0057b8">🔵 Herramienta y versión</span> | <span style="color:#0057b8">🔵 Indicar otros usos: código, esquemático, pruebas, imágenes, etc.</span> | <span style="color:#0057b8">🔵 Explicar cómo se validó el resultado</span> |
 
 *Tabla 6.1: uso declarado de herramientas de inteligencia artificial.*
