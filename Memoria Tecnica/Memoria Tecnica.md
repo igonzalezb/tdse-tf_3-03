@@ -876,23 +876,25 @@ Como verificación independiente puede conmutarse un GPIO al inicio y final de `
 
 | Tarea | Período de invocación | WCET medido | Utilización \(C_i/T_i\) |
 | --- | ---: | ---: | ---: |
-| Botones | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Display | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Humedad de suelo | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Luz | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Nivel de agua | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Corriente de bomba | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Corriente de LED | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| DHT22 | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| LED RGB | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Buzzer | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Bomba | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Tira LED | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Gestor de fallas | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| Menú | 1000 µs | <span style="color:#008000">🟢 ___ µs</span> | <span style="color:#008000">🟢 ___ %</span> |
-| **Ciclo completo** | **1000 µs** | <span style="color:#008000"><strong>🟢 ___ µs</strong></span> | <span style="color:#008000"><strong>🟢 ___ %</strong></span> |
+| Botones | 1000 µs | 17 µs | 1,7 % |
+| Display | 1000 µs | 87 µs | 8,7 % |
+| Humedad de suelo | 1000 µs | 22 µs | 2,2 % |
+| Luz | 1000 µs | 32 µs | 3,2 % |
+| Nivel de agua | 1000 µs | 22 µs | 2,2 % |
+| Corriente de bomba | 1000 µs | 22 µs | 2,2 % |
+| Corriente de LED | 1000 µs | 27 µs | 2,7 % |
+| DHT22 | 1000 µs | 111 µs | 11,1 % |
+| LED RGB | 1000 µs | 14 µs | 1,4 % |
+| Buzzer | 1000 µs | 9 µs | 0,9 % |
+| Bomba | 1000 µs | 13 µs | 1,3 % |
+| Tira LED | 1000 µs | 7 µs | 0,7 % |
+| Gestor de fallas | 1000 µs | 6 µs | 0,6 % |
+| Menú | 1000 µs | 251 µs | 25,1 % |
+| **Cota por suma de WCET individuales** | **1000 µs** | **640 µs** | **64,0 %** |
 
 *Tabla 4.6: WCET experimental de las tareas.*
+
+Los valores se obtuvieron del máximo registrado por DWT para cada tarea. La suma de 640 µs es una cota conservadora: los máximos individuales pueden haber ocurrido en ciclos diferentes y, por lo tanto, no reemplaza una medición directa del WCET del ciclo completo.
 
 Aunque las tareas analógicas usan un parámetro nominal de 50 ms —con primera oportunidad efectiva cercana a 51 ms y variación adicional por el arbitraje— y el DHT22 inicia una trama cada 2000 ms, todas sus funciones de actualización son invocadas cada 1 ms. Por ello, la cota conservadora de utilización del ciclo cooperativo se calcula como:
 
@@ -901,11 +903,9 @@ U = \frac{\sum_{i=1}^{14} C_i}{1000\ \mu s}
 \tag{4.3}
 $$
 
-<span style="color:#008000"><strong>🟢 VALOR A COMPLETAR:</strong> \(U =\) ___ %, holgura temporal = ___ µs y máximo atraso de ticks observado = ___.</span>
+La cota de utilización es \(U = 64,0\ \%\) y la holgura temporal resultante es de 360 µs por ciclo.
 
 El criterio mínimo es que el WCET del ciclo completo sea menor que 1000 µs. Para conservar margen ante interrupciones y variabilidad se debe definir un límite de proyecto más exigente.
-
-<span style="color:#008000"><strong>🟢 VALOR A COMPLETAR:</strong> límite de utilización adoptado por el equipo = ___ %.</span>
 
 ## 4.8 Gestión de bajo consumo
 
