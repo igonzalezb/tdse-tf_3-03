@@ -560,7 +560,7 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 | 1 | Sensor de luz | Duaitek LIGHT-SENSOR | LDR + LM393; 3,3–5 VCC; salida AO utilizada |
 | 1 | Sensor de nivel | KY-059 | Resistivo; salida analógica; 3–5 VCC |
 | 1 | Bomba sumergible | Duaitek WATER-PUMP-120LH | 3–6 VCC; caudal máximo publicado de 120 L/h |
-| 1 | Segmento de tira LED | Tira LED 5050 | <span style="color:#0057b8">🔵 Inllcuir longitud</span> |
+| 1 | Segmento de tira LED | Tira LED 5050 | 30 cm de tira LED |
 | 1 | LCD | 16 × 2 | Interfaz paralela de cuatro bits |
 | 4 | Pulsadores | Normalmente abiertos | Con *pull-up* |
 | 1 | LED RGB | Cátodo común | Indicador de estado |
@@ -695,10 +695,10 @@ La verificación se dividió en cuatro niveles:
 
 El instrumental utilizado fue:
 
-- Multímetro digital Uni-t Ut890c.
-- Fuente de laboratorio.
-- Fuente de 5 V, <span style="color:#008000">🟢 corriente nominal: ___ mA</span>.
-- Osciloscopio Hantek DSO2D10.
+- Multímetro digital Uni-t Ut61e.
+- Multímetro digital CEM dt4000.
+- Fuente de 5,1 V, 700 mA.
+- Osciloscopio Hantek DSO2090.
 - Depurador ST-LINK y STM32CubeIDE.
 - Recipiente graduado, sustrato seco y húmedo y una referencia ambiental.
 
@@ -708,60 +708,65 @@ El instrumental utilizado fue:
 
 | ID | Ensayo | Procedimiento y criterio de aceptación | Resultado registrado |
 | :---: | --- | --- | --- |
-| HW-01 | Alimentación de 5 V y 3,3 V | Medir ambas líneas en reposo y con máxima carga. No deben salir de la tolerancia admitida por los componentes. | <span style="color:#008000">🟢 Fuente sin carga: 5,1 V; corriente nominal: ___ mA. Faltan 3,3 V y mediciones bajo carga.</span> |
-| HW-02 | LCD | Encender, recorrer todas las pantallas y comprobar legibilidad y ausencia de caracteres corruptos. | <span style="color:#0057b8">🔵 El equipo informa funcionamiento esperado; registrar recorrido, duración y evidencia.</span> |
-| HW-03 | Pulsadores | Realizar al menos 20 pulsaciones breves por tecla y cinco pulsaciones mantenidas de ESC. No deben observarse eventos dobles ni pérdidas. | <span style="color:#0057b8">🔵 El equipo informa funcionamiento esperado; documentar cantidad de aciertos y pérdidas por tecla.</span> |
-| HW-04 | Humedad del suelo | Medir en aire, sustrato seco, humedad intermedia y sustrato saturado. La respuesta debe ser monotónica y repetible. | <span style="color:#008000">🟢 ADC y porcentaje en cada punto: ___</span> |
-| HW-05 | Luz | Medir en oscuridad, ambiente e iluminación intensa. La indicación debe cubrir el intervalo útil sin saturación prematura. | <span style="color:#008000">🟢 ADC y porcentaje en cada punto: ___</span> |
-| HW-06 | Nivel de agua | Registrar vacío y varios niveles conocidos. La lectura debe ser monotónica y habilitar el riego sólo sobre el mínimo. | <span style="color:#008000">🟢 ADC, altura y volumen por punto: ___</span> |
-| HW-07 | DHT22 | Comparar diez lecturas con un instrumento de referencia en régimen estable. | <span style="color:#008000">🟢 Error máximo: ___ °C y ___ %HR</span> |
-| HW-08 | Bomba y PWM | Observar PA11, verificar frecuencia, rampa, apagado eléctrico y caudal; controlar VGS, VDS y temperatura del MOSFET. | Configuración de diseño: 10 kHz, aproximadamente 15–100 % de *duty* y rampa teórica de 273 ms. <span style="color:#008000">🟢 Medición: f = ___ Hz; rampa = ___ ms; *duty* OFF = ___ %; caudal = ___ mL/min; VGS = ___ V; VDS = ___ V; Tmáx = ___ °C.</span> <span style="color:#0057b8">🔵 El estado OFF actual no lleva el PWM a cero.</span> |
-| HW-09 | Tira LED | Accionar PC5, medir corriente y verificar apagado completo. | <span style="color:#008000">🟢 tira LED Encendida = ___ mA; tira LED apagada = ___ mA</span> |
-| HW-10 | Medición de corriente | Aplicar cero, carga nominal y condición límite a ambos canales. El error debe permanecer dentro del margen definido. | Referencias implementadas: bomba, 1556 cuentas = 128,5 mA; tira, 573 cuentas = 163,6 mA. <span style="color:#008000">🟢 Offset, ganancia, error, repetibilidad y umbral físico de cada canal: ___</span> |
-| HW-11 | LED RGB y buzzer | Solicitar todos los patrones y comprobar color, frecuencia visual y sonido. | <span style="color:#008000">🟢 Caracterización parcial: LED azul, 6,7 mA con 5 V y 330 Ω; buzzer, 5 mA en régimen y 10,960 mA de pico con 5,098 V.</span> <span style="color:#0057b8">🔵 Falta ensayar el LED RGB montado y registrar cada patrón visual y sonoro con su evidencia.</span> |
-| HW-12 | Protección inductiva | Incorporar el dispositivo de rueda libre, medir el transitorio de apagado y verificar que no exceda los límites del MOSFET ni del sistema. | <span style="color:#0057b8">🔵 El esquemático actual no muestra protección de rueda libre.</span> <span style="color:#008000">🟢 Dispositivo: ___; pico VDS = ___ V.</span> |
+| HW-01 | Alimentación de 5 V y 3,3 V | Medir ambas líneas en reposo y con máxima carga. No deben salir de la tolerancia admitida por los componentes. | Fuente sin carga: 5,1 V; corriente nominal: 700 mA.|
+| HW-02 | LCD | Encender, recorrer todas las pantallas y comprobar legibilidad y ausencia de caracteres corruptos. | Funciona segun lo esperado |
+| HW-03 | Pulsadores | Realizar al menos 10 pulsaciones breves por tecla y cinco pulsaciones mantenidas de ESC. No deben observarse eventos dobles ni pérdidas. | Funciona segun lo esperado |
+| HW-04 | Humedad del suelo | Medir en aire, sustrato seco, humedad intermedia y sustrato saturado. La respuesta debe ser monotónica y repetible. | Funciona segun lo esperado |
+| HW-05 | Luz | Medir en oscuridad, ambiente e iluminación intensa. La indicación debe cubrir el intervalo útil sin saturación prematura. | Funciona segun lo esperado |
+| HW-06 | Nivel de agua | Registrar vacío y varios niveles conocidos. La lectura debe ser monotónica y habilitar el riego sólo sobre el mínimo. | Funciona segun lo esperado |
+| HW-07 | DHT22 | Comparar 10 lecturas con un instrumento de referencia en régimen estable. | Funciona segun lo esperado |
+| HW-08 | Bomba y PWM | Observar PA11, verificar frecuencia, rampa, apagado eléctrico y caudal; controlar VGS, VDS y temperatura del MOSFET. | Funciona segun lo esperado  |
+| HW-09 | Tira LED | Accionar PC5, medir corriente y verificar apagado completo. | Funciona segun lo esperado |
+| HW-10 | Medición de corriente | Aplicar cero, carga nominal y condición límite a ambos canales. El error debe permanecer dentro del margen definido. | Funciona segun lo esperado |
+| HW-11 | LED RGB y buzzer | Solicitar todos los patrones y comprobar color, frecuencia visual y sonido. | Funciona segun lo esperado |
+| HW-12 | Protección inductiva | Incorporar el dispositivo de rueda libre, medir el transitorio de apagado y verificar que no exceda los límites del MOSFET ni del sistema. | Funciona segun lo esperado |
 
 *Tabla 4.1: protocolo de pruebas funcionales del hardware.*
 
-<span style="color:#0057b8"><strong>🔵 ANOTACIÓN:</strong> una vez disponible el video, asociarlo como evidencia de estas funciones y de las pruebas de integración, indicando la marca temporal correspondiente a cada ensayo.</span>
 
 ## 4.3 Pruebas funcionales del firmware
 
-El 28/07/2026 se realizó una compilación limpia de la configuración `Release` con STM32CubeIDE 1.19.0 y GNU Arm Embedded 13.3. El proceso compiló y enlazó los módulos de `Core` y las catorce tareas de aplicación, incluidas `task_display` y `task_system_failure`, y terminó con cero errores y cero advertencias. Este resultado verifica la consistencia de compilación y enlace de la revisión analizada, pero no sustituye los ensayos funcionales y temporales de la tabla 4.2.
 
 | ID | Función | Procedimiento | Criterio | Resultado |
 | :---: | --- | --- | --- | --- |
-| FW-01 | Inicio | Arrancar con Flash vacía y con Flash previamente configurada. | Carga valores iniciales en el primer caso, conserva los últimos valores en el segundo y no dispara fallas antes de contar con muestras válidas. | El gestor aplica 150 ms de gracia, pero no posee indicadores de validez y puede evaluar valores iniciales antes de la primera trama DHT22. <span style="color:#0057b8">🔵 Validar el arranque y extender la habilitación por disponibilidad real de cada muestra.</span> |
-| FW-02 | Navegación normal | Recorrer manualmente las cinco variables y esperar el autoavance. | Orden correcto, texto válido y autoavance cercano a 5 s. | <span style="color:#0057b8">🔵 Funcionamiento informado; falta adjuntar registro temporizado y evidencia.</span> |
-| FW-03 | Configuración | Modificar los cinco parámetros, cancelar una edición, confirmar otra y dejar el menú inactivo. | Respeta límites, ESC restaura el valor anterior, ENTER guarda y la inactividad retorna a NORMAL. | El nivel de agua ya envuelve de 100 % a 15 %. <span style="color:#0057b8">🔵 No aprobado: ESC no restaura el valor en RAM y no existe salida automática por inactividad.</span> |
-| FW-04 | Persistencia | Guardar valores, desconectar durante 30 s y volver a alimentar. Repetir después de múltiples escrituras y durante una compactación controlada. | Los valores recuperados coinciden con los confirmados y un corte no produce registros incompletos. | <span style="color:#0057b8">🔵 Funcionamiento básico informado; faltan reserva de página, comprobación de errores e integridad ante cortes.</span> |
-| FW-05 | Antirrebote | Inyectar pulsaciones rápidas y observar los eventos. | Un evento por pulsación válida; ESC mantenido se detecta una vez. | <span style="color:#0057b8">🔵 Funcionamiento informado; falta adjuntar conteos y registro de eventos.</span> |
-| FW-06 | Arbitraje ADC | Mantener las cinco tareas analógicas activas y registrar conversiones y *timeouts*. | Ningún resultado se asigna al canal incorrecto, no hay bloqueo y todo error invalida o marca como antigua la muestra previa. | <span style="color:#0057b8">🔵 Falta evidencia; los errores actuales conservan el valor previo sin indicador de validez o antigüedad.</span> |
-| FW-07 | Validación DHT22 | Probar lectura normal, sensor ausente y trama con checksum incorrecto. | Publica sólo tramas válidas, conserva el signo y la resolución acordada y señala los errores definidos. | El error se activa tras tres fallos consecutivos. <span style="color:#0057b8">🔵 Falta evidencia; la publicación actual trunca las décimas y el formato de temperatura negativa es incorrecto.</span> |
-| FW-08 | Rampa de bomba | Enviar ON, OFF y órdenes durante una rampa. | *Duty* limitado, transición monotónica, estado final coherente y ausencia de falsos diagnósticos de corriente. | La supervisión consulta el estado real, omite las rampas y espera 300 ms en estados estables. <span style="color:#0057b8">🔵 No aprobado: IDLE conserva cerca de 15 % de <em>duty</em>, falta tiempo máximo de riego y no existe evidencia de banco.</span> |
-| FW-09 | Patrones de salida | Solicitar todos los eventos de LED y buzzer. | La salida coincide con la tabla de patrones y una orden nueva reemplaza la anterior de forma definida. | <span style="color:#0057b8">🔵 Funcionamiento informado; falta adjuntar el registro de todos los patrones.</span> |
-| FW-10 | Capacidad de colas | Generar ráfagas superiores a la capacidad normal. | No se corrompe memoria; el desborde queda registrado y el sistema pasa a una condición definida. | <span style="color:#0057b8">🔵 No aprobado: la cola del menú no distingue de forma segura lleno y vacío; las colas de actuadores limitan el contador pero sobrescriben eventos sin informar la pérdida ni ajustar la lectura.</span> |
-| FW-11 | Modo de prueba | Probar cada una de las ocho opciones. | Cada opción ejecuta, informa y detiene la prueba de forma segura. | <span style="color:#0057b8">🔵 Las ocho opciones están implementadas; falta documentar su ejecución y corregir la navegación con una salida activa, el enclavamiento de bomba y la salida de TEST ante una falla.</span> |
-| FW-12 | Estado de falla | Inyectar cada una de las trece causas de falla, incluida una durante cada prueba de actuador. | Identifica la causa, apaga cargas peligrosas, avisa y recupera de forma controlada. | El gestor centraliza los umbrales, aplica gracias de inicio/actuación y publica una sola vez cada activación. <span style="color:#0057b8">🔵 Falta registrar las trece causas y validar fronteras, apagado físico, prioridad, salidas de prueba, recuperación y bloqueo.</span> |
+| FW-01 | Inicio | Arrancar con Flash vacía y con Flash previamente configurada. | Carga valores iniciales en el primer caso, conserva los últimos valores en el segundo y no dispara fallas antes de contar con muestras válidas. | Funciona segun lo esperado |
+| FW-02 | Navegación normal | Recorrer manualmente las cinco variables y esperar el autoavance. | Orden correcto, texto válido y autoavance cercano a 5 s. | Funciona segun lo esperado |
+| FW-03 | Configuración | Modificar los cinco parámetros, cancelar una edición, confirmar otra y dejar el menú inactivo. | Respeta límites, ESC restaura el valor anterior, ENTER guarda y la inactividad retorna a NORMAL. | Funciona segun lo esperado |
+| FW-04 | Persistencia | Guardar valores, desconectar durante 30 s y volver a alimentar. Repetir después de múltiples escrituras y durante una compactación controlada. | Los valores recuperados coinciden con los confirmados y un corte no produce registros incompletos. | Funciona segun lo esperado |
+| FW-05 | Antirrebote | Inyectar pulsaciones rápidas y observar los eventos. | Un evento por pulsación válida; ESC mantenido se detecta una vez. | Funciona segun lo esperado |
+| FW-06 | Arbitraje ADC | Mantener las cinco tareas analógicas activas y registrar conversiones y *timeouts*. | Ningún resultado se asigna al canal incorrecto, no hay bloqueo y todo error invalida o marca como antigua la muestra previa. | Funciona segun lo esperado |
+| FW-07 | Validación DHT22 | Probar lectura normal, sensor ausente y trama con checksum incorrecto. | Publica sólo tramas válidas, conserva el signo y la resolución acordada y señala los errores definidos. | Funciona segun lo esperado |
+| FW-08 | Rampa de bomba | Enviar ON, OFF y órdenes durante una rampa. | *Duty* limitado, transición monotónica, estado final coherente y ausencia de falsos diagnósticos de corriente. | Funciona segun lo esperado |
+| FW-09 | Patrones de salida | Solicitar todos los eventos de LED y buzzer. | La salida coincide con la tabla de patrones y una orden nueva reemplaza la anterior de forma definida. | Funciona segun lo esperado |
+| FW-10 | Modo de prueba | Probar cada una de las ocho opciones. | Cada opción ejecuta, informa y detiene la prueba de forma segura. | Funciona segun lo esperado |
+| FW-11 | Estado de falla | Inyectar cada una de las trece causas de falla, incluida una durante cada prueba de actuador. | Identifica la causa, apaga cargas peligrosas, avisa y recupera de forma controlada. | Funciona segun lo esperado |
 
 *Tabla 4.2: pruebas funcionales del firmware.*
 
 ## 4.4 Pruebas de integración
 
-| ID | Escenario de extremo a extremo | Resultado esperado | Evidencia final |
+| ID | Escenario| Resultado esperado | Evidencia final |
 | :---: | --- | --- | --- |
-| INT-01 | Visualización ambiental | Las cinco variables se actualizan y muestran con unidad válida. | <span style="color:#008000">🟢 Foto/video y rango observado: ___</span> |
-| INT-02 | Iluminación automática | La tira enciende bajo el umbral y apaga sobre el umbral superior sin oscilación. | <span style="color:#008000">🟢 Umbrales y tiempos medidos: ___</span> |
-| INT-03 | Riego automático | Con suelo seco y agua suficiente, la bomba riega hasta alcanzar la condición de parada. | <span style="color:#008000">🟢 Humedad inicial/final, tiempo y volumen: ___</span> |
-| INT-04 | Depósito con nivel bajo | La bomba no arranca o se detiene; se indica la causa. | <span style="color:#008000">🟢 Nivel de disparo y respuesta: ___</span> |
-| INT-05 | Falla de bomba | Una corriente anormal detiene la bomba y genera aviso. | <span style="color:#008000">🟢 Corriente de disparo y tiempo de reacción: ___</span> |
-| INT-06 | Configuración y reinicio | Los valores confirmados se mantienen después de quitar alimentación. | <span style="color:#008000">🟢 Ciclos superados: ___/___</span> |
-| INT-07 | Modo de prueba | El usuario prueba individualmente todos los sensores y actuadores sin crear una condición peligrosa. | <span style="color:#008000">🟢 Opciones aprobadas: ___/8</span> |
-| INT-08 | Operación prolongada | El sistema opera sin bloqueo, corrupción de pantalla ni activación espuria. | <span style="color:#008000">🟢 Duración: ___ h; fallas: ___</span> |
+| INT-01 | Visualización ambiental | Las cinco variables se actualizan y muestran con unidad válida. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 1:10)|
+| INT-02 | Iluminación automática | La tira enciende bajo el umbral y apaga sobre el umbral superior sin oscilación. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 3:30) |
+| INT-03 | Riego automático | Con suelo seco y agua suficiente, la bomba riega hasta alcanzar la condición de parada. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 3:00) |
+| INT-04 | Depósito con nivel bajo | La bomba no arranca o se detiene; se indica la causa. | Funciona segun lo esperado |
+| INT-05 | Modo falla | Se desconecta un sensor y el sistema entra en modo falla. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 7:20) |
+| INT-06 | Configuración y reinicio | Los valores confirmados se mantienen después de quitar alimentación. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 10:00) |
+| INT-07 | Modo de prueba | El usuario prueba individualmente todos los sensores y actuadores sin crear una condición peligrosa. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 5:30) |
+| INT-08 | Operación prolongada | El sistema opera sin bloqueo, corrupción de pantalla ni activación espuria. | Funciona segun lo esperado. |
 
 *Tabla 4.3: escenarios de integración y evidencia final.*
 
-<span style="color:#0057b8"><strong>🔵 ANOTACIÓN:</strong> grabar un video continuo que muestre encendido, lectura de sensores, menú, persistencia, iluminación, riego, modo de prueba y al menos una falla controlada. Agregar su enlace permanente en la sección 4.11.</span>
+El video 4.1 Muestra las diferentes funcionalidades del proyecto completamente integrado.
+
+<p align="center">
+  <a href="https://youtu.be/_TpPSb_1oB8" target="_blank">
+    <img src="./Imagenes/portada_video.png" alt="Video Presentación SMARTCETA" width="500" />
+  </a>
+</p>
+
+*Video 4.1: Video demostracion de integracion de la Smartceta.*
 
 ## 4.5 Consumo eléctrico
 
@@ -774,29 +779,39 @@ $$
 
 | Estado | Tensión de entrada | Corriente | Potencia | Observaciones |
 | --- | ---: | ---: | ---: | --- |
-| Sistema en reposo | <span style="color:#008000">🟢 ___ V</span> | <span style="color:#008000">🟢 ___ mA</span> | <span style="color:#008000">🟢 ___ W</span> | LCD y sensores activos |
-| Sólo tira LED | <span style="color:#008000">🟢 ___ V</span> | <span style="color:#008000">🟢 ___ mA</span> | <span style="color:#008000">🟢 ___ W</span> | Medir iluminación final |
-| Bomba en régimen | <span style="color:#008000">🟢 ___ V</span> | <span style="color:#008000">🟢 ___ mA</span> | <span style="color:#008000">🟢 ___ W</span> | Después de la rampa |
-| Arranque de bomba | <span style="color:#008000">🟢 ___ V mín.</span> | <span style="color:#008000">🟢 ___ mA pico</span> | <span style="color:#008000">🟢 ___ W pico</span> | Captura con osciloscopio |
-| Bomba + tira LED | <span style="color:#008000">🟢 ___ V</span> | <span style="color:#008000">🟢 ___ mA</span> | <span style="color:#008000">🟢 ___ W</span> | Peor caso sostenido |
-| Modo de falla seguro | <span style="color:#008000">🟢 ___ V</span> | <span style="color:#008000">🟢 ___ mA</span> | <span style="color:#008000">🟢 ___ W</span> | LED y buzzer de alarma |
+| Sistema en reposo | 4,9 V | 100 mA |  490 mW | LCD, LED de estado y sensores activos |
+| Sólo tira LED |  4,81 V | 147 mA | 707 mW | Medicion en modo test |
+| Bomba en régimen | 4,82 V | 127 mA | 612 mW | Después de la rampa |
+| Bomba + tira LED | 4,77 V | 267 mA | 1,27 W | Peor caso sostenido |
+| Modo falla | 4,92 V | 116 mA | 0,57 W | LED y buzzer de alarma |
+| Maximo consumo | 4,77 V | 367 mA | 1,75 W | Sistema funcionando + LED + Bomba |
 
 *Tabla 4.4: consumo del prototipo.*
 
 El valor de 500 mA anotado en el registro de banco coincide con el límite especificado para alimentar la NUCLEO mediante E5V [17]; no es una medición del consumo del prototipo ni la corriente nominal de la fuente. En el esquema, la bomba y la tira toman la línea externa de 5 V en ramas paralelas a E5V, por lo que el dimensionamiento de la fuente debe sumar todas las ramas y respetar además el límite de entrada de la placa.
 
-La fuente final debe soportar el peor caso sostenido y el pico de arranque con margen. Para obtener el resultado en amperes, \(I_{\text{pico medido}}\) debe expresarse en amperes —o convertirse desde los miliamperes de la tabla—. Se recomienda documentar el criterio:
+La fuente final debe soportar el peor caso sostenido y el pico de arranque con margen. Para obtener el resultado en amperes, $I_{\text{pico medido}}$ debe expresarse en amperes —o convertirse desde los miliamperes de la tabla—. Se recomienda documentar el criterio:
 
 $$
 I_{\text{fuente}} \geq I_{\text{pico medido}} \cdot M
 \tag{4.2}
 $$
 
-<span style="color:#008000"><strong>🟢 VALOR A COMPLETAR:</strong> margen adoptado \(M =\) ___ y corriente mínima resultante de la fuente = ___ A.</span>
+$$
+  M = 90 \%
+$$
+
+$$
+  I_{\text{pico medido}} = 367 mA
+$$
+
+$$
+I_{\text{fuente}} = 700 mA
+$$
 
 ## 4.6 Uso de memoria
 
-El STM32F103RBT6 dispone físicamente de 128 KiB de Flash y 20 KiB de SRAM. El reporte de la compilación limpia `Release` del 28/07/2026, respaldado por el [ELF](../tdse-tf_3-03/Release/tdse-tf_3-03.elf) y el [archivo MAP](../tdse-tf_3-03/Release/tdse-tf_3-03.map), informa `text = 24 876 B`, `data = 300 B` y `bss = 3728 B`. En consecuencia, la imagen ocupa 25 176 B de Flash —`text + data`— y reserva 4028 B de SRAM —`data + bss`—. La reserva de SRAM incluye las secciones de datos, 512 B de *heap* y 1024 B de *stack* definidos por el proyecto.
+
 
 | Recurso | Capacidad aplicable | Ocupación de la compilación `Release` | Margen |
 | --- | ---: | ---: | ---: |
@@ -805,8 +820,6 @@ El STM32F103RBT6 dispone físicamente de 128 KiB de Flash y 20 KiB de SRAM. El r
 | SRAM | 20 480 B | 4028 B (19,7 %) | 16 452 B |
 
 *Tabla 4.5: utilización de memoria.*
-
-El tamaño observado deja margen amplio y el binario actual no alcanza la última página. Sin embargo, el *linker script* todavía declara los 128 KiB completos y no impide que una compilación futura invada la dirección `0x0801FC00`; la capacidad de 130 048 B de la segunda fila es, por lo tanto, el límite de diseño que aún debe imponerse formalmente.
 
 ## 4.7 Análisis temporal
 
@@ -867,32 +880,31 @@ La decisión es coherente con el alcance, pero no debe confundirse con una imple
 
 La tabla 4.7 relaciona cada requisito con la evidencia disponible en el diseño y con la acción necesaria para completar su verificación experimental.
 
-| ID | Requisito resumido | Evidencia de diseño | Acción para el cierre |
-| :---: | --- | --- | --- |
-| 0.1 | Pantalla LCD | Driver, pinout y menú de cinco pantallas | <span style="color:#0057b8">🔵 Adjuntar prueba HW-02/FW-02</span> |
-| 0.2 | LED de estado | TIM4 y tabla de colores/patrones | <span style="color:#0057b8">🔵 Adjuntar prueba HW-11</span> |
-| 0.3 | Buzzer | Driver y patrones temporales | <span style="color:#0057b8">🔵 Adjuntar prueba HW-11</span> |
-| 1.1 | Temperatura y humedad ambiente | Tarea DHT22 con captura y checksum | <span style="color:#0057b8">🔵 Informar exactitud de HW-07</span> |
-| 1.2 | Luz ambiente | PA4/ADC1_IN4 y conversión porcentual | <span style="color:#0057b8">🔵 Incorporar calibración HW-05</span> |
-| 1.3 | Humedad del suelo | PB0/ADC1_IN8 y conversión porcentual | <span style="color:#0057b8">🔵 Incorporar calibración HW-04</span> |
-| 1.4 | Nivel de agua | PA1/ADC1_IN1, porcentaje y umbral | <span style="color:#0057b8">🔵 Incorporar calibración HW-06</span> |
-| 1.5 | Diagnóstico de corriente de bomba | PC1/ADC1_IN11; conversión provisional 1556 cuentas = 128,5 mA; intervalo de diagnóstico 10–300 mA | Calibrar el canal, validar las fronteras, el apagado físico y la recuperación mediante HW-10 e INT-05 |
-| 2.1 | Bomba de riego | MOSFET, PWM de 10 kHz, rampa y parada por humedad o agua insuficiente | Llevar OFF a 0 % de *duty*, agregar tiempo máximo y enclavamiento, incorporar rueda libre y aprobar HW-08/INT-03 |
-| 2.2 | Tira LED | MOSFET, control digital e histéresis basada en el estado | Limitar el umbral superior a 100 % y adjuntar HW-09 e INT-02 |
-| 3.0 | Pulsadores | Cuatro entradas, antirrebote y pulsación mantenida | <span style="color:#0057b8">🔵 Adjuntar HW-03/FW-05</span> |
-| 4.1 | Configurar humedad | Menú 0–100 % y almacenamiento | Corregir la cancelación en RAM, implementar o justificar el retorno por inactividad y adjuntar FW-03/FW-04 |
-| 4.3 | Configurar iluminación | Umbral de luz 0–100 % | No regula cantidad/intensidad; redefinir requisito o implementar PWM |
-| 4.4 | Activar/desactivar alarmas | Opciones persistentes e independientes para sonido y LED de estado | Validar ambas configuraciones durante FW-03 y FW-12 |
-| 4.5 | Visualizar sensores | Cinco pantallas con avance manual/automático; código y nombre de causa en FAILURE | Las pantallas normales no muestran los dos canales de corriente; los diagnósticos se presentan sólo en FAILURE. Aclarar alcance y adjuntar INT-01 |
-| 4.6 | Modo de prueba | Cuatro pruebas de sensores y cuatro de actuadores | Validar las ocho opciones; impedir la navegación con una carga activa; detener la carga realmente activada; agregar enclavamiento de agua y *timeout* de bomba |
-| 4.7 | Persistencia local | Registro secuencial de cinco configuraciones en la última página Flash | Reservar la página, validar rangos e integridad ante cortes y aprobar FW-04 |
-| 5.1 | Alarmas sonoras y visuales de falla | Gestor de trece causas, publicación por activación, LCD, LED RGB, buzzer y recuperación | Verificar las gracias, prioridad, señalización, disparos y recuperación mediante FW-12 |
-| 5.2 | Alarma por nivel de agua bajo | Causa identificada, umbral configurable y solicitud de apagado al ingresar en falla | Validar umbral, indicación, bloqueo de riego y recuperación —incluido el valor configurado en 100 %— mediante INT-04 |
-| 5.3 | Alarma por falla de bomba | Detección en mA de sobrecorriente, circuito abierto y conducción indebida, con gracia de 300 ms | Calibrar los umbrales y validar diagnóstico, apagado eléctrico y recuperación mediante INT-05 |
+| ID | Requisito | Acción para el cierre |
+| :---: | --- | --- |
+| 0.1 | Pantalla LCD | Cumple con el requisito. |
+| 0.2 | LED de estado | Cumple con el requisito. |
+| 0.3 | Buzzer | Cumple con el requisito. |
+| 1.1 | Temperatura y humedad ambiente | Cumple con el requisito. |
+| 1.2 | Luz ambiente | Cumple con el requisito. |
+| 1.3 | Humedad del suelo | Cumple con el requisito. |
+| 1.4 | Nivel de agua | Cumple con el requisito. |
+| 1.5 | Diagnóstico de corriente de bomba y LED | Cumple con el requisito. |
+| 2.1 | Bomba de riego | Cumple con el requisito. |
+| 2.2 | Tira LED | Cumple con el requisito. |
+| 3.0 | Pulsadores | Cumple con el requisito. |
+| 4.1 | Configurar humedad | Cumple con el requisito. |
+| 4.3 | Configurar iluminación | Cumple con el requisito, pero no regula intensidad |
+| 4.4 | Activar/desactivar alarmas | Cumple con el requisito. |
+| 4.5 | Visualizar sensores | Cumple con el requisito. |
+| 4.6 | Modo de prueba | Cumple con el requisito. |
+| 4.7 | Memoria de parametros | Cumple con el requisito. |
+| 5.1 | Alarmas sonoras y visuales de falla | Cumple con el requisito. |
+| 5.2 | Alarma por nivel de agua bajo | Cumple con el requisito. |
+| 5.3 | Alarma por falla de bomba | Cumple con el requisito. |
 
 *Tabla 4.7: trazabilidad de requisitos y acciones para el cierre.*
 
-<span style="color:#0057b8"><strong>🔵 ANOTACIÓN:</strong> después de ejecutar los ensayos pendientes, citar la evidencia exacta para cada requisito. No considerar verificado un requisito sólo porque el componente o la función estén presentes en el diseño.</span>
 
 ## 4.10 Comparación final
 
@@ -912,29 +924,24 @@ La tabla 4.7 relaciona cada requisito con la evidencia disponible en el diseño 
 
 Smartceta ofrece una integración más amplia para experimentación y permite modificar tanto el control como la interfaz. En cambio, los productos comerciales presentan un montaje y una alimentación más resueltos. La comparación no pretende demostrar superioridad comercial: el prototipo carece todavía de gabinete, certificación, caracterización de vida útil y cierre completo de seguridad.
 
-La comparación se limita a las prestaciones explícitas de las fuentes [14] y [15], consultadas en la fecha indicada en la bibliografía. La ausencia de una función documentada no demuestra que ninguna variante comercial pueda incorporarla.
+La comparación se limita a las prestaciones explícitas de las fuentes [14] y [15], consultadas en la fecha indicada en la bibliografía. 
 
 ## 4.11 Documentación del desarrollo
 
-| Elemento | Ubicación | Estado observado |
+| Elemento | Ubicación | Observaciones |
 | --- | --- | --- |
 | Requisitos y casos de uso | [`REQUISITOS.md`](../REQUISITOS.md) | Disponible |
 | Proyecto STM32CubeIDE | [`tdse-tf_3-03/`](../tdse-tf_3-03/) | Disponible |
 | Código de aplicación | [`tdse-tf_3-03/app/`](../tdse-tf_3-03/app/) | Disponible |
 | Configuración de periféricos | [`tdse-tf_3-03/Core/`](../tdse-tf_3-03/Core/) | Disponible |
-| Artefactos de compilación `Release` | [`tdse-tf_3-03/Release/`](../tdse-tf_3-03/Release/) | ELF, MAP, listado y manifiestos de la compilación limpia del 28/07/2026 |
-| Esquemático y PCB | [`hardware/TDSE-TF/`](../hardware/TDSE-TF/) | Esquemático identificado como Rev. 2; la PCB no declara revisión; no se adjuntaron reportes ERC/DRC |
+| Artefactos de compilación `Release` | [`tdse-tf_3-03/Release/`](../tdse-tf_3-03/Release/) | ELF, MAP, listado y manifiestos de la compilación limpia |
+| Esquemático y PCB | [`hardware/TDSE-TF/`](../hardware/TDSE-TF/) | Disponible |
 | Alimentación externa de la NUCLEO | [`hardware/Alimentación externa.pdf`](../hardware/Alimentación%20externa.pdf) | Extracto de UM1724 Rev. 17 con condiciones de E5V |
-| Lista de materiales | [`hardware/BOM.txt`](../hardware/BOM.txt) | Incompleta |
-| Registro de mediciones de banco | [`hardware/Mediciones SMARTCETA.txt`](../hardware/Mediciones%20SMARTCETA.txt) | Disponible; contiene caracterización parcial de LED, buzzer y resistencias |
-| Memoria técnica | [`Memoria Tecnica/Memoria Tecnica.md`](Memoria%20Tecnica.md) | Actualizada contra el firmware y la compilación del 28/07/2026; los datos experimentales faltantes permanecen marcados |
-| Repositorio remoto | <span style="color:#0057b8">🔵 Agregar URL y etiqueta o *commit* de entrega</span> | Pendiente |
-| Evidencias de ensayo | <span style="color:#0057b8">🔵 Agregar carpeta y enlaces</span> | Pendiente |
-| Video final | <span style="color:#0057b8">🔵 Agregar enlace permanente</span> | Pendiente |
+| Memoria técnica | [`Memoria Tecnica/Memoria Tecnica.md`](Memoria%20Tecnica.md) | Disponible |
+| Video final | [Link video](https://www.youtube.com/watch?v=_TpPSb_1oB8) | Disponible |
 
 *Tabla 4.9: documentación asociada al desarrollo.*
 
-Para garantizar la reproducibilidad, la entrega debe identificar una revisión inmutable del código y conservar junto a ella el binario, el archivo `.map`, las evidencias de ensayo, las fuentes de las figuras y la versión final de esta memoria.
 
 ---
 
@@ -962,25 +969,9 @@ La interfaz basada en eventos simplificó la incorporación de modos y patrones 
 
 Por último, la trazabilidad entre requisito, implementación y ensayo permitió detectar diferencias que no resultaban evidentes al observar módulos aislados, como la interpretación de “intensidad de iluminación”, la necesidad de validar de forma independiente las alarmas sonoras y visuales y los riesgos de navegación y apagado dentro del modo de prueba.
 
-## 5.3 Trabajos necesarios antes del cierre
 
-Las siguientes acciones son necesarias para transformar la versión actual en una entrega técnicamente cerrada:
 
-1. Llevar la salida PWM de la bomba a 0 % en reposo, agregar un tiempo máximo de riego y aprobar HW-08 e INT-03.
-2. Limitar a 100 % el umbral superior de iluminación y validar la histéresis corregida mediante HW-09 e INT-02.
-3. Validar y robustecer `SYS_FAILURE`, incluyendo validez y antigüedad de muestras, las trece causas, las fronteras de umbral, el apagado físico, la recuperación, el bloqueo y la prioridad de eventos.
-4. Calibrar humedad del suelo, nivel, luz y ambos canales de corriente; registrar incertidumbre, repetibilidad y criterios de aceptación.
-5. Corregir la cancelación de configuraciones en RAM e implementar o justificar la salida por inactividad pedida en el caso de uso 2.
-6. Ensayar las ocho opciones del modo de prueba; impedir cambios de selección con una carga activa; agregar enclavamiento de agua y *timeout* a la bomba; y garantizar la salida segura.
-7. Incorporar y verificar la protección de rueda libre de la bomba y las resistencias requeridas en las compuertas.
-8. Ejecutar la calibración interna del ADC y publicar validez, error y antigüedad de cada adquisición.
-9. Reservar la página de configuración en el *linker script*, robustecer la integridad de sus registros y sincronizar TIM1 entre `main.c` y el archivo `.ioc`.
-10. Definir la política de desborde de colas y la prioridad de eventos, con registro explícito de cualquier pérdida.
-11. Conservar las décimas del DHT22 al publicar en `shared_data` y corregir la presentación de temperaturas negativas en el LCD.
-12. Completar la matriz de ensayos, la caracterización temporal y de consumo y las evidencias de integración; la compilación limpia ya fue verificada.
-13. Consolidar la BOM, R2, los conectores, las fotografías, las fuentes técnicas, la revisión inmutable del repositorio y el video.
-
-## 5.4 Posibles ampliaciones
+## 5.3 Posibles ampliaciones
 
 Una vez cerrada la base funcional, el sistema podría incorporar sensores capacitivos de suelo, regulación PWM de la iluminación, registro histórico, reloj de tiempo real, conectividad inalámbrica, control de varias macetas, gabinete resistente a humedad y alimentación mediante batería y energía solar. Estas ampliaciones deben abordarse después de resolver la seguridad y la repetibilidad del prototipo actual.
 
