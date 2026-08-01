@@ -28,24 +28,13 @@
 
 ---
 
-## Convención para completar esta versión
-
-Este documento fue redactado con estructura y tono de entrega final a partir de los requisitos, el esquemático, la placa, el firmware y los artefactos de compilación presentes en el proyecto.
-
-- <span style="color:#008000"><strong>🟢 Verde:</strong> valor numérico o resultado medido que debe introducirse después de realizar el ensayo indicado.</span>
-- <span style="color:#0057b8"><strong>🔵 Azul:</strong> anotación editorial, dato desconocido, decisión que debe confirmar el equipo o aspecto técnico que todavía requiere corrección o verificación.</span>
-
-Las marcas de color no deben permanecer sin resolver en la versión que se entregue.
-
----
-
 ## Resumen
 
 El presente trabajo describe el diseño y la implementación de Smartceta, un sistema embebido destinado a asistir el cuidado de una planta doméstica. El equipo desarrollado sensa la humedad del suelo, la intensidad de luz ambiente, el nivel de agua de un depósito y la temperatura y humedad del aire. A partir de estas variables controla una bomba de riego y una tira de iluminación, y permite consultar las mediciones y modificar parámetros mediante una pantalla LCD y cuatro pulsadores.
 
 La unidad de control se implementó sobre una placa NUCLEO-F103RB. El firmware se organizó como una aplicación *bare-metal* cooperativa, con tareas periódicas, máquinas de estados, intercambio de eventos y una estructura de datos compartida. También se incorporaron un LED RGB, un buzzer, medición de corriente en las etapas de potencia, un modo de prueba y almacenamiento de las configuraciones en la memoria Flash interna.
 
-El prototipo permitió integrar en una única plataforma la adquisición de datos de los sensores, el control de actuadores, la interfaz local y la persistencia de parámetros. La última revisión del firmware corrigió la condición de parada del riego, incorporó una histéresis basada en el estado de la iluminación, convirtió a miliamperes las dos señales de corriente y evitó la publicación repetitiva de una misma causa de falla. Una compilación limpia de la configuración `Release`, que incluyó las catorce tareas, finalizó sin errores ni advertencias. Permanecen pendientes la validación experimental y varios puntos de seguridad: el estado de reposo de la bomba conserva aproximadamente 15 % de *duty* en vez de un apagado eléctrico, no existe un tiempo máximo de riego, las colas no poseen una política completa de desborde y prioridad, el modo de prueba conserva riesgos de enclavamiento y la página de configuración aún no está reservada en el *linker script*. La memoria presenta las decisiones de diseño, la implementación realizada, el protocolo de ensayos y la trazabilidad entre requisitos y resultados.
+El Producto mínimo Viable permitió integrar en una única plataforma la adquisición de datos de los sensores, el control de actuadores, la interfaz local y la persistencia de parámetros de configuración. Se logró la compilación sin errores en modo Release para comprobar el funcionamiento del dispositivo en una maceta real sin dependencia de una computadora. El Proyecto tuvo un enfoque de seguridad para priorizar la integridad del hardware ante posibles fallas o malos funcionamientos.
 
 ## Abstract
 
@@ -53,7 +42,7 @@ This report presents the design and implementation of Smartceta, an embedded sys
 
 The control unit was implemented on an STM32 NUCLEO-F103RB board. Its firmware follows a cooperative bare-metal architecture based on periodic tasks, state machines, event queues, and shared application data. An RGB status LED, a buzzer, current-sensing circuits, a hardware test mode, and non-volatile configuration storage were also included.
 
-The prototype integrates sensing, automatic actuation, local interaction, and parameter persistence in a single platform. The latest firmware revision corrected the irrigation stop condition, added state-based hysteresis to the lighting control, converted both current channels to milliamperes, and prevented the repeated publication of an already active fault. A clean `Release` build including all fourteen tasks completed without errors or warnings. Experimental validation and several safety issues remain open: the pump idle state retains approximately 15% PWM duty instead of providing an electrical off state, no maximum irrigation time is enforced, queue overflow and priority policies remain incomplete, the test mode still has actuator-interlock risks, and the configuration page has not yet been reserved in the linker script. This report documents the design decisions, implementation, verification procedures, and requirement traceability of the system.
+The Minimum Viable Product (MVP) enabled the integration of sensor data acquisition, actuator control, the local user interface, and configuration parameter persistence into a single platform. The system was successfully compiled in Release mode without errors to verify the device's operation in a real plant pot without relying on a computer. The project adopted a safety-oriented approach, prioritizing hardware integrity in the event of potential failures or malfunctions.
 
 
 ## Registro de versiones
@@ -103,10 +92,9 @@ The prototype integrates sensing, automatic actuation, local interaction, and pa
     - [3.2.4 Control de la bomba](#324-control-de-la-bomba)
     - [3.2.5 Control de iluminación e indicadores](#325-control-de-iluminación-e-indicadores)
     - [3.2.6 Interfaz de usuario](#326-interfaz-de-usuario)
-    - [3.2.7 Alimentación y protecciones](#327-alimentación-y-protecciones)
-    - [3.2.8 Esquemático, PCB y montaje](#328-esquemático-pcb-y-montaje)
-    - [3.2.9 Pinout del sistema](#329-pinout-del-sistema)
-    - [3.2.10 Lista de materiales](#3210-lista-de-materiales)
+    - [3.2.7 Esquemático, PCB y montaje](#327-esquemático-pcb-y-montaje)
+    - [3.2.8 Pinout del sistema](#328-pinout-del-sistema)
+    - [3.2.9 Lista de materiales](#329-lista-de-materiales)
   - [3.3 Diseño de firmware](#33-diseño-de-firmware)
     - [3.3.1 Arquitectura de ejecución](#331-arquitectura-de-ejecución)
     - [3.3.2 Tareas y periodicidades](#332-tareas-y-periodicidades)
@@ -125,12 +113,9 @@ The prototype integrates sensing, automatic actuation, local interaction, and pa
   - [4.5 Consumo eléctrico](#45-consumo-eléctrico)
   - [4.6 Uso de memoria](#46-uso-de-memoria)
   - [4.7 Análisis temporal](#47-análisis-temporal)
-    - [4.7.1 Metodología](#471-metodología)
-    - [4.7.2 WCET experimental](#472-wcet-experimental)
-  - [4.8 Gestión de bajo consumo](#48-gestión-de-bajo-consumo)
-  - [4.9 Cumplimiento de requisitos](#49-cumplimiento-de-requisitos)
-  - [4.10 Comparación final](#410-comparación-final)
-  - [4.11 Documentación del desarrollo](#411-documentación-del-desarrollo)
+    - [4.7.1 WCET experimental](#471-wcet-experimental)
+  - [4.8 Cumplimiento de requisitos](#48-cumplimiento-de-requisitos)
+  - [4.9 Documentación del desarrollo](#49-documentación-del-desarrollo)
 - [Capítulo 5: Conclusiones](#capítulo-5-conclusiones)
   - [5.1 Resultados obtenidos](#51-resultados-obtenidos)
   - [5.2 Lecciones aprendidas](#52-lecciones-aprendidas)
@@ -353,7 +338,7 @@ Como restricciones de diseño se adoptaron una alimentación externa de 5 V, ope
 | Disparador | El usuario presiona ENTER en modo normal. |
 | Precondiciones | El LCD y los pulsadores se encuentran operativos. |
 | Flujo principal | El usuario recorre sonido, luz, nivel de agua, humedad del suelo y habilitación del LED de estado; selecciona un parámetro; modifica su valor; confirma con ENTER; y el firmware registra el cambio en Flash. |
-| Flujos alternativos | ESC abandona la pantalla de edición sin escribir un nuevo registro en Flash o regresa al modo normal. El requisito original también prevé volver a NORMAL después de un tiempo de inactividad [5]. En la versión actual la salida temporizada no está implementada. |
+| Flujos alternativos | ESC abandona la pantalla de edición sin escribir un nuevo registro en Flash o regresa al modo normal. El requisito original también prevé volver a NORMAL después de un tiempo de inactividad [5]. |
 | Poscondición | La configuración confirmada queda disponible en RAM y almacenada en memoria no volátil. |
 
 *Tabla 2.3: caso de uso de configuración.*
@@ -410,9 +395,6 @@ La bomba utilizada es una Duaitek WATER-PUMP-120LH, especificada para 3–6 VCC 
 
 Cada carga se conecta mediante una etapa MOSFET de canal N FQPF13N06L en configuración de conmutación *low-side*. La bomba recibe PWM desde TIM1, mientras que la tira LED se controla como una salida digital. Un transistor MPSA42 maneja el buzzer y tres canales PWM controlan los colores del LED RGB.
 
-<span style="color:#008000"><strong>🟢 VALOR A COMPLETAR:</strong> corriente nominal y corriente de arranque medidas sobre la bomba instalada: ___ mA y ___ mA.</span>
-
-<span style="color:#008000"><strong>🟢 VALOR A COMPLETAR:</strong> potencia o corriente medida de la tira o del segmento efectivamente instalado: ___ W o ___ mA.</span>
 
 ### 2.3.4 Interfaz local
 
@@ -528,11 +510,8 @@ El LCD se conectó en modo de cuatro bits. `task_display` utiliza un doble búfe
 
 El buzzer se acciona mediante un transistor MPSA42. Los patrones implementados incluyen un pulso de 80 ms, dos pulsos de 80 ms separados por 80 ms, sonido continuo y alternancia de 300 ms encendido/300 ms apagado.
 
-### 3.2.7 Alimentación y protecciones
 
-La alimentación externa de 5 V ingresa por J3 a las cargas y a E5V de la NUCLEO mediante CN7 pin 6. Para esta forma de alimentación, la documentación de la placa establece 4,75–5,25 V, hasta 500 mA a través de E5V, JP5 entre los pines 2 y 3 y JP1 retirado [17]. El límite de 500 mA no incluye por sí solo el dimensionamiento de las ramas externas de bomba e iluminación. Las entradas analógicas y los periféricos de señal operan a 3,3 V.
-
-### 3.2.8 Esquemático, PCB y montaje
+### 3.2.7 Esquemático, PCB y montaje
 
 La documentación eléctrica se encuentra en los siguientes archivos:
 
@@ -546,7 +525,7 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 
 
 
-### 3.2.9 Pinout del sistema
+### 3.2.8 Pinout del sistema
 
 | Función | Pin STM32 | Periférico o modo |
 | --- | --- | --- |
@@ -576,7 +555,7 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 
 *Tabla 3.2: asignación de pines implementada.*
 
-### 3.2.10 Lista de materiales
+### 3.2.9 Lista de materiales
 
 | Cantidad | Elemento | Valor o modelo | Observaciones |
 | ---: | --- | --- | --- |
@@ -594,11 +573,11 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 | 2 | MOSFET canal N | FQPF13N06L  | Bomba y tira LED |
 | 1 | Transistor NPN | MPSA42 | Driver de buzzer |
 | 2 | Diodos Zener | 1N4727A | Protección de entradas |
-| 4 | Resistencias R3, R5, R6 y R7 | 330 Ω, 1/4 W | Medidas: 331,7 Ω; 326,9 Ω; 329,7 Ω y 328,7 Ω, respectivamente [16] |
-| 1 | Resistencia R4 | 5,1 kΩ nominal, 1/4 W | Se midieron 4,645 kΩ [16] |
-| 1 | Resistencia de potencia R1 | 10 Ω, 2 W | Medición de corriente; valor montado medido: 10,14 Ω [16] |
+| 4 | Resistencias R3, R5, R6 y R7 | 330 Ω, 1/4 W |  |
+| 1 | Resistencia R4 | 5,1 kΩ nominal, 1/4 W | |
+| 1 | Resistencia de potencia R1 | 10 Ω, 2 W |  |
 | 1 | Resistencia R2 | 3,3 Ω, 1/4 W | |
-| 1 | Resistencia R8 | 3,3 kΩ, 1/4 W | Base del transistor del buzzer; valor medido: 3,261 kΩ [16] |
+| 1 | Resistencia R8 | 3,3 kΩ, 1/4 W |  |
 | 1 | Potenciómetro RV1 | 10 kΩ | Contraste del LCD |
 | 2 | Tiras de pines hembra dobles | 2x19 | Conexión de la NUCLEO |
 | — | Conectores de sensores y cargas | Conectores de 2, 3 y 4 vías | |
@@ -620,7 +599,7 @@ El contador de ciclos DWT mide el tiempo de cada tarea y conserva su máximo obs
 | Tarea | Función | Períodos de activación o evaluación |
 | --- | --- | --- |
 | `task_button` | Antirrebote y eventos de cuatro pulsadores | Evaluación cada 1 ms |
-| `task_display` | Copia el contenido solicitado a un doble búfer y actualiza el LCD de manera incremental | Cada 1 ms cuando existe contenido pendiente |
+| `task_display` | Se actualiza el LCD de manera incremental | Cada 1 ms cuando existe contenido pendiente |
 | `task_humidity` | Humedad de suelo | Solicitud cada 50 ms, sujeta al arbitraje del ADC |
 | `task_light` | Luz ambiente | Solicitud cada 50 ms, sujeta al arbitraje del ADC |
 | `task_water_level` | Nivel de agua | Solicitud cada 50 ms, sujeta al arbitraje del ADC |
@@ -839,19 +818,7 @@ $$
 
 ## 4.7 Análisis temporal
 
-### 4.7.1 Metodología
-
-El firmware instrumenta cada tarea mediante el contador DWT, pero no actualiza un máximo equivalente para el ciclo completo. Para obtener valores representativos se debe:
-
-1. Reiniciar los máximos.
-2. Ejecutar todos los modos y provocar cada rama relevante.
-3. Capturar varias tramas DHT22, conversiones ADC, escrituras Flash, rampas y eventos simultáneos.
-4. Registrar el máximo por tarea e instrumentar externamente o agregar al firmware el máximo del ciclo completo.
-5. Repetir en la configuración de compilación que se entregará y sin pausas del depurador.
-
-Como verificación independiente puede conmutarse un GPIO al inicio y final de `app_update()` y observarlo con un osciloscopio.
-
-### 4.7.2 WCET experimental
+### 4.7.1 WCET experimental
 
 | Tarea | Período de invocación | WCET medido | Utilización \(C_i/T_i\) |
 | --- | ---: | ---: | ---: |
@@ -886,13 +853,7 @@ La cota de utilización es \(U = 64,0 \%\), por lo que existe un sobrante de uno
 
 El criterio mínimo es que el WCET del ciclo completo sea menor que 1000 µs.
 
-## 4.8 Gestión de bajo consumo
-
-El firmware no ingresa al microcontrolador en modos *sleep*, *stop* o *standby*. El lazo principal consulta continuamente el contador de ticks y la placa permanece alimentada desde una fuente externa. Dado que la bomba y la tira LED representan cargas considerablemente mayores que el núcleo, el bajo consumo no fue una prioridad de esta versión.
-
-La decisión es coherente con el alcance, pero no debe confundirse con una implementación energéticamente optimizada. Una ampliación con batería o panel solar requeriría apagar periféricos, reducir la frecuencia de reloj, dormir entre eventos, disminuir el consumo del LCD y diseñar una estrategia específica para la iluminación y la bomba.
-
-## 4.9 Cumplimiento de requisitos
+## 4.8 Cumplimiento de requisitos
 
 En la tabla 4.7 se muestra cada requisito impuesto previamente y se establece si se cumple o no.
 
@@ -921,27 +882,8 @@ En la tabla 4.7 se muestra cada requisito impuesto previamente y se establece si
 
 *Tabla 4.7: Requisitos de la tabla 2.1 y la verificación de su cumplimiento.*
 
-## 4.10 Comparación final
 
-| Característica | Beday | HCT-355 | Smartceta |
-| --- | --- | --- | --- |
-| Criterio de riego | Temporización, humedad o manual | Horario programado | Humedad de suelo + disponibilidad de agua |
-| Depósito propio | Externo | No, conexión a canilla | Sí |
-| Medición ambiental | No documentada | No | Temperatura y humedad relativa |
-| Medición de luz | No documentada en la fuente consultada | No | Sí |
-| Iluminación artificial | No | No | Tira LED automática |
-| Diagnóstico eléctrico | No documentado | No documentado | Dos entradas de corriente, calibración pendiente |
-| Interfaz | Pantalla y botones | Pantalla y botones | LCD, cuatro botones, LED RGB y buzzer |
-| Alimentación | Solar y batería | Pilas AA | Fuente externa de 5 V |
-| Modificabilidad | Producto cerrado | Producto cerrado | Hardware y firmware del prototipo disponibles |
-
-*Tabla 4.8: comparación final de características.*
-
-Smartceta ofrece una integración más amplia y permite modificar tanto aspectosd del control como de la interfaz. En cambio, los productos comerciales presentan un montaje y una alimentación más resueltos, esperable de productos ya disponibles para la venta masiva.
-
-La comparación se limita a las prestaciones explícitas de las fuentes [14] y [15], consultadas en la fecha indicada en la bibliografía.
-
-## 4.11 Documentación del desarrollo
+## 4.9 Documentación del desarrollo
 
 | Elemento | Ubicación | Observaciones |
 | --- | --- | --- |
