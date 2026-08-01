@@ -28,7 +28,7 @@ static void apply_pump_pwm(uint16_t);
 void task_pump_init(void *parameters) {
     HAL_TIM_PWM_Start(&TIMER_PUMP, CHANNEL_PUMP);
 
-    current_duty = PUMP_PWM_MIN;
+    current_duty = 0;
     apply_pump_pwm(current_duty);
 
     pump_dta.state = ST_PUMP_IDLE;
@@ -61,6 +61,10 @@ static void task_pump_statechart(void) {
                     pump_dta.state = ST_PUMP_RAMP_UP;
                     pump_dta.tick = current_tick;
                 }
+                if (current_duty == 0) {
+					current_duty = PUMP_PWM_MIN;
+					apply_pump_pwm(current_duty);
+				}
                 break;
 
             case EV_PUMP_OFF:
@@ -113,7 +117,9 @@ static void task_pump_statechart(void) {
 
                     apply_pump_pwm(current_duty);
                 } else {
-                    pump_dta.state = ST_PUMP_IDLE;
+                    current_duty = 0;
+					apply_pump_pwm(current_duty);
+					pump_dta.state = ST_PUMP_IDLE;
                 }
             }
             break;

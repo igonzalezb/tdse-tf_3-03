@@ -9,21 +9,21 @@
 #include "task_led_strip.h"
 #include "logger.h"
 
-// Comentar la linea de abajo para desactivar modo falla
-#define ENABLE_FAILURE
+// Para desactivar el modo falla cambiar true por false (O comentar la linea de abajo)
+#define ENABLE_FAILURE true
 
 
 /********************** defines *******************************************/
 #define MAX_OVERCURRENT_FAILURES 2
-// periodos en los que se anula el sensado de fallas para evitar falsos positivos
+// Periodos en los que se anula el sensado de fallas para evitar falsos positivos
 #define STARTUP_PERIOD_MS 150
 #define ACTUATOR_PERIOD_MS 300
 
 /** Variables estáticas **/
 static volatile bool active_faults[FAULT_QTY];		// Arreglo estático de las fallas activas
-static bool lock_system = false;      				// Flag: se debe bloquear el sistema por repetidos excesos de corriente?
-static uint8_t pump_overcurrent_failures = 0; 		// Contador de fallas de sobre corriente de bomba
-static uint8_t led_strip_overcurrent_failures = 0; 	// Contador de fallas de sobre corriente de tira led
+static bool lock_system = false;      				// Flag: se debe bloquear el sistema por repetidos excesos de corriente
+static uint8_t pump_overcurrent_failures = 0; 		// Contador de fallas de sobrecorriente de bomba
+static uint8_t led_strip_overcurrent_failures = 0; 	// Contador de fallas de sobrecorriente de tira led
 
 
 
@@ -54,7 +54,7 @@ void task_system_failure_init(void *parameters){
 }
 
 void task_system_failure_update(void *parameters) {
-	#ifdef ENABLE_FAILURE
+	#if ENABLE_FAILURE
 	static uint32_t init_tick = 0;
 	static bool system_ready = false;
 
@@ -63,6 +63,7 @@ void task_system_failure_update(void *parameters) {
 	static uint32_t pump_off_tick = 0;
 	static uint32_t led_strip_on_tick = 0;
 	static uint32_t led_strip_off_tick = 0;
+
 
 	if (!system_ready) {
 			if (init_tick == 0) {
@@ -74,7 +75,7 @@ void task_system_failure_update(void *parameters) {
 			return;
 		}
 
-		// El tiempo de gracia finalizó, marcamos el sistema como listo
+		// El tiempo de gracia finalizó
 		system_ready = true;
 		LOGGER_INFO("Iniciando monitoreo de fallas.");
 	}
@@ -82,23 +83,21 @@ void task_system_failure_update(void *parameters) {
 
 	// ======================     BOMBA     ==========================
 	if (get_pump_state() == ST_PUMP_ON) {
-			pump_off_tick = 0; // Se encendió, cancelamos el timer de apagado
+			pump_off_tick = 0; // Reinicialización del timer de apagado
 
-			if (pump_on_tick == 0) pump_on_tick = HAL_GetTick(); // Registramos cuándo arrancó
+			if (pump_on_tick == 0) pump_on_tick = HAL_GetTick(); // Inicialización del timer de encendido
 
 			if ((HAL_GetTick() - pump_on_tick) > ACTUATOR_PERIOD_MS) {
 				if(shared_data.pump_current_ma > MAX_PUMP_CURRENT){
 					task_system_failure_report(FAULT_PUMP_OVERCURRENT);
 				}
-				else if(shared_data.pump_current_ma < MIN_PUMP_CURRENT){
-					task_system_failure_report(FAULT_PUMP_OPEN);
-				}
+
 			}
 		}
 		else if (get_pump_state() == ST_PUMP_IDLE) {
-			pump_on_tick = 0; // Se apagó, cancelamos el timer de encendido
+			pump_on_tick = 0; // Reinicialización del timer de encendido
 
-			if (pump_off_tick == 0) pump_off_tick = HAL_GetTick(); // Registramos cuándo se apagó
+			if (pump_off_tick == 0) pump_off_tick = HAL_GetTick(); // Inicialización del timer de apagado
 
 			if ((HAL_GetTick() - pump_off_tick) > ACTUATOR_PERIOD_MS) {
 				// Si pasó el tiempo de gracia y sigue habiendo corriente, el driver falló
@@ -111,6 +110,8 @@ void task_system_failure_update(void *parameters) {
 			pump_on_tick = 0;
 			pump_off_tick = 0;
 		}
+
+
 
 	// ======================     Tira LED     ==========================
 		if (get_led_strip_state() == ST_LED_STRIP_ON) {
@@ -140,7 +141,6 @@ void task_system_failure_update(void *parameters) {
 		}
 
 	// ======================     DHT 22     ==========================
-	// pruebo directamente sin pausa
 	if(shared_data.dht22_temperature > MAX_TEMPERATURE){
 		task_system_failure_report(FAULT_HIGH_TEMPERATURE);
 	}
@@ -152,7 +152,8 @@ void task_system_failure_update(void *parameters) {
 	if(shared_data.dht22_error){
 		task_system_failure_report(FAULT_DHT22_NO_RESPONSE);
 	}
-//}
+
+	// ======================     Nivel de agua     ==========================
 	if(shared_data.water_level_percent < shared_data.config_values[CONFIG_WATER_LEVEL]){
 		task_system_failure_report(FAULT_WATER_LEVEL_LOW);
 	}
@@ -160,9 +161,13 @@ void task_system_failure_update(void *parameters) {
 	if(shared_data.water_level_percent <= 0){
 		task_system_failure_report(FAULT_WATER_LEVEL_ERROR);
 	}
+
+	// ======================     Nivel de luz     ==========================
 	if(shared_data.light_percent <= 0){
 		task_system_failure_report(FAULT_LIGHT_LEVEL_ERROR);
 	}
+
+	// ======================     Nivel de humedad de suelo     ==========================
 	if(shared_data.humidity_percent <= 0){
 		task_system_failure_report(FAULT_HUMIDITY_LEVEL_ERROR);
 	}

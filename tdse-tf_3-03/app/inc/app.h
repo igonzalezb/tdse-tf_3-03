@@ -9,9 +9,9 @@ extern "C" {
 #include <stdint.h>
 #include "task_menu_attribute.h"
 
-typedef enum {
+typedef enum {				// Posibles usuarios del ADC1
     ADC_OWNER_NONE = 0,
-    ADC_OWNER_HUMIDITY,		//Para decidir quien esta utilizando el ADC1
+    ADC_OWNER_HUMIDITY,
     ADC_OWNER_LIGHT,
     ADC_OWNER_WATER_LEVEL,
 	ADC_OWNER_PUMP_CURRENT,
@@ -23,7 +23,6 @@ typedef struct {
     uint16_t humidity_percent;
 
     uint16_t light_percent;
-    bool led_current_failure;
 
     uint16_t water_level_percent;
 
@@ -50,7 +49,7 @@ typedef struct {
 extern shared_data_type shared_data;
 
 extern uint32_t g_app_cnt;
-extern uint32_t g_app_time_us; // Estos 2 son para medir tiempod e ejecucion en dwt.h
+extern uint32_t g_app_time_us; // Estos 2 son para medir tiempo de ejecucion en dwt.h
 extern uint32_t g_app_wcet_us; // Peor tiempo de ejecucion
 
 void app_init(void);

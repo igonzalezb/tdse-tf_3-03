@@ -10,7 +10,8 @@ extern "C" {
  * Para añadir nuevas fallas:
  * 1) Incorporarlas en el enum system_failure_type en task_system_failure.h
  * 2) Agregar una etiqueta en fault_names[FAULT_QTY] EN ORDEN en task_system_failure.c
- * 3) Agregar una forma de verificar si se solucionó en task_system_failure_can_restore en task_system_failure.c
+ * 3) Agregarla en task_system_failure_update() en task_system_failure.c
+ * 4) Agregar una forma de verificar si se solucionó en task_system_failure_can_restore en task_system_failure.c
  */
 
 /*** Valores maximos ***/
@@ -19,7 +20,7 @@ extern "C" {
 #define MAX_PUMP_CURRENT 300
 #define MIN_PUMP_CURRENT 10
 #define MAX_LED_STRIP_CURRENT 200
-#define MIN_LED_STRIP_CURRENT 10
+#define MIN_LED_STRIP_CURRENT 30
 
 typedef enum {
     FAULT_PUMP_OVERCURRENT,			// Exceso de corriente en bomba

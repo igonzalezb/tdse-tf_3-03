@@ -27,7 +27,7 @@ con R=3k3 IBASEpico=1,046mA
 
 Resistencias:
 R1 = 10R14
-R2 = 
+R2 = 3R3
 R3 = 0K3317
 R4 = 4K645
 R5 = 0K3269
