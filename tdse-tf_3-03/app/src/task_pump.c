@@ -11,8 +11,8 @@ extern TIM_HandleTypeDef TIMER_PUMP;
 #define PUMP_PWM_MAX       3199
 #define PUMP_PWM_MIN       480
 
-// La rampa tardará: (MAX / STEP) * DELAY_MS.
-// En este caso, debería tomar 650 ms pasar de 0% a 100%
+// La rampa tardará aprox: (MAX / STEP) * DELAY_MS.
+// En este caso, debería tomar ~320 ms pasar de 0% a 100%
 #define PUMP_RAMP_STEP     10    // Incremento/Decremento de PWM por ciclo
 #define PUMP_RAMP_DELAY_MS 1   // Tiempo de espera entre pasos
 
