@@ -386,7 +386,7 @@ La interfaz está formada por un LCD de 16 × 2 caracteres conectado en modo de 
 
 ### 2.3.5 Alimentación
 
-Una fuente externa de 5 V ingresa por J3 y alimenta tanto las cargas como la entrada E5V de la NUCLEO mediante el pin 6 del conector CN7. Para utilizar E5V, el manual de la placa especifica 4,75–5,25 V, y una provisión de corriente máxima de 500 mA, el puente JP5 entre los pines 2 y 3 y la remoción de JP1 [17]. Los sensores y niveles lógicos utilizan 3,3 V provistos por la placa NUCLEO.
+Una fuente externa de 5 V ingresa por J3 y alimenta tanto las cargas como la entrada E5V de la NUCLEO mediante el pin 6 del conector CN7. Para utilizar E5V, el manual de la placa especifica 4,75–5,25 V, y una provisión de corriente máxima de 500 mA, el puente JP5 entre los pines 2 y 3 y la remoción de JP1 [16]. Los sensores y niveles lógicos utilizan 3,3 V provistos por la placa NUCLEO.
 
 ---
 
@@ -476,12 +476,12 @@ La lectura del DHT22 se implementó sin espera activa prolongada. La línea de d
 
 ### 3.2.4 Control de la bomba
 
-La bomba se conecta mediante un FQPF13N06L en conmutación *low-side* y se comanda desde PA11/TIM1_CH4. Su rango de alimentación publicado es de 3 a 6 VCC y su caudal máximo es de 120 L/h. Se opera el PWM a 1 kHz para generar una rampa controlada de encendido y de apagado. El firmware modifica el valor de comparación entre aproximadamente 480 y 3200 en pasos de 10 cada 1 ms. La inicialización avanza desde 0 a 480 para evitar enviar pulsos de tensión demasiado cortos que generen ruido, pero que no alcancen a mover agua. El recorrido útil requiere aproximadamente 320 ms. En la figura 3.3 se visualiza la rampa de encendido de la bomba.
+La bomba se conecta mediante un FQPF13N06L en conmutación *low-side* y se comanda desde PA11/TIM1_CH4. Su rango de alimentación publicado es de 3 a 6 VCC y su caudal máximo es de 120 L/h. Se opera el PWM a 1 kHz para generar una rampa controlada de encendido y de apagado. El firmware modifica el valor de comparación entre aproximadamente 480 y 3200 en pasos de 10 cada 1 ms. La inicialización avanza desde 0 a 480 para evitar enviar pulsos de tensión demasiado cortos que generen ruido, pero que no alcancen a mover agua. El recorrido útil requiere aproximadamente 320 ms. En la figura 3.3 se visualiza una primera medición de la tensión que cae sobre al resistencia de shunt de la bomba, con el PWM en 100% de ciclo de trabajo a 1kHz aproximadamente.
 
 <p align="center">
   <img src="Imagenes/Rampa PWM.jpeg" alt="Rampa PWM" width="430">
   <br>
-  <em>Figura 3.3: Rampa de encendido de la bomba.</em>
+  <em>Figura 3.3: Señal que lee el ADC para calcular la corriente de la bomba.</em>
 </p>
 
 El sensado de corriente utiliza una resistencia de paso y una entrada limitada por un diodo Zener de 3V. El objetivo es detectar consumo excesivo y distinguir una bomba desconectada o bloqueada. El diodo proporciona un enclavamiento en 3V ante una subida repentina de la corriente que atraviesa la resistencia de *shunt*.
@@ -666,7 +666,7 @@ Los valores configurables y sus límites se muestran en la tabla 3.5.
 
 *Tabla 3.5: cinco configuraciones predeterminadas.*
 
-### 3.3.8 Alarmas y recuperación
+### 3.3.8 Alarmas y restauración
 
 `task_system_failure` evalúa trece posibles fallas: corriente anormal de la bomba, corriente anormal de la tira LED, temperatura fuera del intervalo de 0 a 35 °C, error persistente del DHT22, nivel de agua bajo y lecturas consideradas inválidas en los sensores analógicos. Los *timeouts*, tramas incompletas y errores de checksum del DHT22 se notifican mediante una única causa rotulada «DHT22 No Resp.». El diagnóstico comienza después de un período de gracia inicial de 150 ms para evitar falsos positivos; el DHT22 informa error después de tres fallos consecutivos; y las corrientes se comprueban 300 ms después de alcanzar ON u OFF, omitiendo las rampas. Los umbrales de corriente se configuraron en 10–300 mA para la bomba y 30–200 mA para la tira LED.
 
@@ -910,33 +910,31 @@ En la tabla 4.7 se muestra cada requisito impuesto previamente y se establece si
 
 ## 5.1 Resultados obtenidos
 
-El proyecto permitió diseñar un sistema embebido que reúne las funciones principales necesarias para asistir el cuidado de una planta. Sobre una única NUCLEO-F103RB se integraron cinco entradas analógicas, un sensor digital, una pantalla, cuatro pulsadores y cuatro actuadores, incluyendo dos cargas de potencia.
+El proyecto permitió diseñar y construir un sistema embebido que reúne las funciones principales necesarias para asistir el cuidado de una planta. Sobre una única placa de desarrollo se integraron cinco entradas analógicas, un sensor digital, una pantalla, cuatro pulsadores y cuatro actuadores, incluyendo dos cargas de potencia.
 
-La arquitectura cooperativa y modular separó las responsabilidades de sensado, evaluación y actuación. El arbitraje del ADC organiza el uso concurrente de un único conversor sin introducir esperas activas prolongadas, mientras que las colas de eventos desacoplan la lógica de menú de las salidas.
+La arquitectura cooperativa y modular separó las responsabilidades de sensado, evaluación y actuación. El ruteo del ADC organizó el uso de un único conversor sin introducir esperas prolongadas, mientras que las colas de eventos desacoplaronn la lógica de menú de las salidas.
 
-Con el uso del PWM, interrupciones y timers se indago en las posibilidades que ofrece la placa de desarrollo. Esto permite que en una futura revision del prototipo se tenga un mayor manejo de dichas funcionalidades para lograr implementar mejores soluciones. 
-
-
+Con el uso de PWM, interrupciones y timers se indagó en las posibilidades que ofrece la placa de desarrollo. Esto permite que, en una futura revisión del prototipo, se tenga un mayor manejo de dichas funcionalidades para lograr implementar mejores soluciones.
 
 ## 5.2 Lecciones aprendidas
 
 La integración de sensores de distinta naturaleza mostró la importancia de separar adquisición, conversión y publicación de datos. El esquema de propiedad del ADC evita interferencias entre canales y puede reutilizarse en otros proyectos con recursos compartidos.
 
-El desarrollo de las etapas de potencia puso de manifiesto que la existencia de una orden de software no garantiza una acción segura. El control de una bomba requiere considerar corriente de arranque, protección inductiva, disponibilidad de agua, tiempo máximo de funcionamiento y una vía de apagado ante fallas.
+Durante el desarrollo de las etapas de potencia se pusieron de manifiesto las limitaciones de la realidad práctica, al tener que lidiar con ruidos electromagnéticos, interferencias y falsos contactos. En sintonía con ello, el enfoque en seguridad del sistema logró evitar problemas más graves gracias al uso de alertas y del modo falla.
 
-La interfaz basada en eventos simplificó la incorporación de modos y patrones de señalización, pero también evidenció la necesidad de diseñar explícitamente el tratamiento de colas llenas y de eventos prioritarios. Una falla crítica no debe competir en igualdad de condiciones con una pulsación de usuario.
+La interfaz basada en eventos simplificó la incorporación de modos y patrones de señalización, pero también evidenció la necesidad de diseñar explícitamente el tratamiento de colas llenas y de eventos prioritarios.
 
-Por último, la trazabilidad entre requisito, implementación y ensayo permitió detectar caracteristicas que no representaban una ayuda real al sistema, como la variacion en la intensidad de iluminacion. Al materializar el proyecto, evoluciono la comprension de las necesidades que requiere suplir el prototipo y se distribuyo mejor el foco de trabajo para poder cumplir los objetivos a los que se epuntaban.
+Por último, la dinámica de trabajo de plantear requisitos por escrito y explicitar los avances obtenidos simplificó la trazabilidad de objetivos. En este sentido, se desestimó la necesidad de un control de intensidad de iluminación y se pudieron establecer las prioridades de manera más sencilla.
 
 ## 5.3 Posibles ampliaciones
 
-Una vez cerrada la base funcional, el sistema podría incorporar sensores capacitivos de suelo, regulación PWM de la iluminación, registro histórico, reloj de tiempo real, conectividad inalámbrica, control de varias macetas, gabinete resistente a humedad y alimentación mediante batería y energía solar. Estas ampliaciones deben abordarse después de resolver la seguridad y la repetibilidad del prototipo actual.
+Con la base del PMV actual se podrían añadir varias mejoras. En primer lugar, se podría concretar la presentación del producto en formato maceta, donde toda la electrónica y sensores se encuentren integrados dentro del mismo recipiente donde crecerá la planta. Además, a nivel funcional, el sistema podría implementar un registro histórico, reloj de tiempo real, algún método de calefacción para control de temperatura, conectividad inalámbrica,  gabinete resistente a humedad y alimentación mediante batería y energía solar.
 
 ---
 
 # Capítulo 6: Uso de herramientas de inteligencia artificial
 
-Durante la preparación de esta versión de la memoria se utilizó una herramienta de inteligencia artificial para analizar la estructura de dos informes de referencia [8], [9], recorrer los archivos del proyecto, proponer una organización documental y redactar una primera versión integral. Las afirmaciones técnicas se contrastaron con `REQUISITOS.md`, el esquemático, la asignación de pines, el código fuente, las hojas de datos del *hardware*, el registro interno de mediciones [16] y una compilación limpia de la configuración `Release`.
+Durante la preparación de esta versión de la memoria se utilizó una herramienta de inteligencia artificial para analizar la estructura de dos informes de referencia [8], [9], recorrer los archivos del proyecto, proponer una organización documental y redactar una primera versión integral. Las afirmaciones técnicas se contrastaron con `REQUISITOS.md`, el esquemático, la asignación de pines, el código fuente, las hojas de datos del *hardware* y una compilación limpia de la configuración `Release`.
 
 | Participante | Herramienta | Uso | Verificación humana requerida |
 | --- | --- | --- | --- |
@@ -980,9 +978,7 @@ Durante la preparación de esta versión de la memoria se utilizó una herramien
 
 [15] Eshine, [*HCT-355 Water Timer — instruction manual*](https://eshine-t.com/wp-content/uploads/2025/09/Manual-HCT-355-EN.pdf), manual de usuario consultado el 25/07/2026.
 
-[16] Equipo Smartceta, [*Mediciones SMARTCETA*](../hardware/Mediciones%20SMARTCETA.txt), registro interno de mediciones de banco actualizado el 24/07/2026.
-
-[17] STMicroelectronics, [*UM1724 — STM32 Nucleo-64 boards: external power supply inputs VIN and E5V*](../hardware/Alimentación%20externa.pdf), revisión 17, extracto local de las páginas 22–23.
+[16] STMicroelectronics, [*UM1724 — STM32 Nucleo-64 boards: external power supply inputs VIN and E5V*](../hardware/Alimentación%20externa.pdf), revisión 17, extracto local de las páginas 22–23.
 
 ---
 
