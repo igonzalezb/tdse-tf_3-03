@@ -36,15 +36,6 @@ La unidad de control se implementó sobre una placa NUCLEO-F103RB. El firmware s
 
 El Producto mínimo Viable permitió integrar en una única plataforma la adquisición de datos de los sensores, el control de actuadores, la interfaz local y la persistencia de parámetros de configuración. Se logró la compilación sin errores en modo Release para comprobar el funcionamiento del dispositivo en una maceta real sin dependencia de una computadora. El Proyecto tuvo un enfoque de seguridad para priorizar la integridad del hardware ante posibles fallas o malos funcionamientos.
 
-## Abstract
-
-This report presents the design and implementation of Smartceta, an embedded system intended to assist with the care of a household plant. The system measures soil moisture, ambient light, water-tank level, air temperature, and relative humidity. These variables are used to control an irrigation pump and an artificial light source, while a local LCD and four push-buttons allow the user to inspect measurements and modify configuration parameters.
-
-The control unit was implemented on an STM32 NUCLEO-F103RB board. Its firmware follows a cooperative bare-metal architecture based on periodic tasks, state machines, event queues, and shared application data. An RGB status LED, a buzzer, current-sensing circuits, a hardware test mode, and non-volatile configuration storage were also included.
-
-The Minimum Viable Product (MVP) enabled the integration of sensor data acquisition, actuator control, the local user interface, and configuration parameter persistence into a single platform. The system was successfully compiled in Release mode without errors to verify the device's operation in a real plant pot without relying on a computer. The project adopted a safety-oriented approach, prioritizing hardware integrity in the event of potential failures or malfunctions.
-
-
 ## Registro de versiones
 
 | Revisión | Cambios realizados | Fecha |
@@ -59,9 +50,7 @@ The Minimum Viable Product (MVP) enabled the integration of sensor data acquisit
 
 - [Smartceta](#smartceta)
     - [Sistema embebido para el cuidado automatizado de plantas](#sistema-embebido-para-el-cuidado-automatizado-de-plantas)
-  - [Convención para completar esta versión](#convención-para-completar-esta-versión)
   - [Resumen](#resumen)
-  - [Abstract](#abstract)
   - [Registro de versiones](#registro-de-versiones)
 - [Índice general](#índice-general)
 - [Capítulo 1: Introducción general](#capítulo-1-introducción-general)
@@ -104,7 +93,7 @@ The Minimum Viable Product (MVP) enabled the integration of sensor data acquisit
     - [3.3.6 Modos de operación](#336-modos-de-operación)
     - [3.3.7 Interfaz de usuario](#337-interfaz-de-usuario)
     - [3.3.8 Alarmas y recuperación](#338-alarmas-y-recuperación)
-    - [3.3.9 Persistencia de configuraciones](#339-persistencia-de-configuraciones)
+    - [3.3.9 Guardado de configuraciones](#339-guardado-de-configuraciones)
 - [Capítulo 4: Ensayos y resultados](#capítulo-4-ensayos-y-resultados)
   - [4.1 Metodología general](#41-metodología-general)
   - [4.2 Pruebas funcionales del hardware](#42-pruebas-funcionales-del-hardware)
@@ -119,8 +108,7 @@ The Minimum Viable Product (MVP) enabled the integration of sensor data acquisit
 - [Capítulo 5: Conclusiones](#capítulo-5-conclusiones)
   - [5.1 Resultados obtenidos](#51-resultados-obtenidos)
   - [5.2 Lecciones aprendidas](#52-lecciones-aprendidas)
-  - [5.3 Trabajos necesarios antes del cierre](#53-trabajos-necesarios-antes-del-cierre)
-  - [5.4 Posibles ampliaciones](#54-posibles-ampliaciones)
+  - [5.3 Posibles ampliaciones](#53-posibles-ampliaciones)
 - [Capítulo 6: Uso de herramientas de inteligencia artificial](#capítulo-6-uso-de-herramientas-de-inteligencia-artificial)
 - [Bibliografía y referencias](#bibliografía-y-referencias)
 
@@ -176,7 +164,7 @@ Smartceta se desarrolló como un sistema embebido destinado a supervisar las con
 
 El sistema incorporó sensores para medir la humedad del suelo, la intensidad de luz ambiente, el nivel de agua disponible en el depósito y la temperatura y humedad del aire. También se incluyeron sensores para medir la corriente consumida por la bomba y por la tira LED. Estas últimas mediciones se plantearon como información de diagnóstico para detectar condiciones de funcionamiento anormales en las etapas de potencia.
 
-A partir de los valores adquiridos y de los parámetros configurados por el usuario, el sistema determina cuándo regar la planta y cuándo encender la iluminación artificial. El riego utiliza una bomba controlada por modulación por ancho de pulso, generando una rampa de tensión durante el arranque y la detención. El riego inicia sólo con agua suficiente y humedad de suelo por debajo del umbral, y se detiene al alcanzar la consigna más una banda de 10 puntos porcentuales o al disminuir el nivel del depósito. La tira LED se controla por encendido y apagado con una banda de histéresis de 10 puntos. 
+A partir de los valores adquiridos y de los parámetros configurados por el usuario, el sistema determina cuándo regar la planta y cuándo encender la iluminación artificial. El riego utiliza una bomba controlada por modulación por ancho de pulso, generando una rampa de tensión durante el arranque y la detención. El riego inicia solo con agua suficiente y humedad de suelo por debajo del umbral, y se detiene al alcanzar la consigna más una banda de 10 puntos porcentuales o al disminuir el nivel del depósito. La tira LED se controla por encendido y apagado con una banda de histéresis de 10 puntos.
 
 La interacción con el usuario se concentró en una pantalla LCD de 16 × 2 caracteres y cuatro pulsadores: siguiente, anterior, aceptar (Enter) y volver (Escape). En operación normal, la pantalla presenta de manera alternada las mediciones de los sensores. Desde el menú de configuración es posible modificar los umbrales de humedad del suelo, luz y nivel de agua, además de habilitar o deshabilitar de manera independiente las señales sonoras y el LED de estado. Los cinco valores seleccionados se almacenan en la memoria Flash del microcontrolador.
 
@@ -239,14 +227,13 @@ flowchart LR
 
 *Figura 1.1: diagrama en bloques funcional de Smartceta.*
 
-
 ## 1.4 Análisis de sistemas similares
 
 Durante la definición del alcance se consideraron dos equipos de riego doméstico. El sistema Beday integra una bomba, una interfaz local y modalidades de riego manual, temporizado o condicionado por humedad; algunas variantes se alimentan mediante batería y panel solar [14]. El HCT-355 funciona como programador conectado a una canilla, admite tres programas y dispone de detección de lluvia, riego manual e interfaz local [15]. Ambos resuelven parte del problema, pero no integran el mismo conjunto de sensores, actuación e interfaz propuesto para Smartceta.
 
 | Sistema analizado | Variables consideradas | Riego | Iluminación | Interfaz | Diferencia principal respecto de Smartceta |
 | --- | --- | --- | --- | --- | --- |
-| Sistema de riego automático Beday | Humedad del sustrato en la variante consultada | Automático por temporización, humedad o mando manual | No incluida | Pantalla y teclado  | Puede incorporar alimentación solar, pero no documenta supervisión ambiental ni diagnóstico de corriente [14] |
+| Sistema de riego automático Beday | Humedad del sustrato en la variante consultada | Automático por temporización, humedad o mando manual | No incluida | Pantalla y teclado | Puede incorporar alimentación solar, pero no documenta supervisión ambiental ni diagnóstico de corriente [14] |
 | HCT-355 | Lluvia y programación horaria | Automático mediante tres programas | No incluida | Pantalla y botones | Requiere conexión a canilla y no decide el riego a partir de la humedad del suelo [15] |
 | Smartceta | Humedad del suelo, luz, nivel de agua, temperatura, humedad ambiente y señales de corriente | Automático por humedad | Automático por nivel de luz | LCD, cuatro botones, LED RGB y buzzer | - |
 
@@ -264,7 +251,6 @@ Durante la definición del alcance se consideraron dos equipos de riego domésti
   <em>Figura 1.3: programador de riego HCT-355 utilizado como referencia [15].</em>
 </p>
 
-
 ## 1.5 Justificación del enfoque técnico
 
 El enfoque técnico se definió buscando un equilibrio entre funcionalidad, costo, disponibilidad de componentes y tiempo de implementación. Debido al alcance académico del trabajo, se priorizó la construcción de un prototipo autónomo en su operación, aunque alimentado desde una fuente externa, capaz de medir las variables principales asociadas al cuidado de una planta, actuar sobre ellas y ofrecer una interfaz amigable con el usuario. Las funciones que requerían infraestructura adicional, como conectividad inalámbrica, batería, panel solar, control de múltiples macetas y análisis de pH, se dejaron fuera de la primera versión.
@@ -279,8 +265,7 @@ La interfaz local evita depender de un teléfono o de una red. El LCD, los pulsa
 
 El firmware se organizó como un sistema *bare-metal* cooperativo con una base de tiempo de 1 ms. La separación en tareas aísla la adquisición, la interfaz y cada actuador; las colas de eventos desacoplan las órdenes; y una estructura de datos compartida concentra las mediciones. Para utilizar un único ADC, las tareas analógicas coordinan su acceso y realizan conversiones por interrupción, sin espera activa.
 
-En suma, las deciciones adoptadas buscan proveer estabilidad, seguridad y facilidad de uso e implementación, además de eventualmente permitir la ampliación del sistema.
-
+En suma, las decisiones adoptadas buscan proveer estabilidad, seguridad y facilidad de uso e implementación, además de eventualmente permitir la ampliación del sistema.
 
 ---
 
@@ -304,7 +289,7 @@ Los requisitos funcionales originales se conservaron con sus identificadores par
 | Actuadores | 2.2 | El sistema contará con una tira de luces LED para iluminar la planta. |
 | Pulsadores | 3.0 | El sistema contará con pulsadores para interactuar con la aplicación. |
 | Aplicación | 4.1 | La aplicación permitirá configurar el umbral de humedad del suelo. |
-| Aplicación | 4.2 |La aplicación permitirá configurar si se desea que se active la iluminacion|
+| Aplicación | 4.2 | La aplicación permitirá configurar si se desea que se active la iluminación |
 | Aplicación | 4.3 | La aplicación permitirá activar o desactivar las alarmas sonoras y visuales. |
 | Aplicación | 4.4 | La aplicación permitirá visualizar las lecturas de los sensores en tiempo real. |
 | Aplicación | 4.5 | La aplicación permitirá ingresar a un modo de prueba de los componentes. |
@@ -359,7 +344,7 @@ Como restricciones de diseño se adoptaron una alimentación externa de 5 V, ope
 | Elemento | Definición |
 | --- | --- |
 | Disparador | El usuario mantiene presionado ESC; el umbral interno es de 1500 ms después del antirrebote, por lo que el evento ocurre aproximadamente a los 1,55 s desde el flanco físico. |
-| Precondiciones | El prototipo está conectado y el depósito contiene agua antes de probar la bomba.  |
+| Precondiciones | El prototipo está conectado y el depósito contiene agua antes de probar la bomba. |
 | Flujo principal | El usuario recorre los componentes con siguiente/anterior, inicia una prueba con ENTER y la detiene con ESC. Un segundo ESC regresa al modo normal. |
 | Componentes implementados | Nivel de agua, luz, humedad de suelo, humedad y temperatura ambiente, LED de estado, buzzer, bomba y tira LED. |
 | Poscondición prevista | Las pruebas de sensores finalizan sin modificar salidas y toda prueba de actuador debe terminar con todas las cargas apagadas. |
@@ -391,10 +376,9 @@ El KY-059 detecta la presencia y el nivel relativo de agua mediante pistas condu
 
 ### 2.3.3 Actuadores y etapas de potencia
 
-La bomba utilizada es una Duaitek WATER-PUMP-120LH, especificada para 3–6 VCC y un caudal máximo publicado de 120 L/h; en Smartceta se alimenta con 5 V [12]. La iluminacion es una tira LED 5050 flexible [13]. En el prototipo, el segmento instalado se alimenta desde la línea de 5 V mediante su etapa de potencia.
+La bomba utilizada es una Duaitek WATER-PUMP-120LH, especificada para 3–6 VCC y un caudal máximo publicado de 120 L/h; en Smartceta se alimenta con 5 V [12]. La iluminación es una tira LED 5050 flexible [13]. En el prototipo, el segmento instalado se alimenta desde la línea de 5 V mediante su etapa de potencia.
 
 Cada carga se conecta mediante una etapa MOSFET de canal N FQPF13N06L en configuración de conmutación *low-side*. La bomba recibe PWM desde TIM1, mientras que la tira LED se controla como una salida digital. Un transistor MPSA42 maneja el buzzer y tres canales PWM controlan los colores del LED RGB.
-
 
 ### 2.3.4 Interfaz local
 
@@ -478,8 +462,6 @@ El reloj del sistema se obtiene del oscilador interno HSI dividido por dos y mul
 
 *Tabla 3.1: periféricos principales del STM32.*
 
-
-
 ### 3.2.2 Entradas analógicas y calibración
 
 Las cinco señales analógicas comparten ADC1. Antes de cada conversión la tarea solicitante configura el canal y registra su propiedad en el *router* de *callbacks*. La conversión se inicia por interrupción; al finalizar, el valor se entrega únicamente a la tarea propietaria y se libera el recurso. Cada tarea posee además un tiempo de espera de 10 ms para evitar que una conversión perdida bloquee indefinidamente el módulo.
@@ -494,7 +476,7 @@ La lectura del DHT22 se implementó sin espera activa prolongada. La línea de d
 
 ### 3.2.4 Control de la bomba
 
-La bomba se conecta mediante un FQPF13N06L en conmutación *low-side* y se comanda desde PA11/TIM1_CH4. Su rango de alimentación publicado es de 3 a 6 VCC y su caudal máximo es de 120 L/h. Se opera el PWM a 1 kHz para generar una rampa controlada de encendido y de apagado. El firmware modifica el valor de comparación entre aproximadamente 480 y 3200 en pasos de 10 cada 1 ms. La inicialización avanza desde 0 a 480 para evitar enviar pulsos de tensión demasiado cortos que generen ruido pero que no alcancen a mover agua. El recorrido útil requiere aproximadamente 320 ms.
+La bomba se conecta mediante un FQPF13N06L en conmutación *low-side* y se comanda desde PA11/TIM1_CH4. Su rango de alimentación publicado es de 3 a 6 VCC y su caudal máximo es de 120 L/h. Se opera el PWM a 1 kHz para generar una rampa controlada de encendido y de apagado. El firmware modifica el valor de comparación entre aproximadamente 480 y 3200 en pasos de 10 cada 1 ms. La inicialización avanza desde 0 a 480 para evitar enviar pulsos de tensión demasiado cortos que generen ruido, pero que no alcancen a mover agua. El recorrido útil requiere aproximadamente 320 ms.
 
 El sensado de corriente utiliza una resistencia de paso y una entrada limitada por un diodo Zener de 3V. El objetivo es detectar consumo excesivo y distinguir una bomba desconectada o bloqueada. El diodo proporciona un enclavamiento en 3V ante una subida repentina de la corriente que atraviesa la resistencia de *shunt*.
 
@@ -510,7 +492,6 @@ El LCD se conectó en modo de cuatro bits. `task_display` utiliza un doble búfe
 
 El buzzer se acciona mediante un transistor MPSA42. Los patrones implementados incluyen un pulso de 80 ms, dos pulsos de 80 ms separados por 80 ms, sonido continuo y alternancia de 300 ms encendido/300 ms apagado.
 
-
 ### 3.2.7 Esquemático, PCB y montaje
 
 La documentación eléctrica se encuentra en los siguientes archivos:
@@ -522,8 +503,6 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 - [Configuración de alimentación externa de la NUCLEO](../hardware/Alimentación%20externa.pdf).
 - [Fuente del esquemático](../hardware/TDSE-TF/TDSE-TF.kicad_sch).
 - [Fuente de la PCB](../hardware/TDSE-TF/TDSE-TF.kicad_pcb).
-
-
 
 ### 3.2.8 Pinout del sistema
 
@@ -570,21 +549,20 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 | 4 | Pulsadores | Normalmente abiertos | |
 | 1 | LED RGB | Cátodo común | Indicador de estado |
 | 1 | Buzzer | Buzzer activo | Aviso sonoro |
-| 2 | MOSFET canal N | FQPF13N06L  | Bomba y tira LED |
+| 2 | MOSFET canal N | FQPF13N06L | Bomba y tira LED |
 | 1 | Transistor NPN | MPSA42 | Driver de buzzer |
 | 2 | Diodos Zener | 1N4727A | Protección de entradas |
-| 4 | Resistencias R3, R5, R6 y R7 | 330 Ω, 1/4 W |  |
+| 4 | Resistencias R3, R5, R6 y R7 | 330 Ω, 1/4 W | |
 | 1 | Resistencia R4 | 5,1 kΩ nominal, 1/4 W | |
-| 1 | Resistencia de potencia R1 | 10 Ω, 2 W |  |
+| 1 | Resistencia de potencia R1 | 10 Ω, 2 W | |
 | 1 | Resistencia R2 | 3,3 Ω, 1/4 W | |
-| 1 | Resistencia R8 | 3,3 kΩ, 1/4 W |  |
+| 1 | Resistencia R8 | 3,3 kΩ, 1/4 W | |
 | 1 | Potenciómetro RV1 | 10 kΩ | Contraste del LCD |
 | 2 | Tiras de pines hembra dobles | 2x19 | Conexión de la NUCLEO |
 | — | Conectores de sensores y cargas | Conectores de 2, 3 y 4 vías | |
 | 1 | PCB | Diseño propio | Prototipo |
 
 *Tabla 3.3: lista de materiales utilizados.*
-
 
 ## 3.3 Diseño de firmware
 
@@ -668,10 +646,9 @@ Los valores configurables y sus límites se muestran en la tabla 3.5.
 
 *Tabla 3.5: cinco configuraciones predeterminadas.*
 
-
 ### 3.3.8 Alarmas y recuperación
 
-`task_system_failure` evalúa trece posibles fallas: corriente anormal de la bomba, corriente anormal de la tira LED, temperatura fuera del intervalo de 0 a 35 °C, error persistente del DHT22, nivel de agua bajo y lecturas consideradas inválidas en los sensores analógicos. Los *timeouts*, tramas incompletas y errores de checksum del DHT22 se notifican mediante una única causa rotulada «DHT22 No Resp.». El diagnóstico comienza después de un período de gracia inicial de 150 ms para evitar falsos positivos; el DHT22 informa error después de tres fallos consecutivos; y las corrientes se comprueban 300 ms después de alcanzar ON u OFF, omitiendo las rampas. Los  umbrales de corriente se configuraron en 10–300 mA para la bomba y 30–200 mA para la tira LED.
+`task_system_failure` evalúa trece posibles fallas: corriente anormal de la bomba, corriente anormal de la tira LED, temperatura fuera del intervalo de 0 a 35 °C, error persistente del DHT22, nivel de agua bajo y lecturas consideradas inválidas en los sensores analógicos. Los *timeouts*, tramas incompletas y errores de checksum del DHT22 se notifican mediante una única causa rotulada «DHT22 No Resp.». El diagnóstico comienza después de un período de gracia inicial de 150 ms para evitar falsos positivos; el DHT22 informa error después de tres fallos consecutivos; y las corrientes se comprueban 300 ms después de alcanzar ON u OFF, omitiendo las rampas. Los umbrales de corriente se configuraron en 10–300 mA para la bomba y 30–200 mA para la tira LED.
 
 Cada falla activa se conserva en un arreglo para que la interfaz pueda mostrarla de manera individual. El menú cambia al modo de falla y solicita apagar la bomba y la tira LED.
 
@@ -694,7 +671,6 @@ La verificación se dividió en cuatro niveles:
 3. Integración.
 4. Caracterización de consumo, memoria y tiempo de ejecución.
 
-
 El instrumental utilizado fue:
 
 - Multímetro digital Uni-t UT61E.
@@ -711,16 +687,16 @@ El instrumental utilizado fue:
 | ID | Ensayo | Procedimiento y criterio de aceptación | Resultado registrado |
 | :---: | --- | --- | --- |
 | HW-01 | Alimentación de 5 V y 3,3 V | Medir ambas líneas en reposo y con máxima carga. No deben salir de la tolerancia admitida por los componentes. | Fuente sin carga: 5,1 V; corriente nominal: 700 mA. Fuente con carga máxima (sistema, bomba y tira led encendidos): 4,77 V |
-| HW-02 | LCD | Encender, recorrer todas las pantallas y comprobar legibilidad y ausencia de caracteres corruptos. | Funciona segun lo esperado |
-| HW-03 | Pulsadores | Realizar al menos 10 pulsaciones breves por tecla y pulsaciones mantenidas de ESC. No deben observarse eventos dobles ni pérdidas. | Funciona segun lo esperado |
-| HW-04 | Humedad del suelo | Medir en aire, sustrato seco, humedad intermedia y sustrato saturado. | Funciona segun lo esperado |
-| HW-05 | Luz | Medir en oscuridad, condiciones normales e iluminación intensa. La indicación debe cubrir el intervalo útil sin saturación prematura. | Funciona segun lo esperado |
-| HW-06 | Nivel de agua | Registrar vacío y varios niveles conocidos. | Funciona segun lo esperado |
-| HW-07 | DHT22 | Comparar 10 lecturas con un instrumento de referencia en régimen estable. | Funciona segun lo esperado |
-| HW-08 | Bomba y PWM | Observar PA11, verificar frecuencia, rampa, apagado eléctrico; controlar VGS, VDS y temperatura del MOSFET. | Funciona segun lo esperado |
-| HW-09 | Tira LED | Accionar PC5, medir corriente y verificar apagado completo. | Funciona segun lo esperado |
-| HW-10 | Medición de corriente | Aplicar cero, carga nominal y condición límite a ambos canales. | Funciona segun lo esperado |
-| HW-11 | LED RGB y buzzer | Solicitar todos los patrones y comprobar color, frecuencia y sonido. | Funciona segun lo esperado |
+| HW-02 | LCD | Encender, recorrer todas las pantallas y comprobar legibilidad y ausencia de caracteres corruptos. | Funciona según lo esperado |
+| HW-03 | Pulsadores | Realizar al menos 10 pulsaciones breves por tecla y pulsaciones mantenidas de ESC. No deben observarse eventos dobles ni pérdidas. | Funciona según lo esperado |
+| HW-04 | Humedad del suelo | Medir en aire, sustrato seco, humedad intermedia y sustrato saturado. | Funciona según lo esperado |
+| HW-05 | Luz | Medir en oscuridad, condiciones normales e iluminación intensa. La indicación debe cubrir el intervalo útil sin saturación prematura. | Funciona según lo esperado |
+| HW-06 | Nivel de agua | Registrar vacío y varios niveles conocidos. | Funciona según lo esperado |
+| HW-07 | DHT22 | Comparar 10 lecturas con un instrumento de referencia en régimen estable. | Funciona según lo esperado |
+| HW-08 | Bomba y PWM | Observar PA11, verificar frecuencia, rampa, apagado eléctrico; controlar VGS, VDS y temperatura del MOSFET. | Funciona según lo esperado |
+| HW-09 | Tira LED | Accionar PC5, medir corriente y verificar apagado completo. | Funciona según lo esperado |
+| HW-10 | Medición de corriente | Aplicar cero, carga nominal y condición límite a ambos canales. | Funciona según lo esperado |
+| HW-11 | LED RGB y buzzer | Solicitar todos los patrones y comprobar color, frecuencia y sonido. | Funciona según lo esperado |
 
 *Tabla 4.1: protocolo de pruebas funcionales del hardware.*
 
@@ -728,17 +704,17 @@ El instrumental utilizado fue:
 
 | ID | Función | Procedimiento | Criterio | Resultado |
 | :---: | --- | --- | --- | --- |
-| FW-01 | Inicio | Arrancar con Flash vacía y con Flash previamente configurada. | Carga valores iniciales en el primer caso, conserva los últimos valores en el segundo y no dispara fallas antes de contar con muestras válidas. | Funciona segun lo esperado |
-| FW-02 | Navegación normal | Recorrer manualmente las cinco variables y esperar el autoavance. | Orden correcto, texto válido y autoavance cercano a 5 s. | Funciona segun lo esperado |
-| FW-03 | Configuración | Modificar los cinco parámetros, cancelar una edición, confirmar otra y dejar el menú inactivo. | Respeta límites, ESC restaura el valor anterior, ENTER guarda y la inactividad retorna a NORMAL. | Funciona segun lo esperado |
-| FW-04 | Persistencia | Guardar valores, desconectar durante 30 s y volver a alimentar. Repetir después de múltiples escrituras y durante una compactación controlada. | Los valores recuperados coinciden con los confirmados y un corte no produce registros incompletos. | Funciona segun lo esperado |
-| FW-05 | Antirrebote | Inyectar pulsaciones rápidas y observar los eventos. | Un evento por pulsación válida; ESC mantenido se detecta una vez. | Funciona segun lo esperado |
-| FW-06 | Arbitraje ADC | Mantener las cinco tareas analógicas activas y registrar conversiones y *timeouts*. | Ningún resultado se asigna al canal incorrecto, no hay bloqueo y todo error invalida o marca como antigua la muestra previa. | Funciona segun lo esperado |
-| FW-07 | Validación DHT22 | Probar lectura normal, sensor ausente y trama con *checksum* incorrecto. | Publica sólo tramas válidas, conserva el signo y la resolución acordada y señala los errores definidos. | Funciona segun lo esperado |
-| FW-08 | Rampa de bomba | Enviar ON, OFF y órdenes durante una rampa. | Estado final coherente y ausencia de falsos diagnósticos de corriente. | Funciona segun lo esperado |
-| FW-09 | Patrones de estado | Solicitar todos los eventos de LED y buzzer. | La salida coincide con la tabla de patrones y una orden nueva reemplaza la anterior de forma definida. | Funciona segun lo esperado |
-| FW-10 | Modo de prueba | Probar cada una de las ocho opciones. | Cada opción ejecuta, informa y detiene la prueba de forma segura. | Funciona segun lo esperado |
-| FW-11 | Estado de falla | Inyectar cada una de las trece causas de falla, incluida una durante cada prueba de actuador. | Identifica la causa, apaga cargas peligrosas, avisa y recupera de forma controlada. | Funciona segun lo esperado |
+| FW-01 | Inicio | Arrancar con Flash vacía y con Flash previamente configurada. | Carga valores iniciales en el primer caso, conserva los últimos valores en el segundo y no dispara fallas antes de contar con muestras válidas. | Funciona según lo esperado |
+| FW-02 | Navegación normal | Recorrer manualmente las cinco variables y esperar el autoavance. | Orden correcto, texto válido y autoavance cercano a 5 s. | Funciona según lo esperado |
+| FW-03 | Configuración | Modificar los cinco parámetros, cancelar una edición, confirmar otra y dejar el menú inactivo. | Respeta límites, ESC restaura el valor anterior, ENTER guarda y la inactividad retorna a NORMAL. | Funciona según lo esperado |
+| FW-04 | Persistencia | Guardar valores, desconectar durante 30 s y volver a alimentar. Repetir después de múltiples escrituras y durante una compactación controlada. | Los valores recuperados coinciden con los confirmados y un corte no produce registros incompletos. | Funciona según lo esperado |
+| FW-05 | Antirrebote | Inyectar pulsaciones rápidas y observar los eventos. | Un evento por pulsación válida; ESC mantenido se detecta una vez. | Funciona según lo esperado |
+| FW-06 | Arbitraje ADC | Mantener las cinco tareas analógicas activas y registrar conversiones y *timeouts*. | Ningún resultado se asigna al canal incorrecto, no hay bloqueo y todo error invalida o marca como antigua la muestra previa. | Funciona según lo esperado |
+| FW-07 | Validación DHT22 | Probar lectura normal, sensor ausente y trama con *checksum* incorrecto. | Publica solo tramas válidas, conserva el signo y la resolución acordada y señala los errores definidos. | Funciona según lo esperado |
+| FW-08 | Rampa de bomba | Enviar ON, OFF y órdenes durante una rampa. | Estado final coherente y ausencia de falsos diagnósticos de corriente. | Funciona según lo esperado |
+| FW-09 | Patrones de estado | Solicitar todos los eventos de LED y buzzer. | La salida coincide con la tabla de patrones y una orden nueva reemplaza la anterior de forma definida. | Funciona según lo esperado |
+| FW-10 | Modo de prueba | Probar cada una de las ocho opciones. | Cada opción ejecuta, informa y detiene la prueba de forma segura. | Funciona según lo esperado |
+| FW-11 | Estado de falla | Inyectar cada una de las trece causas de falla, incluida una durante cada prueba de actuador. | Identifica la causa, apaga cargas peligrosas, avisa y recupera de forma controlada. | Funciona según lo esperado |
 
 *Tabla 4.2: pruebas funcionales del firmware.*
 
@@ -746,14 +722,14 @@ El instrumental utilizado fue:
 
 | ID | Escenario | Resultado esperado | Evidencia final |
 | :---: | --- | --- | --- |
-| INT-01 | Sensado del ambiente | Las cinco variables se actualizan y muestran con unidad válida. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 1:10)|
-| INT-02 | Iluminación automática | La tira enciende bajo el umbral y apaga sobre el umbral superior sin oscilación. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 3:30) |
-| INT-03 | Riego automático | Con suelo seco y agua suficiente, la bomba riega hasta alcanzar la condición de parada. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 3:00) |
-| INT-04 | Depósito con nivel bajo | La bomba no arranca o se detiene; se indica la causa. | Funciona segun lo esperado |
-| INT-05 | Modo falla | Se desconecta un sensor y el sistema entra en modo falla. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 7:20) |
-| INT-06 | Configuración y reinicio | Los valores confirmados se mantienen después de quitar alimentación. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 10:00) |
-| INT-07 | Modo de prueba | Se prueban individualmente todos los sensores y actuadores. | Funciona segun lo esperado. Se muestra en el Video 4.1 (Minuto 5:30) |
-| INT-08 | Operación prolongada | El sistema opera sin bloqueo, corrupción de pantalla ni activación espuria. | Funciona segun lo esperado. |
+| INT-01 | Sensado del ambiente | Las cinco variables se actualizan y muestran con unidad válida. | Funciona según lo esperado. Se muestra en el Video 4.1 (Minuto 1:10)|
+| INT-02 | Iluminación automática | La tira enciende bajo el umbral y apaga sobre el umbral superior sin oscilación. | Funciona según lo esperado. Se muestra en el Video 4.1 (Minuto 3:30) |
+| INT-03 | Riego automático | Con suelo seco y agua suficiente, la bomba riega hasta alcanzar la condición de parada. | Funciona según lo esperado. Se muestra en el Video 4.1 (Minuto 3:00) |
+| INT-04 | Depósito con nivel bajo | La bomba no arranca o se detiene; se indica la causa. | Funciona según lo esperado |
+| INT-05 | Modo falla | Se desconecta un sensor y el sistema entra en modo falla. | Funciona según lo esperado. Se muestra en el Video 4.1 (Minuto 7:20) |
+| INT-06 | Configuración y reinicio | Los valores confirmados se mantienen después de quitar alimentación. | Funciona según lo esperado. Se muestra en el Video 4.1 (Minuto 10:00) |
+| INT-07 | Modo de prueba | Se prueban individualmente todos los sensores y actuadores. | Funciona según lo esperado. Se muestra en el Video 4.1 (Minuto 5:30) |
+| INT-08 | Operación prolongada | El sistema opera sin bloqueo, corrupción de pantalla ni activación espuria. | Funciona según lo esperado. |
 
 *Tabla 4.3: escenarios de integración y evidencia final.*
 
@@ -765,7 +741,7 @@ El video 4.1 Muestra las diferentes funcionalidades del proyecto completamente i
   </a>
 </p>
 
-*Video 4.1: Video demostracion de integracion de la Smartceta.*
+*Video 4.1: Video demostración de integración de la Smartceta.*
 
 ## 4.5 Consumo eléctrico
 
@@ -778,12 +754,12 @@ $$
 
 | Estado | Tensión de entrada | Corriente | Potencia | Observaciones |
 | --- | ---: | ---: | ---: | --- |
-| Sistema en reposo | 4,9 V | 100 mA |  490 mW | LCD, LED de estado y sensores activos |
-| Sólo tira LED |  4,81 V | 147 mA | 707 mW | Medicion en modo test |
+| Sistema en reposo | 4,9 V | 100 mA | 490 mW | LCD, LED de estado y sensores activos |
+| Solo tira LED | 4,81 V | 147 mA | 707 mW | Medición en modo test |
 | Bomba en régimen | 4,82 V | 127 mA | 612 mW | Después de la rampa |
 | Bomba + tira LED | 4,77 V | 267 mA | 1,27 W | Peor caso sostenido |
 | Modo falla | 4,92 V | 116 mA | 0,57 W | LED y buzzer de alarma |
-| Maximo consumo | 4,77 V | 367 mA | 1,75 W | Sistema funcionando + LED + Bomba |
+| Máximo consumo | 4,77 V | 367 mA | 1,75 W | Sistema funcionando + LED + Bomba |
 
 *Tabla 4.4: consumo del prototipo.*
 
@@ -849,7 +825,7 @@ U = \frac{\sum_{i=1}^{14} C_i}{1000\ \mu s}
 \tag{4.3}
 $$
 
-La cota de utilización es \(U = 64,0 \%\), por lo que existe un sobrante de unos 360 µs por ciclo.
+La cota de uso es \(U = 64,0 \%\), por lo que existe un sobrante de unos 360 µs por ciclo.
 
 El criterio mínimo es que el WCET del ciclo completo sea menor que 1000 µs.
 
@@ -871,7 +847,7 @@ En la tabla 4.7 se muestra cada requisito impuesto previamente y se establece si
 | Actuadores | 2.2 | El sistema contará con una tira de luces LED para iluminar la planta. | Sí |
 | Pulsadores | 3.0 | El sistema contará con pulsadores para interactuar con la aplicación. | Sí |
 | Aplicación | 4.1 | La aplicación permitirá configurar el umbral de humedad del suelo. | Sí |
-| Aplicación | 4.2 |La aplicación permitirá configurar si se desea que se active la iluminacion| Sí |
+| Aplicación | 4.2 | La aplicación permitirá configurar si se desea que se active la iluminación | Sí |
 | Aplicación | 4.3 | La aplicación permitirá activar o desactivar las alarmas sonoras y visuales. | Sí |
 | Aplicación | 4.4 | La aplicación permitirá visualizar las lecturas de los sensores en tiempo real. | Sí |
 | Aplicación | 4.5 | La aplicación permitirá ingresar a un modo de prueba de los componentes. | Sí |
@@ -881,7 +857,6 @@ En la tabla 4.7 se muestra cada requisito impuesto previamente y se establece si
 | Alarmas | 5.3 | El sistema activará las alarmas cuando detecte una falla en la bomba o la tira LED mediante la medición de corriente. | Sí |
 
 *Tabla 4.7: Requisitos de la tabla 2.1 y la verificación de su cumplimiento.*
-
 
 ## 4.9 Documentación del desarrollo
 
@@ -924,8 +899,6 @@ El desarrollo de las etapas de potencia puso de manifiesto que la existencia de 
 La interfaz basada en eventos simplificó la incorporación de modos y patrones de señalización, pero también evidenció la necesidad de diseñar explícitamente el tratamiento de colas llenas y de eventos prioritarios. Una falla crítica no debe competir en igualdad de condiciones con una pulsación de usuario.
 
 Por último, la trazabilidad entre requisito, implementación y ensayo permitió detectar diferencias que no resultaban evidentes al observar módulos aislados, como la interpretación de “intensidad de iluminación”, la necesidad de validar de forma independiente las alarmas sonoras y visuales y los riesgos de navegación y apagado dentro del modo de prueba.
-
-
 
 ## 5.3 Posibles ampliaciones
 
@@ -983,8 +956,6 @@ Durante la preparación de esta versión de la memoria se utilizó una herramien
 
 [17] STMicroelectronics, [*UM1724 — STM32 Nucleo-64 boards: external power supply inputs VIN and E5V*](../hardware/Alimentación%20externa.pdf), revisión 17, extracto local de las páginas 22–23.
 
-
 ---
-
 
 **Fin de la memoria técnica**
