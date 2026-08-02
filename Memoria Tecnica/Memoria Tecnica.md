@@ -40,7 +40,7 @@ El producto mínimo viable (PMV) permitió integrar en una única plataforma la 
 
 | Revisión | Cambios realizados | Fecha |
 | :---: | --- | :---: |
-| 0.1 | Entrega de memoria técnica | <span style="color:#0057b8">🔵 Confirmar fecha</span> |
+| 0.1 | Entrega de memoria técnica | 3/8/2024 |
 
 *Tabla 0.1: registro de versiones del documento.*
 
