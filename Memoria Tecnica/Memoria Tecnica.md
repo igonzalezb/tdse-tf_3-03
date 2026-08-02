@@ -476,7 +476,13 @@ La lectura del DHT22 se implementó sin espera activa prolongada. La línea de d
 
 ### 3.2.4 Control de la bomba
 
-La bomba se conecta mediante un FQPF13N06L en conmutación *low-side* y se comanda desde PA11/TIM1_CH4. Su rango de alimentación publicado es de 3 a 6 VCC y su caudal máximo es de 120 L/h. Se opera el PWM a 1 kHz para generar una rampa controlada de encendido y de apagado. El firmware modifica el valor de comparación entre aproximadamente 480 y 3200 en pasos de 10 cada 1 ms. La inicialización avanza desde 0 a 480 para evitar enviar pulsos de tensión demasiado cortos que generen ruido, pero que no alcancen a mover agua. El recorrido útil requiere aproximadamente 320 ms.
+La bomba se conecta mediante un FQPF13N06L en conmutación *low-side* y se comanda desde PA11/TIM1_CH4. Su rango de alimentación publicado es de 3 a 6 VCC y su caudal máximo es de 120 L/h. Se opera el PWM a 1 kHz para generar una rampa controlada de encendido y de apagado. El firmware modifica el valor de comparación entre aproximadamente 480 y 3200 en pasos de 10 cada 1 ms. La inicialización avanza desde 0 a 480 para evitar enviar pulsos de tensión demasiado cortos que generen ruido, pero que no alcancen a mover agua. El recorrido útil requiere aproximadamente 320 ms. En la figura 3.3 se visualiza la rampa de encendido de la bomba.
+
+<p align="center">
+  <img src="Imagenes/Rampa PWM.jpeg" alt="Rampa PWM" width="430">
+  <br>
+  <em>Figura 3.3: Rampa de encendido de la bomba.</em>
+</p>
 
 El sensado de corriente utiliza una resistencia de paso y una entrada limitada por un diodo Zener de 3V. El objetivo es detectar consumo excesivo y distinguir una bomba desconectada o bloqueada. El diodo proporciona un enclavamiento en 3V ante una subida repentina de la corriente que atraviesa la resistencia de *shunt*.
 
@@ -503,6 +509,20 @@ La documentación eléctrica se encuentra en los siguientes archivos:
 - [Configuración de alimentación externa de la NUCLEO](../hardware/Alimentación%20externa.pdf).
 - [Fuente del esquemático](../hardware/TDSE-TF/TDSE-TF.kicad_sch).
 - [Fuente de la PCB](../hardware/TDSE-TF/TDSE-TF.kicad_pcb).
+
+Se muestran imagenes del circuito impreso finalizado en las Figuras 3.1 y 3.2
+
+<p align="center">
+  <img src="Imagenes/PCB cobre.jpeg" alt="PCB Back Cu" width="430">
+  <br>
+  <em>Figura 3.1: PCB Smartceta lado cobre.</em>
+</p>
+
+<p align="center">
+  <img src="Imagenes/PCB serigrafia.jpeg" alt="PCB cerigrafia" width="430">
+  <br>
+  <em>Figura 3.2: PCB Smartceta lado serigrafia.</em>
+</p>
 
 ### 3.2.8 Pinout del sistema
 
@@ -680,7 +700,11 @@ El instrumental utilizado fue:
 - Depurador ST-LINK y STM32CubeIDE.
 - Recipiente graduado, sustrato seco y húmedo y una referencia ambiental.
 
-<span style="color:#0057b8"><strong>🔵 ANOTACIÓN:</strong> asociar a cada fila un enlace a una fotografía, captura de osciloscopio o archivo de datos.</span>
+<p align="center">
+  <img src="Imagenes/Mediciones osciloscopio.png" alt="Banco mediciones osciloscopio" width="430">
+  <br>
+  <em>Figura 4.1: Banco de mediciones utilizando osciloscopio DSO2090.</em>
+</p>
 
 ## 4.2 Pruebas funcionales del hardware
 
@@ -748,18 +772,24 @@ El video 4.1 Muestra las diferentes funcionalidades del proyecto completamente i
 La medición debe realizarse sobre la entrada de 5 V, no únicamente sobre la NUCLEO, porque la bomba y la tira LED dominan el consumo. Para cada estado se registran tensión y corriente después de alcanzar régimen. La potencia de entrada se calcula como:
 
 $$
-P\,[\mathrm{W}] = \frac{V\,[\mathrm{V}] \cdot I\,[\mathrm{mA}]}{1000}
+P\,[\mathrm{mW}] = V\,[\mathrm{V}] \cdot I\,[\mathrm{mA}]
 \tag{4.1}
 $$
+
+<p align="center">
+  <img src="Imagenes/Mediciones tension y corriente.jpeg" alt="Banco mediciones de tension y corriente" width="430">
+  <br>
+  <em>Figura 4.2: Banco de mediciones utilizado para medir tension y corriente entregados por la fuente.</em>
+</p>
 
 | Estado | Tensión de entrada | Corriente | Potencia | Observaciones |
 | --- | ---: | ---: | ---: | --- |
 | Sistema en reposo | 4,9 V | 100 mA | 490 mW | LCD, LED de estado y sensores activos |
 | Solo tira LED | 4,81 V | 147 mA | 707 mW | Medición en modo test |
 | Bomba en régimen | 4,82 V | 127 mA | 612 mW | Después de la rampa |
-| Bomba + tira LED | 4,77 V | 267 mA | 1,27 W | Peor caso sostenido |
-| Modo falla | 4,92 V | 116 mA | 0,57 W | LED y buzzer de alarma |
-| Máximo consumo | 4,77 V | 367 mA | 1,75 W | Sistema funcionando + LED + Bomba |
+| Bomba + tira LED | 4,77 V | 267 mA | 1270 mW | Peor caso sostenido |
+| Modo falla | 4,92 V | 116 mA | 570 mW | LED y buzzer de alarma |
+| Máximo consumo | 4,77 V | 367 mA | 1750 mW | Sistema funcionando + LED + Bomba |
 
 *Tabla 4.4: consumo del prototipo.*
 
@@ -882,13 +912,11 @@ En la tabla 4.7 se muestra cada requisito impuesto previamente y se establece si
 
 El proyecto permitió diseñar un sistema embebido que reúne las funciones principales necesarias para asistir el cuidado de una planta. Sobre una única NUCLEO-F103RB se integraron cinco entradas analógicas, un sensor digital, una pantalla, cuatro pulsadores y cuatro actuadores, incluyendo dos cargas de potencia.
 
-La arquitectura cooperativa y modular separó las responsabilidades de sensado, evaluación y actuación. El arbitraje del ADC organiza el uso concurrente de un único conversor sin introducir esperas activas prolongadas, mientras que las colas de eventos desacoplan la lógica de menú de las salidas. La persistencia en Flash conserva consignas en las pruebas informadas, pero aún requiere reservar la página y robustecer su integridad.
+La arquitectura cooperativa y modular separó las responsabilidades de sensado, evaluación y actuación. El arbitraje del ADC organiza el uso concurrente de un único conversor sin introducir esperas activas prolongadas, mientras que las colas de eventos desacoplan la lógica de menú de las salidas.
 
-La revisión actual corrigió la condición de parada del riego, implementó una histéresis de iluminación que conserva el estado, expresó los canales de corriente en miliamperes y evitó la publicación repetitiva de una misma falla. El gestor contempla trece causas, una gracia inicial de 150 ms, una espera de 300 ms para diagnosticar los actuadores en estado estable y un filtro de tres fallos consecutivos para el DHT22. Una compilación limpia de las catorce tareas concluyó sin errores ni advertencias y ocupó 25 176 B de Flash y 4028 B de SRAM, equivalentes al 19,2 % y 19,7 % de los recursos físicos, respectivamente.
+Con el uso del PWM, interrupciones y timers se indago en las posibilidades que ofrece la placa de desarrollo. Esto permite que en una futura revision del prototipo se tenga un mayor manejo de dichas funcionalidades para lograr implementar mejores soluciones. 
 
-Estas mejoras no equivalen por sí solas a una validación de seguridad. El reposo de la bomba conserva aproximadamente 15 % de *duty*, no existe tiempo máximo de riego, las colas pueden perder eventos sin diagnóstico, los modos de configuración y prueba no garantizan la detención de una carga previamente activa, y las muestras analógicas carecen de validez y antigüedad. La recuperación de algunas fallas, la integridad de Flash y las protecciones de potencia también requieren cierre. En consecuencia, Smartceta constituye un prototipo integrado y extensible, pero no debe presentarse como un sistema de riego autónomo seguro hasta resolver y ensayar esos puntos.
 
-<span style="color:#008000"><strong>🟢 VALORES EXPERIMENTALES A COMPLETAR:</strong> error máximo de sensado = ___; consumo máximo = ___ W; utilización máxima de CPU = ___ %.</span>
 
 ## 5.2 Lecciones aprendidas
 
@@ -898,7 +926,7 @@ El desarrollo de las etapas de potencia puso de manifiesto que la existencia de 
 
 La interfaz basada en eventos simplificó la incorporación de modos y patrones de señalización, pero también evidenció la necesidad de diseñar explícitamente el tratamiento de colas llenas y de eventos prioritarios. Una falla crítica no debe competir en igualdad de condiciones con una pulsación de usuario.
 
-Por último, la trazabilidad entre requisito, implementación y ensayo permitió detectar diferencias que no resultaban evidentes al observar módulos aislados, como la interpretación de “intensidad de iluminación”, la necesidad de validar de forma independiente las alarmas sonoras y visuales y los riesgos de navegación y apagado dentro del modo de prueba.
+Por último, la trazabilidad entre requisito, implementación y ensayo permitió detectar caracteristicas que no representaban una ayuda real al sistema, como la variacion en la intensidad de iluminacion. Al materializar el proyecto, evoluciono la comprension de las necesidades que requiere suplir el prototipo y se distribuyo mejor el foco de trabajo para poder cumplir los objetivos a los que se epuntaban.
 
 ## 5.3 Posibles ampliaciones
 
