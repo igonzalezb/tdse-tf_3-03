@@ -70,3 +70,4 @@ tdse-tf_3-03/tdse-tf_3-03.launch
 tdse-tf_3-03/tdse-tf_3-03 Release.launch
 *.launch
 tdse-tf_3-03/tdse-tf_3-03 Debug.cfg
+/.vscode
