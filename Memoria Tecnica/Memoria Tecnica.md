@@ -14,7 +14,7 @@
 
 <br>
 
-**Autores**
+#### Autores
 
 | Apellido y nombre         | Padrón |
 | ------------------------- | -----: |
@@ -37,12 +37,13 @@ La unidad de control se implementó sobre una placa NUCLEO-F103RB. El firmware s
 El producto mínimo viable (PMV) permitió integrar en una única plataforma la adquisición de datos de los sensores, el control de actuadores, la interfaz local y la persistencia de parámetros de configuración. Se logró compilar el firmware sin errores en modo `Release` y comprobar el funcionamiento del dispositivo en una maceta real, sin dependencia de una computadora. El proyecto adoptó un enfoque orientado a la seguridad, con el objetivo de priorizar la integridad del hardware ante posibles fallas o funcionamientos anómalos.
 
 ## Registro de versiones
+
 En la tabla 0.1 se documentan las versiones del presente documento, con la fecha de entrega y una breve descripción de los cambios realizados.
 
 | Revisión | Cambios realizados               |   Fecha    |
 | :------: | -------------------------------- | :--------: |
 |   0.1    | Entrega de memoria técnica       | 03/08/2026 |
-|   0.2    | Actualización de memoria técnica | 05/08/2026 |
+|   0.2    | Actualización de memoria técnica | 04/08/2026 |
 
 *Tabla 0.1: registro de versiones del documento.*
 
@@ -51,7 +52,7 @@ En la tabla 0.1 se documentan las versiones del presente documento, con la fecha
 # Índice general
 
 - [Smartceta](#smartceta)
-    - [Sistema embebido para el cuidado automatizado de plantas](#sistema-embebido-para-el-cuidado-automatizado-de-plantas)
+  - [Sistema embebido para el cuidado automatizado de plantas](#sistema-embebido-para-el-cuidado-automatizado-de-plantas)
   - [Resumen](#resumen)
   - [Registro de versiones](#registro-de-versiones)
 - [Índice general](#índice-general)
@@ -169,7 +170,7 @@ A partir de los valores adquiridos y de los parámetros configurados por el usua
 
 La interacción con el usuario se concentró en una pantalla LCD de 16 × 2 caracteres y cuatro pulsadores: siguiente, anterior, aceptar (Enter) y volver (Escape). En operación normal, la pantalla presenta de manera alternada las mediciones de los sensores. Desde el menú de configuración es posible modificar los umbrales de humedad del suelo, luz y nivel de agua, además de habilitar o deshabilitar de manera independiente las señales sonoras y el LED de estado. Los cinco valores seleccionados se almacenan en la memoria Flash del microcontrolador.
 
-Como elementos de señalización se utilizaron un LED RGB y un buzzer activo. El color y el patrón del LED identifican el modo de operación, mientras que el buzzer informa acciones del sistema. Además de los modos normal y configuración, se incorpora un modo de prueba con cuatro lecturas de sensores y cuatro pruebas de actuadores. También contempla trece causas de falla, aplica tiempos de gracia para reducir falsos positivos y solicita el apagado de la bomba y de la tira LED al entrar en el modo falla. 
+Como elementos de señalización se utilizaron un LED RGB y un buzzer activo. El color y el patrón del LED identifican el modo de operación, mientras que el buzzer informa acciones del sistema. Además de los modos normal y configuración, se incorpora un modo de prueba con cuatro lecturas de sensores y cuatro pruebas de actuadores. También contempla trece causas de falla, aplica tiempos de gracia para reducir falsos positivos y solicita el apagado de la bomba y de la tira LED al entrar en el modo falla.
 
 La figura 1.1 presenta la organización general de Smartceta. El diagrama muestra la arquitectura del sistema con la placa NUCLEO-F103RB como unidad central, que integra todas las entradas de sensores analógicos y digitales (humedad del suelo, luz, nivel de agua, temperatura y humedad ambiente, mediciones de corriente de bomba e iluminación, y pulsadores) con los actuadores de control (etapas MOSFET para bomba e iluminación, pantalla LCD, LED RGB indicador de estado y buzzer). La comunicación entre componentes se realiza mediante ADC para conversión de señales analógicas, PWM para control de potencia, GPIO para señales digitales y un bus de 4 bits para la interfaz LCD. Las líneas punteadas representan la realimentación de corriente desde los actuadores hacia los sensores de diagnóstico.
 
@@ -180,14 +181,14 @@ flowchart LR
         LDR["Luz ambiente · LDR"]
         NA["Nivel de agua"]
         DHT["DHT22 · temperatura y humedad ambiente"]
-        IB["Medición de corriente de bomba"]
-        IL["Medición de corriente de tira LED"]
-        BTN["Cuatro pulsadores"]
+        IB["Corriente de bomba"]
+        IL["Corriente de tira LED"]
+        BTN["Pulsadores"]
     end
 
     MCU["NUCLEO-F103RB<br>STM32F103RBT6"]
 
-    subgraph SALIDAS["Actuadores e interfaz local"]
+    subgraph SALIDAS["Actuadores e interfaz"]
         QB["Etapa MOSFET de bomba"]
         BOMBA["Bomba de agua"]
         QL["Etapa MOSFET de iluminación"]
@@ -212,11 +213,11 @@ flowchart LR
     QL --> TIRA
     MCU -->|"GPIO · bus de 4 bits"| LCD
     MCU -->|"PWM · TIM4"| RGB
-    MCU -->|"GPIO"| DB
+    MCU -->|"Digital · PB13"| DB
     DB --> BUZ
 
-    BOMBA -. "Realimentación de corriente" .-> IB
-    TIRA -. "Realimentación de corriente" .-> IL
+    BOMBA -. " " .-> IB
+    TIRA -. " " .-> IL
 
     classDef sensor fill:#d9f0ff,stroke:#1674a8,color:#111;
     classDef control fill:#dff5df,stroke:#287a28,color:#111;
@@ -822,10 +823,10 @@ En la tabla 4.4 se resumen los resultados de las mediciones de consumo eléctric
 
 *Tabla 4.4: consumo del prototipo.*
 
-La fuente debe soportar el peor caso sostenido y el pico de arranque con un cierto margen. Se estableció el margen de seguridad (M) en un 90%:
+La fuente debe soportar el peor caso sostenido y el pico de arranque con un cierto margen. Se estableció el margen de seguridad (M) en 0,9:
 
 $$
-I_{\text{fuente}} \geq I_{\text{pico medido}} \cdot M
+I_{\text{fuente}} \geq I_{\text{pico medido}} \cdot (1+M)
 \tag{4.2}
 $$
 
