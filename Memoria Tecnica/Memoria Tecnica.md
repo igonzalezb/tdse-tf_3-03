@@ -797,10 +797,7 @@ El video 4.1 muestra las diferentes funcionalidades del proyecto completamente i
 
 La medición debe realizarse sobre la entrada de 5 V, no únicamente sobre la NUCLEO, porque la bomba y la tira LED dominan el consumo. Para cada estado se registran tensión y corriente después de alcanzar régimen. La potencia de entrada se calcula como:
 
-$$
-P\,[\mathrm{mW}] = V\,[\mathrm{V}] \cdot I\,[\mathrm{mA}]
-\tag{4.1}
-$$
+$$ (4.1) \quad P[\text{mW}] = V[\text{V}] \cdot I[\text{mA}] $$
 
 En la figura 4.2 se muestra el banco de mediciones utilizado para medir la tensión y la corriente suministradas por la fuente.
 
@@ -825,22 +822,13 @@ En la tabla 4.4 se resumen los resultados de las mediciones de consumo eléctric
 
 La fuente debe soportar el peor caso sostenido y el pico de arranque con un cierto margen. Se estableció el margen de seguridad (M) en 0,9:
 
-$$
-I_{\text{fuente}} \geq I_{\text{pico medido}} \cdot (1+M)
-\tag{4.2}
-$$
+$$ I_{\text{fuente}} \geq I_{\text{pico medido}} \cdot (1+M) \tag{4.2} $$
 
-$$
-  M = 90 \%
-$$
+$$ M = 90\% $$
 
-$$
-  I_{\text{pico medido}} = 367 mA
-$$
+$$ I_{\text{pico medido}} = 367 \text{ mA} $$
 
-$$
-I_{\text{fuente}} = 700 mA
-$$
+$$ I_{\text{fuente}} = 700 \text{ mA} $$
 
 ## 4.6 Uso de memoria
 
@@ -884,10 +872,7 @@ Los valores se obtuvieron del máximo registrado por DWT para cada tarea. La sum
 
 La cota de utilización se calcula como:
 
-$$
-U = \frac{\sum_{i=1}^{14} C_i}{1000\ \mu s}
-\tag{4.3}
-$$
+$$ U = \frac{\sum_{i=1}^{14} C_i}{1000 \, \mu\text{s}} \tag{4.3} $$
 
 La cota de uso es \(U = 64,0 \%\), por lo que existe un sobrante de unos 360 µs por ciclo.
 
