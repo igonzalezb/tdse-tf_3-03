@@ -44,6 +44,7 @@ En la tabla 0.1 se documentan las versiones del presente documento, con la fecha
 | :------: | -------------------------------- | :--------: |
 |   0.1    | Entrega de memoria técnica       | 03/08/2026 |
 |   0.2    | Actualización de memoria técnica | 04/08/2026 |
+|   0.3    | Actualización de memoria técnica | 06/08/2026 |
 
 *Tabla 0.1: registro de versiones del documento.*
 
@@ -52,7 +53,8 @@ En la tabla 0.1 se documentan las versiones del presente documento, con la fecha
 # Índice general
 
 - [Smartceta](#smartceta)
-  - [Sistema embebido para el cuidado automatizado de plantas](#sistema-embebido-para-el-cuidado-automatizado-de-plantas)
+    - [Sistema embebido para el cuidado automatizado de plantas](#sistema-embebido-para-el-cuidado-automatizado-de-plantas)
+      - [Autores](#autores)
   - [Resumen](#resumen)
   - [Registro de versiones](#registro-de-versiones)
 - [Índice general](#índice-general)
@@ -369,7 +371,7 @@ La placa NUCLEO-F103RB incorpora un microcontrolador STM32F103RBT6 basado en Arm
 
 ### 2.3.2 Sensores
 
-A continuación se detallan los sensores utilizados, su interfaz, alimentación y función dentro del sistema. La tabla 2.6 resume esta información.
+En la tabla 2.6 se detallan los sensores utilizados, su interfaz, alimentación y función dentro del sistema. Aplicar este criterio a todo el documento.
 
 | Variable                       | Elemento empleado                              | Interfaz                                     | Alimentación                  | Uso en el sistema                      |
 | ------------------------------ | ---------------------------------------------- | -------------------------------------------- | ----------------------------- | -------------------------------------- |
@@ -406,7 +408,7 @@ Una fuente externa de 5 V ingresa por J3 y alimenta tanto las cargas como la ent
 
 ## 3.1 Arquitectura general
 
-La arquitectura gestiona adquisición, supervisión, decisión, interfaz y actuación respetando la separación de módulos independientes de "Sensores", "Sistemas" y "Actuadores". Las tareas de sensores actualizan una estructura de datos común; `task_system_failure` evalúa las condiciones anormales; `task_menu` consulta los datos, administra los modos y produce eventos; `task_display` transfiere al LCD el contenido solicitado; y las tareas de actuadores consumen colas independientes. Los pulsadores generan eventos de usuario. Las configuraciones se escriben en la última página de la Flash. A continuación se muestra la figura 3.1, que representa la arquitectura funcional del sistema.
+La arquitectura gestiona adquisición, supervisión, decisión, interfaz y actuación respetando la separación de módulos independientes de "Sensores", "Sistemas" y "Actuadores". Las tareas de sensores actualizan una estructura de datos común; `task_system_failure` evalúa las condiciones anormales; `task_menu` consulta los datos, administra los modos y produce eventos; `task_display` transfiere al LCD el contenido solicitado; y las tareas de actuadores consumen colas independientes. Los pulsadores generan eventos de usuario. Las configuraciones se escriben en la última página de la Flash. La figura 3.1 representa la arquitectura funcional del sistema.
 
 ```mermaid
 flowchart LR
@@ -538,7 +540,7 @@ Se muestran imágenes del circuito impreso finalizado en las figuras 3.3 y 3.4.
 
 ### 3.2.8 Pinout del sistema
 
-A continuación se presenta la asignación de pines implementada en el prototipo. La tabla 3.2 resume la función, el pin de la NUCLEO y el periférico o modo utilizado.
+En la tabla 3.2 se presenta la asignación de pines implementada en el prototipo para cada función, junto con el periférico o modo utilizado.
 
 | Función            | Pin STM32 | Periférico o modo             |
 | ------------------ | --------- | ----------------------------- |
@@ -570,7 +572,7 @@ A continuación se presenta la asignación de pines implementada en el prototipo
 
 ### 3.2.9 Lista de materiales
 
-A continuación se presenta la lista de materiales utilizada en el prototipo. La tabla 3.3 resume la cantidad, el elemento, su valor o modelo y observaciones relevantes.
+En la tabla 3.3 se presenta la lista de materiales utilizada en el prototipo, en donde resume la cantidad, el elemento, su valor o modelo y observaciones relevantes.
 
 | Cantidad | Elemento                        | Valor o modelo              | Observaciones                    |
 | -------: | ------------------------------- | --------------------------- | -------------------------------- |
@@ -610,7 +612,7 @@ El contador de ciclos DWT mide el tiempo de cada tarea y conserva su máximo obs
 
 ### 3.3.2 Tareas y periodicidades
 
-A continuación se presenta la tabla 3.4, que resume las tareas principales del firmware, su función y los períodos de activación o evaluación.
+En la tabla 3.4 se presenta la asignación de tareas y sus respectivos períodos de activación o evaluación.
 
 | Tarea                 | Función                                                             | Períodos de activación o evaluación                                                        |
 | --------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -718,7 +720,7 @@ El instrumental utilizado fue:
 - Depurador ST-LINK y STM32CubeIDE.
 - Recipiente graduado, sustrato seco y húmedo y una referencia ambiental.
 
-A continuación se muestra la figura 4.1, que representa el banco de mediciones con el osciloscopio DSO2090.
+En la figura 4.1 se puede observar el banco de mediciones con el osciloscopio DSO2090.
 
 <p align="center">
   <img src="Imagenes/Mediciones osciloscopio.png" alt="Banco mediciones osciloscopio" width="430">
@@ -831,7 +833,13 @@ Donde:
 
 ## 4.6 Uso de memoria
 
-En la tabla 4.5 se resumen los resultados de la utilización de memoria del prototipo obtenidos del IDE.
+En la tabla 4.5 se muestran los resultados de la utilización de memoria. El firmware del prototipo ocupa alrededor de una quinta parte de la memoria de programa (Flash) y de la memoria de datos (SRAM).
+
+Ese nivel de ocupación reducido (menos del 20 % en todos los casos) tiene dos ventajas para el proyecto:
+
+- *Estabilidad del sistema:* Con más del 80 % de la SRAM libre (más de 16 KiB), se reduce el riesgo de problemas en tiempo de ejecución, como desbordamientos de pila al procesar interrupciones o ejecutar funciones con llamadas profundas.
+
+- *Mayor Escalabilidad:* El espacio sobrante en Flash (más de 104 KiB útiles) permite futuras mejoras del prototipo. Se pueden añadir nuevas funcionalidades, usar librerías más pesadas (por ejemplo, para pantallas gráficas o comunicaciones complejas) o implementar algoritmos más elaborados sin cambiar el hardware ni subir a un microcontrolador más costoso.
 
 | Memoria                         |                                Total | Usada por la compilación `Release` |     Libre |
 | ------------------------------- | -----------------------------------: | ---------------------------------: | --------: |
